@@ -22,9 +22,9 @@ export default function LoginPage() {
             const sessionRes = await fetch("/api/auth/session");
             const session = await sessionRes.json();
 
-            if (session?.user?.rol === "admin") {
+            if (session?.user?.role === "admin") {
                 router.push("/admin");
-            } else if (session?.user?.rol === "playero") {
+            } else if (session?.user?.role === "playero") {
                 router.push("/playero");
             } else {
                 router.push("/");
@@ -35,9 +35,9 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-gray-200 px-4">
+        <main className="min-h-screen flex items-center justify-center bg-gray-700 px-4">
             <div className="bg-white/90 backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
-                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Iniciar sesión</h1>
+                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Iniciar Sesión</h1>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <input
                         type="text"

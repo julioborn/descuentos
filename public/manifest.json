@@ -3,7 +3,7 @@
     "short_name": "Descuentos",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#000000",
+    "background_color": "#111827",
     "theme_color": "#0f172a",
     "description": "Sistema de carga con descuentos para empleados",
     "icons": [

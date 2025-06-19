@@ -10,11 +10,13 @@ type Empleado = {
     apellido: string;
     dni: string;
     empresa: string;
+    moneda: string
 };
 
 type PrecioProducto = {
     producto: string;
     precio: number;
+    moneda: string;
 };
 
 export default function PlayeroPage() {
@@ -24,6 +26,7 @@ export default function PlayeroPage() {
     const [form, setForm] = useState({ producto: '', litros: '' });
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
+    const moneda = precios.find(p => p.producto === form.producto)?.moneda || '';
 
     useEffect(() => {
         const fetchPrecios = async () => {
@@ -34,6 +37,25 @@ export default function PlayeroPage() {
             }
         };
         fetchPrecios();
+    }, []);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+
+        if (token) {
+            fetch(`/api/empleados/token/${token}`)
+                .then((res) => {
+                    if (!res.ok) throw new Error("Empleado no encontrado");
+                    return res.json();
+                })
+                .then((data) => {
+                    setEmpleado(data);
+                })
+                .catch(() => {
+                    setScanError("Empleado no encontrado con token en la URL");
+                });
+        }
     }, []);
 
     useEffect(() => {
@@ -78,6 +100,7 @@ export default function PlayeroPage() {
     const litros = parseFloat(form.litros) || 0;
     const precioFinal = precioUnitario * litros;
 
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!empleado) return;
@@ -109,9 +132,9 @@ export default function PlayeroPage() {
     };
 
     return (
-        <main className="min-h-screen px-4 py-6 bg-gray-900 text-white">
+        <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Escanear QR del empleado</h1>
+                <h1 className="text-2xl font-bold">Escanear QR</h1>
                 <LogoutButton />
             </div>
 
@@ -124,24 +147,33 @@ export default function PlayeroPage() {
 
             {empleado && (
                 <>
-                    <div className="mb-6 bg-white/5 p-4 rounded shadow border border-white/10">
-                        <p><strong>Empleado:</strong> {empleado.nombre} {empleado.apellido}</p>
-                        <p><strong>DNI:</strong> {empleado.dni}</p>
-                        <p><strong>Empresa:</strong> {empleado.empresa}</p>
+                    <div className="mb-6 bg-white/10 p-6 rounded-2xl shadow-lg border border-white/20">
+                        <p className="text-2xl font-semibold mb-2">
+                            {empleado.nombre} {empleado.apellido}
+                        </p>
+                        <p className="text-xl mb-1">
+                            <span className="text-gray-300">DNI:</span> {empleado.dni}
+                        </p>
+                        <p className="text-xl">
+                            <span className="text-gray-300">Empresa:</span> {empleado.empresa}
+                        </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4 bg-white/5 p-4 rounded border border-white/10 max-w-md">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-6 bg-white/10 p-6 rounded-lg border border-white/20 max-w-md mx-auto shadow-lg"
+                    >
                         <select
                             name="producto"
                             value={form.producto}
                             onChange={handleChange}
                             required
-                            className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
+                            className="w-full text-lg p-4 rounded-lg bg-gray-700 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
                             <option value="">Seleccionar producto</option>
-                            {precios.map(p => (
+                            {precios.map((p) => (
                                 <option key={p.producto} value={p.producto}>
-                                    {p.producto} - {p.precio.toLocaleString()} ₲
+                                    {p.producto} - {p.precio.toLocaleString()} {p.moneda}
                                 </option>
                             ))}
                         </select>
@@ -152,23 +184,24 @@ export default function PlayeroPage() {
                             placeholder="Litros"
                             value={form.litros}
                             onChange={handleChange}
-                            className="w-full p-2 rounded bg-white/10 text-white border border-white/20 placeholder-gray-400"
+                            className="w-full text-3xl text-center font-semibold p-4 rounded-lg bg-gray-700 text-white border border-gray-500 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                             required
                         />
 
-                        <div className="text-right text-green-400 font-semibold">
-                            Total: {precioFinal.toLocaleString()} ₲
+                        <div className="text-center text-green-400 text-2xl font-bold">
+                            Total: {precioFinal.toLocaleString()} {moneda}
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded transition"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-4 rounded-lg font-bold transition"
                         >
-                            Registrar carga
+                            Cargar
                         </button>
                     </form>
                 </>
             )}
+
         </main>
     );
 }
