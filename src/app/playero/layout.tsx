@@ -8,7 +8,7 @@ export default async function PlayeroLayout({ children }: { children: React.Reac
         redirect("/login");
     }
 
-    if (session.user.rol === "admin") {
+    if (session.user.role === "admin") {
         redirect("/admin");
     }
 
