@@ -21,7 +21,6 @@ export default function PlayeroPage() {
     const [empleado, setEmpleado] = useState<Empleado | null>(null);
     const [precios, setPrecios] = useState<PrecioProducto[]>([]);
     const [scanError, setScanError] = useState('');
-    const [escaneando, setEscaneando] = useState(false);
     const [form, setForm] = useState({ producto: '', litros: '' });
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
@@ -37,18 +36,14 @@ export default function PlayeroPage() {
         fetchPrecios();
     }, []);
 
-    const iniciarEscaneo = async () => {
-        try {
-            setScanError('');
-            setEscaneando(true);
-            codeReader.current = new BrowserQRCodeReader();
-            const preview = videoRef.current;
-            if (!preview) return;
+    useEffect(() => {
+        const startScanner = async () => {
+            try {
+                codeReader.current = new BrowserQRCodeReader();
+                const preview = videoRef.current;
+                if (!preview) return;
 
-            await codeReader.current.decodeFromVideoDevice(
-                undefined,
-                preview,
-                async (result) => {
+                await codeReader.current.decodeFromVideoDevice(undefined, preview, async (result) => {
                     if (result) {
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
@@ -57,23 +52,23 @@ export default function PlayeroPage() {
                                 if (!res.ok) throw new Error('Empleado no encontrado');
                                 const data = await res.json();
                                 setEmpleado(data);
-                                detenerEscaneo();
+                                (codeReader.current as any).reset();
                             } catch {
                                 setScanError('QR inválido o empleado no encontrado.');
                             }
                         }
                     }
-                }
-            );
-        } catch {
-            setScanError('Error al iniciar la cámara');
-        }
-    };
+                });
+            } catch {
+                setScanError('Error al iniciar la cámara');
+            }
+        };
 
-    const detenerEscaneo = () => {
-        (codeReader.current as any).reset();
-        setEscaneando(false);
-    };
+        startScanner();
+        return () => {
+            (codeReader.current as any).reset();
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -94,7 +89,7 @@ export default function PlayeroPage() {
                 nombreEmpleado: `${empleado.nombre} ${empleado.apellido}`,
                 dniEmpleado: empleado.dni,
                 producto: form.producto,
-                litros,
+                litros: litros,
                 precioFinal,
                 fecha: new Date().toISOString(),
             }),
@@ -104,6 +99,10 @@ export default function PlayeroPage() {
             alert('Carga registrada con éxito');
             setForm({ producto: '', litros: '' });
             setEmpleado(null);
+            (codeReader.current as any).reset();
+            setTimeout(() => {
+                codeReader.current?.decodeFromVideoDevice(undefined, videoRef.current!, () => { });
+            }, 500);
         } else {
             alert('Error al registrar carga');
         }
@@ -117,26 +116,9 @@ export default function PlayeroPage() {
             </div>
 
             {!empleado && (
-                <div className="mb-6 space-y-4">
-                    {!escaneando ? (
-                        <button
-                            onClick={iniciarEscaneo}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                        >
-                            Escanear QR
-                        </button>
-                    ) : (
-                        <>
-                            <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
-                            <button
-                                onClick={detenerEscaneo}
-                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-                            >
-                                Cancelar escaneo
-                            </button>
-                        </>
-                    )}
-                    {scanError && <p className="text-red-400">{scanError}</p>}
+                <div className="mb-6">
+                    <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
+                    {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
                 </div>
             )}
 
