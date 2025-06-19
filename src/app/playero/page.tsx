@@ -102,7 +102,7 @@ export default function PlayeroPage() {
                         style={{ width: '100%' }}
                         onError={handleError}
                         onScan={handleScan}
-                        constraints={{ facingMode: { exact: "environment" } }} // 👈 clave para usar la trasera
+                        constraints={{ facingMode: "environment" }} // ✅
                     />
                     {error && <p className="text-red-400 mt-4">{error}</p>}
                 </div>

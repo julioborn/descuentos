@@ -19,7 +19,6 @@ export default function LoginPage() {
         });
 
         if (res?.ok) {
-            // Obtenemos la sesión con el rol del usuario
             const sessionRes = await fetch("/api/auth/session");
             const session = await sessionRes.json();
 
@@ -36,27 +35,32 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-100">
-            <form onSubmit={handleLogin} className="bg-white p-6 rounded shadow max-w-md w-full space-y-4">
-                <h1 className="text-2xl font-bold text-center">Iniciar sesión</h1>
-                <input
-                    type="text"
-                    placeholder="Usuario"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className="w-full border p-2 rounded"
-                />
-                <input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full border p-2 rounded"
-                />
-                <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
-                    Entrar
-                </button>
-            </form>
+        <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-gray-200 px-4">
+            <div className="bg-white/90 backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
+                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Iniciar sesión</h1>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <input
+                        type="text"
+                        placeholder="Usuario"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    />
+                    <button
+                        type="submit"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition"
+                    >
+                        Entrar
+                    </button>
+                </form>
+            </div>
         </main>
     );
 }
