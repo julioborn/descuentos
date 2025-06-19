@@ -52,7 +52,7 @@ export default function PlayeroPage() {
                                 if (!res.ok) throw new Error('Empleado no encontrado');
                                 const data = await res.json();
                                 setEmpleado(data);
-                                (codeReader.current as any).reset();
+                                (codeReader.current as any)?.stopContinuousDecode?.();
                             } catch {
                                 setScanError('QR inválido o empleado no encontrado.');
                             }
@@ -66,7 +66,7 @@ export default function PlayeroPage() {
 
         startScanner();
         return () => {
-            (codeReader.current as any).reset();
+            (codeReader.current as any)?.stopContinuousDecode?.();
         };
     }, []);
 
@@ -99,7 +99,7 @@ export default function PlayeroPage() {
             alert('Carga registrada con éxito');
             setForm({ producto: '', litros: '' });
             setEmpleado(null);
-            (codeReader.current as any).reset();
+            (codeReader.current as any)?.stopContinuousDecode?.();
             setTimeout(() => {
                 codeReader.current?.decodeFromVideoDevice(undefined, videoRef.current!, () => { });
             }, 500);
