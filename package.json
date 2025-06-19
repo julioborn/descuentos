@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@zxing/browser": "^0.1.5",
     "framer-motion": "^12.18.1",
     "html5-qrcode": "^2.3.8",
     "mongoose": "^8.16.0",

@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
+import { BrowserQRCodeReader } from '@zxing/browser';
 import LogoutButton from '@/components/LogoutButton';
-
-// Import dinámico para evitar errores de SSR
-const QrScanner = dynamic(() => import('react-qr-scanner'), { ssr: false });
 
 type Empleado = {
     _id: string;
@@ -16,46 +13,52 @@ type Empleado = {
 };
 
 export default function PlayeroPage() {
-    const [scanResult, setScanResult] = useState('');
     const [empleado, setEmpleado] = useState<Empleado | null>(null);
+    const [scanError, setScanError] = useState('');
     const [form, setForm] = useState({ producto: '', litros: '', precioFinal: '' });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const codeReader = useRef<BrowserQRCodeReader | null>(null);
 
-    // Detectar empleado a partir del QR escaneado
     useEffect(() => {
-        const fetchEmpleado = async () => {
+        const startScanner = async () => {
             try {
-                const token = new URL(scanResult).searchParams.get('token');
-                if (!token) return;
+                codeReader.current = new BrowserQRCodeReader();
 
-                setLoading(true);
-                const res = await fetch(`/api/empleados/token/${token}`);
-                if (!res.ok) throw new Error('Empleado no encontrado');
-                const data = await res.json();
-                setEmpleado(data);
-                setError('');
-            } catch (err) {
-                setError('QR inválido o empleado no encontrado.');
-                setEmpleado(null);
-            } finally {
-                setLoading(false);
+                const preview = videoRef.current;
+                if (!preview) return;
+
+                const controls = await codeReader.current.decodeFromVideoDevice(
+                    undefined, // deja que seleccione la trasera automáticamente
+                    preview,
+                    async (result, err) => {
+                        if (result) {
+                            const token = new URL(result.getText()).searchParams.get('token');
+                            if (token) {
+                                try {
+                                    const res = await fetch(`/api/empleados/token/${token}`);
+                                    if (!res.ok) throw new Error('Empleado no encontrado');
+                                    const data = await res.json();
+                                    setEmpleado(data);
+                                    (codeReader.current as any).reset();
+                                    // Detener el escáner
+                                } catch {
+                                    setScanError('QR inválido o empleado no encontrado.');
+                                }
+                            }
+                        }
+                    }
+                );
+            } catch (error) {
+                setScanError('Error al iniciar la cámara');
             }
         };
 
-        if (scanResult) fetchEmpleado();
-    }, [scanResult]);
+        startScanner();
 
-    const handleScan = (data: any) => {
-        if (data?.text && data.text !== scanResult) {
-            setScanResult(data.text);
-        }
-    };
-
-    const handleError = (err: any) => {
-        console.error(err);
-        setError('Error al acceder a la cámara');
-    };
+        return () => {
+            (codeReader.current as any).reset();
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -82,7 +85,10 @@ export default function PlayeroPage() {
             alert('Carga registrada con éxito');
             setForm({ producto: '', litros: '', precioFinal: '' });
             setEmpleado(null);
-            setScanResult('');
+            (codeReader.current as any).reset();
+            setTimeout(() => {
+                codeReader.current?.decodeFromVideoDevice(undefined, videoRef.current!, () => { });
+            }, 500);
         } else {
             alert('Error al registrar carga');
         }
@@ -97,14 +103,8 @@ export default function PlayeroPage() {
 
             {!empleado && (
                 <div className="mb-6">
-                    <QrScanner
-                        delay={300}
-                        style={{ width: '100%' }}
-                        onError={handleError}
-                        onScan={handleScan}
-                        constraints={{ facingMode: "environment" }} // ✅
-                    />
-                    {error && <p className="text-red-400 mt-4">{error}</p>}
+                    <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
+                    {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
                 </div>
             )}
 
