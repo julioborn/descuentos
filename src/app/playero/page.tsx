@@ -187,7 +187,7 @@ export default function PlayeroPage() {
                             required
                         />
 
-                        <div className="text-center text-red-800 text-2xl font-bold">
+                        <div className="text-center text-white text-2xl font-bold">
                             Total: {precioFinal.toLocaleString()} {moneda}
                         </div>
 
