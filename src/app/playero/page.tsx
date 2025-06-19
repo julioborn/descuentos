@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BrowserQRCodeReader } from '@zxing/browser';
-import LogoutButton from '@/components/LogoutButton';
 
 type Empleado = {
     _id: string;
@@ -10,7 +9,7 @@ type Empleado = {
     apellido: string;
     dni: string;
     empresa: string;
-    moneda: string
+    moneda: string;
 };
 
 type PrecioProducto = {
@@ -26,44 +25,69 @@ export default function PlayeroPage() {
     const [form, setForm] = useState({ producto: '', litros: '' });
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
-    const moneda = precios.find(p => p.producto === form.producto)?.moneda || '';
-    const [camaraActiva, setCamaraActiva] = useState(false);
+    const moneda = precios.find((p) => p.producto === form.producto)?.moneda || '';
 
+    // Traer precios
     useEffect(() => {
-        const fetchPrecios = async () => {
-            const res = await fetch('/api/precios');
-            if (res.ok) {
-                const data = await res.json();
-                setPrecios(data);
-            }
-        };
-        fetchPrecios();
+        fetch('/api/precios')
+            .then((res) => res.json())
+            .then(setPrecios);
     }, []);
 
+    // Verificar si hay token por URL
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get("token");
-
+        const token = new URLSearchParams(window.location.search).get('token');
         if (token) {
             fetch(`/api/empleados/token/${token}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error("Empleado no encontrado");
-                    return res.json();
-                })
-                .then((data) => {
-                    setEmpleado(data);
-                })
-                .catch(() => {
-                    setScanError("Empleado no encontrado con token en la URL");
-                });
+                .then((res) => res.json())
+                .then(setEmpleado)
+                .catch(() => setScanError('Empleado no encontrado con token en la URL'));
         }
     }, []);
+
+    // Activar cámara automáticamente si no hay empleado
+    useEffect(() => {
+        if (empleado) return;
+
+        const startScanner = async () => {
+            try {
+                codeReader.current = new BrowserQRCodeReader();
+                const preview = videoRef.current;
+                if (!preview) return;
+
+                await codeReader.current.decodeFromVideoDevice(undefined, preview, async (result) => {
+                    if (result) {
+                        const token = new URL(result.getText()).searchParams.get('token');
+                        if (token) {
+                            try {
+                                const res = await fetch(`/api/empleados/token/${token}`);
+                                if (!res.ok) throw new Error();
+                                const data = await res.json();
+                                setEmpleado(data);
+                                (codeReader.current as any)?.stopContinuousDecode?.();
+                            } catch {
+                                setScanError('QR inválido o empleado no encontrado.');
+                            }
+                        }
+                    }
+                });
+            } catch {
+                setScanError('Error al iniciar la cámara');
+            }
+        };
+
+        startScanner();
+
+        return () => {
+            (codeReader.current as any)?.stopContinuousDecode?.();
+        };
+    }, [empleado]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
+    const precioUnitario = precios.find((p) => p.producto === form.producto)?.precio || 0;
     const litros = parseFloat(form.litros) || 0;
     const precioFinal = precioUnitario * litros;
 
@@ -78,7 +102,7 @@ export default function PlayeroPage() {
                 nombreEmpleado: `${empleado.nombre} ${empleado.apellido}`,
                 dniEmpleado: empleado.dni,
                 producto: form.producto,
-                litros: litros,
+                litros,
                 precioFinal,
                 fecha: new Date().toISOString(),
             }),
@@ -87,7 +111,7 @@ export default function PlayeroPage() {
         if (res.ok) {
             alert('Carga registrada con éxito');
             setForm({ producto: '', litros: '' });
-            setEmpleado(null);
+            setEmpleado(null); // reset para escanear otro
             (codeReader.current as any)?.stopContinuousDecode?.();
             setTimeout(() => {
                 codeReader.current?.decodeFromVideoDevice(undefined, videoRef.current!, () => { });
@@ -97,90 +121,12 @@ export default function PlayeroPage() {
         }
     };
 
-    const toggleCamara = async () => {
-        if (!camaraActiva) {
-            if (codeReader.current) {
-                (codeReader.current as any)?.stopContinuousDecode?.();
-                codeReader.current = null;
-            }
-
-            setScanError('');
-            setCamaraActiva(true);
-            codeReader.current = new BrowserQRCodeReader();
-
-            try {
-                const preview = videoRef.current;
-                if (!preview) return;
-
-                // Obtener permiso y stream manualmente
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                preview.srcObject = stream;
-                await preview.play();
-
-                await codeReader.current.decodeFromVideoDevice(undefined, preview, async (result) => {
-                    if (result) {
-                        const token = new URL(result.getText()).searchParams.get('token');
-                        if (token) {
-                            try {
-                                const res = await fetch(`/api/empleados/token/${token}`);
-                                if (!res.ok) throw new Error("Empleado no encontrado");
-                                const data = await res.json();
-                                setEmpleado(data);
-                                setCamaraActiva(false);
-                                (codeReader.current as any)?.stopContinuousDecode?.();
-                                stream.getTracks().forEach(track => track.stop());
-                            } catch {
-                                setScanError("QR inválido o empleado no encontrado.");
-                            }
-                        }
-                    }
-                });
-
-            } catch {
-                setScanError("Error al iniciar la cámara.");
-                setCamaraActiva(false);
-            }
-
-        } else {
-            // Apagar escaneo
-            (codeReader.current as any)?.stopContinuousDecode?.();
-            const preview = videoRef.current;
-            if (preview?.srcObject) {
-                const tracks = (preview.srcObject as MediaStream).getTracks();
-                tracks.forEach(track => track.stop());
-                preview.srcObject = null;
-            }
-            setCamaraActiva(false);
-        }
-    };
-
     return (
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Escanear QR</h1>
-            </div>
+            <h1 className="text-2xl font-bold mb-4">Escanear QR</h1>
 
             {!empleado && (
-                <div className="flex justify-center mb-6">
-                    <label className="inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={camaraActiva}
-                            onChange={toggleCamara}
-                        />
-                        <div className="w-16 h-9 bg-gray-600 peer-checked:bg-green-500 rounded-full peer peer-focus:ring-2 ring-green-300 transition-all relative">
-                            <div className="w-7 h-7 bg-white rounded-full absolute top-1 left-1 peer-checked:translate-x-7 transition-all" />
-                        </div>
-                        <span className="ml-3 text-lg font-medium">
-                            {camaraActiva ? 'Cámara encendida' : 'Cámara apagada'}
-                        </span>
-                    </label>
-                </div>
-            )}
-
-            {camaraActiva && !empleado && (
-                <div className="mb-6">
+                <>
                     <video
                         ref={videoRef}
                         className="w-full h-64 rounded shadow border border-white/10 bg-black"
@@ -189,21 +135,15 @@ export default function PlayeroPage() {
                         playsInline
                     />
                     {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
-                </div>
+                </>
             )}
 
             {empleado && (
                 <>
                     <div className="mb-6 bg-white/10 p-6 rounded-2xl shadow-lg border border-white/20">
-                        <p className="text-2xl font-semibold mb-2">
-                            {empleado.nombre} {empleado.apellido}
-                        </p>
-                        <p className="text-xl mb-1">
-                            <span className="text-gray-300">DNI:</span> {empleado.dni}
-                        </p>
-                        <p className="text-xl">
-                            <span className="text-gray-300">Empresa:</span> {empleado.empresa}
-                        </p>
+                        <p className="text-2xl font-semibold mb-2">{empleado.nombre} {empleado.apellido}</p>
+                        <p className="text-xl mb-1"><span className="text-gray-300">DNI:</span> {empleado.dni}</p>
+                        <p className="text-xl"><span className="text-gray-300">Empresa:</span> {empleado.empresa}</p>
                     </div>
 
                     <form
@@ -248,7 +188,6 @@ export default function PlayeroPage() {
                     </form>
                 </>
             )}
-
         </main>
     );
 }
