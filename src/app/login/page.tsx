@@ -44,18 +44,18 @@ export default function LoginPage() {
                         placeholder="Usuario"
                         value={nombre}
                         onChange={e => setNombre(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
                     />
                     <input
                         type="password"
                         placeholder="Contraseña"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
                     />
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition"
+                        className="w-full bg-red-800 hover:bg-red-700 text-white font-semibold py-2 rounded-xl transition"
                     >
                         Entrar
                     </button>

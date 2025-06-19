@@ -135,7 +135,6 @@ export default function PlayeroPage() {
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Escanear QR</h1>
-                <LogoutButton />
             </div>
 
             {!empleado && (
@@ -168,7 +167,7 @@ export default function PlayeroPage() {
                             value={form.producto}
                             onChange={handleChange}
                             required
-                            className="w-full text-lg p-4 rounded-lg bg-gray-700 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className="w-full text-xl min-h-[60px] p-5 rounded-xl bg-gray-700 text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
                             <option value="">Seleccionar producto</option>
                             {precios.map((p) => (
@@ -188,13 +187,13 @@ export default function PlayeroPage() {
                             required
                         />
 
-                        <div className="text-center text-green-400 text-2xl font-bold">
+                        <div className="text-center text-red-800 text-2xl font-bold">
                             Total: {precioFinal.toLocaleString()} {moneda}
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xl py-4 rounded-lg font-bold transition"
+                            className="w-full bg-red-800 hover:bg-red-700 text-white text-xl py-4 rounded-lg font-bold transition"
                         >
                             Cargar
                         </button>

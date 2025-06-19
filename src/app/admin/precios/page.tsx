@@ -51,8 +51,8 @@ export default function AdminPreciosPage() {
     const productosARS = productos.filter(p => p.moneda === 'ARS');
 
     return (
-        <main className="min-h-screen p-6 bg-gray-100 text-gray-900">
-            <h1 className="text-2xl font-bold mb-6">Editar precios de combustibles</h1>
+        <main className="min-h-screen p-6 bg-gray-700 text-gray-900">
+            <h1 className="text-2xl font-bold text-white mb-6">Editar Precios</h1>
 
             {mensaje && (
                 <p className="mb-4 text-blue-600 font-medium">{mensaje}</p>
@@ -61,7 +61,7 @@ export default function AdminPreciosPage() {
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Gs */}
                 <section>
-                    <h2 className="text-xl font-semibold mb-4 text-green-700">Moneda: Guaraníes (Gs)</h2>
+                    <h2 className="text-xl font-semibold mb-4 text-white">Moneda: Guaraníes (Gs)</h2>
                     <div className="space-y-4">
                         {productosGs.map(p => (
                             <div key={p._id} className="bg-white p-4 rounded shadow">
@@ -76,7 +76,7 @@ export default function AdminPreciosPage() {
                                 />
                                 <button
                                     onClick={() => guardarCambios(p)}
-                                    className="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700 transition"
+                                    className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
                                 >
                                     Guardar
                                 </button>
@@ -87,7 +87,7 @@ export default function AdminPreciosPage() {
 
                 {/* ARS */}
                 <section>
-                    <h2 className="text-xl font-semibold mb-4 text-blue-700">Moneda: Pesos Argentinos (ARS)</h2>
+                    <h2 className="text-xl font-semibold mb-4 text-white">Moneda: Pesos Argentinos (ARS)</h2>
                     <div className="space-y-4">
                         {productosARS.length === 0 ? (
                             <p className="text-gray-500">Aún no hay productos en ARS.</p>
@@ -105,7 +105,7 @@ export default function AdminPreciosPage() {
                                     />
                                     <button
                                         onClick={() => guardarCambios(p)}
-                                        className="w-full bg-blue-600 text-white py-1 rounded hover:bg-blue-700 transition"
+                                        className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
                                     >
                                         Guardar
                                     </button>

@@ -21,13 +21,19 @@ export default function AdminPage() {
                     onClick={() => router.push('/admin/cargas')}
                     className="bg-red-800 font-semibold py-3 rounded-xl hover:scale-105 transition-transform shadow"
                 >
-                    Ver Cargas Registradas
+                    Cargas Registradas
                 </button>
                 <button
                     onClick={() => router.push('/admin/empleados')}
                     className="bg-red-800 font-semibold py-3 rounded-xl hover:scale-105 transition-transform shadow"
                 >
-                    Ver Empleados Registrados
+                    Empleados Registrados
+                </button>
+                <button
+                    onClick={() => router.push('/admin/precios')}
+                    className="bg-red-800 font-semibold py-3 rounded-xl hover:scale-105 transition-transform shadow"
+                >
+                    Precios
                 </button>
             </div>
         </main>

@@ -1,16 +1,25 @@
-export default function Home() {
-  return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 text-center">
-      <h1 className="text-3xl sm:text-5xl font-bold mb-8">Sistema de Cargas con Descuento</h1>
+// src/app/page.tsx
+'use client';
 
-      <div className="flex flex-col sm:flex-row gap-6">
-        <a
-          href="/admin"
-          className="bg-blue-600 text-white px-8 py-4 rounded text-lg shadow hover:bg-blue-700 transition"
-        >
-          Ingresar
-        </a>
-      </div>
-    </main>
-  );
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function HomePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (session?.user?.role === 'admin') {
+      router.replace('/admin');
+    } else if (session?.user?.role === 'playero') {
+      router.replace('/playero');
+    } else {
+      router.replace('/login');
+    }
+  }, [session, status, router]);
+
+  return null; // no mostrar nada mientras redirige
 }
