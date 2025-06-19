@@ -12,57 +12,76 @@ type Empleado = {
     empresa: string;
 };
 
+type PrecioProducto = {
+    producto: string;
+    precio: number;
+};
+
 export default function PlayeroPage() {
     const [empleado, setEmpleado] = useState<Empleado | null>(null);
+    const [precios, setPrecios] = useState<PrecioProducto[]>([]);
     const [scanError, setScanError] = useState('');
-    const [form, setForm] = useState({ producto: '', litros: '', precioFinal: '' });
+    const [escaneando, setEscaneando] = useState(false);
+    const [form, setForm] = useState({ producto: '', litros: '' });
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
 
     useEffect(() => {
-        const startScanner = async () => {
-            try {
-                codeReader.current = new BrowserQRCodeReader();
+        const fetchPrecios = async () => {
+            const res = await fetch('/api/precios');
+            if (res.ok) {
+                const data = await res.json();
+                setPrecios(data);
+            }
+        };
+        fetchPrecios();
+    }, []);
 
-                const preview = videoRef.current;
-                if (!preview) return;
+    const iniciarEscaneo = async () => {
+        try {
+            setScanError('');
+            setEscaneando(true);
+            codeReader.current = new BrowserQRCodeReader();
+            const preview = videoRef.current;
+            if (!preview) return;
 
-                const controls = await codeReader.current.decodeFromVideoDevice(
-                    undefined, // deja que seleccione la trasera automáticamente
-                    preview,
-                    async (result, err) => {
-                        if (result) {
-                            const token = new URL(result.getText()).searchParams.get('token');
-                            if (token) {
-                                try {
-                                    const res = await fetch(`/api/empleados/token/${token}`);
-                                    if (!res.ok) throw new Error('Empleado no encontrado');
-                                    const data = await res.json();
-                                    setEmpleado(data);
-                                    (codeReader.current as any).reset();
-                                    // Detener el escáner
-                                } catch {
-                                    setScanError('QR inválido o empleado no encontrado.');
-                                }
+            await codeReader.current.decodeFromVideoDevice(
+                undefined,
+                preview,
+                async (result) => {
+                    if (result) {
+                        const token = new URL(result.getText()).searchParams.get('token');
+                        if (token) {
+                            try {
+                                const res = await fetch(`/api/empleados/token/${token}`);
+                                if (!res.ok) throw new Error('Empleado no encontrado');
+                                const data = await res.json();
+                                setEmpleado(data);
+                                detenerEscaneo();
+                            } catch {
+                                setScanError('QR inválido o empleado no encontrado.');
                             }
                         }
                     }
-                );
-            } catch (error) {
-                setScanError('Error al iniciar la cámara');
-            }
-        };
+                }
+            );
+        } catch {
+            setScanError('Error al iniciar la cámara');
+        }
+    };
 
-        startScanner();
+    const detenerEscaneo = () => {
+        (codeReader.current as any).reset();
+        setEscaneando(false);
+    };
 
-        return () => {
-            (codeReader.current as any).reset();
-        };
-    }, []);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
+
+    const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
+    const litros = parseFloat(form.litros) || 0;
+    const precioFinal = precioUnitario * litros;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,20 +94,16 @@ export default function PlayeroPage() {
                 nombreEmpleado: `${empleado.nombre} ${empleado.apellido}`,
                 dniEmpleado: empleado.dni,
                 producto: form.producto,
-                litros: parseFloat(form.litros),
-                precioFinal: parseFloat(form.precioFinal),
+                litros,
+                precioFinal,
                 fecha: new Date().toISOString(),
             }),
         });
 
         if (res.ok) {
             alert('Carga registrada con éxito');
-            setForm({ producto: '', litros: '', precioFinal: '' });
+            setForm({ producto: '', litros: '' });
             setEmpleado(null);
-            (codeReader.current as any).reset();
-            setTimeout(() => {
-                codeReader.current?.decodeFromVideoDevice(undefined, videoRef.current!, () => { });
-            }, 500);
         } else {
             alert('Error al registrar carga');
         }
@@ -102,9 +117,26 @@ export default function PlayeroPage() {
             </div>
 
             {!empleado && (
-                <div className="mb-6">
-                    <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
-                    {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
+                <div className="mb-6 space-y-4">
+                    {!escaneando ? (
+                        <button
+                            onClick={iniciarEscaneo}
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                        >
+                            Escanear QR
+                        </button>
+                    ) : (
+                        <>
+                            <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
+                            <button
+                                onClick={detenerEscaneo}
+                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                            >
+                                Cancelar escaneo
+                            </button>
+                        </>
+                    )}
+                    {scanError && <p className="text-red-400">{scanError}</p>}
                 </div>
             )}
 
@@ -117,15 +149,21 @@ export default function PlayeroPage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4 bg-white/5 p-4 rounded border border-white/10 max-w-md">
-                        <input
-                            type="text"
+                        <select
                             name="producto"
-                            placeholder="Producto"
                             value={form.producto}
                             onChange={handleChange}
-                            className="w-full p-2 rounded bg-white/10 text-white border border-white/20 placeholder-gray-400"
                             required
-                        />
+                            className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
+                        >
+                            <option value="">Seleccionar producto</option>
+                            {precios.map(p => (
+                                <option key={p.producto} value={p.producto}>
+                                    {p.producto} - {p.precio.toLocaleString()} ₲
+                                </option>
+                            ))}
+                        </select>
+
                         <input
                             type="number"
                             name="litros"
@@ -135,15 +173,11 @@ export default function PlayeroPage() {
                             className="w-full p-2 rounded bg-white/10 text-white border border-white/20 placeholder-gray-400"
                             required
                         />
-                        <input
-                            type="number"
-                            name="precioFinal"
-                            placeholder="Precio final"
-                            value={form.precioFinal}
-                            onChange={handleChange}
-                            className="w-full p-2 rounded bg-white/10 text-white border border-white/20 placeholder-gray-400"
-                            required
-                        />
+
+                        <div className="text-right text-green-400 font-semibold">
+                            Total: {precioFinal.toLocaleString()} ₲
+                        </div>
+
                         <button
                             type="submit"
                             className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded transition"

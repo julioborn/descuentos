@@ -9,19 +9,19 @@ export const authOptions: AuthOptions = {
         CredentialsProvider({
             name: "Credenciales",
             credentials: {
-                username: { label: "Usuario", type: "text" },
+                nombre: { label: "Usuario", type: "text" },
                 password: { label: "Contraseña", type: "password" },
             },
             async authorize(credentials) {
                 await connectMongoDB();
 
-                const user = await Usuario.findOne({ nombre: credentials?.username });
+                const user = await Usuario.findOne({ nombre: credentials?.nombre });
 
                 if (user && credentials?.password === user.password) {
                     return {
                         id: user._id.toString(),
                         name: user.nombre,
-                        role: user.role,
+                        role: user.rol,        // <- CORREGIDO
                         moneda: user.moneda,
                     };
                 }
@@ -40,8 +40,8 @@ export const authOptions: AuthOptions = {
         },
         async jwt({ token, user }) {
             if (user) {
-                token.role = user.role;
-                token.moneda = user.moneda; // ✅
+                token.role = user.role;    
+                token.moneda = user.moneda;
             }
             return token;
         },
