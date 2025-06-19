@@ -167,7 +167,7 @@ export default function PlayeroPage() {
                 <div className="mb-6">
                     <video
                         ref={videoRef}
-                        className="w-full rounded shadow border border-white/10"
+                        className="w-full h-64 rounded shadow border border-white/10 bg-black"
                         autoPlay
                         muted
                         playsInline
