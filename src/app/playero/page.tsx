@@ -109,7 +109,15 @@ export default function PlayeroPage() {
             codeReader.current = new BrowserQRCodeReader();
 
             try {
-                await codeReader.current.decodeFromVideoDevice(undefined, videoRef.current!, async (result) => {
+                const preview = videoRef.current;
+                if (!preview) return;
+
+                // Obtener permiso y stream manualmente
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                preview.srcObject = stream;
+                await preview.play();
+
+                await codeReader.current.decodeFromVideoDevice(undefined, preview, async (result) => {
                     if (result) {
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
@@ -120,12 +128,14 @@ export default function PlayeroPage() {
                                 setEmpleado(data);
                                 setCamaraActiva(false);
                                 (codeReader.current as any)?.stopContinuousDecode?.();
+                                stream.getTracks().forEach(track => track.stop());
                             } catch {
                                 setScanError("QR inválido o empleado no encontrado.");
                             }
                         }
                     }
                 });
+
             } catch {
                 setScanError("Error al iniciar la cámara.");
                 setCamaraActiva(false);
@@ -134,6 +144,12 @@ export default function PlayeroPage() {
         } else {
             // Apagar escaneo
             (codeReader.current as any)?.stopContinuousDecode?.();
+            const preview = videoRef.current;
+            if (preview?.srcObject) {
+                const tracks = (preview.srcObject as MediaStream).getTracks();
+                tracks.forEach(track => track.stop());
+                preview.srcObject = null;
+            }
             setCamaraActiva(false);
         }
     };
