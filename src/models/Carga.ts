@@ -1,13 +1,12 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose";
 
-const CargaSchema = new mongoose.Schema({
-    empleadoId: mongoose.Schema.Types.ObjectId,
+const cargaSchema = new Schema({
     nombreEmpleado: String,
     dniEmpleado: String,
     producto: String,
     litros: Number,
     precioFinal: Number,
-    fecha: { type: Date, default: Date.now },
+    fecha: String,
 });
 
-export const Carga = mongoose.models.Carga || mongoose.model("Carga", CargaSchema);
+export const Carga = models.Carga || model("Carga", cargaSchema);

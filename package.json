@@ -9,18 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "framer-motion": "^12.18.1",
     "html5-qrcode": "^2.3.8",
     "mongoose": "^8.16.0",
     "next": "14.2.24",
     "next-auth": "^4.24.11",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^18",
     "react-dom": "^18",
+    "react-qr-code": "^2.0.16",
+    "react-qr-scanner": "^1.0.0-alpha.11",
+    "sweetalert2": "^11.22.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",
+    "@types/qrcode.react": "^1.0.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "postcss": "^8",

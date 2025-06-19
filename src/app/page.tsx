@@ -8,14 +8,7 @@ export default function Home() {
           href="/admin"
           className="bg-blue-600 text-white px-8 py-4 rounded text-lg shadow hover:bg-blue-700 transition"
         >
-          Ingresar como Administrador
-        </a>
-
-        <a
-          href="/playero"
-          className="bg-green-600 text-white px-8 py-4 rounded text-lg shadow hover:bg-green-700 transition"
-        >
-          Ingresar como Playero
+          Ingresar
         </a>
       </div>
     </main>
