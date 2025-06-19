@@ -1,3 +1,5 @@
+// src/app/layout.tsx
+import SessionLayout from "@/components/SessionLayout";
 import "./globals.css";
 import type { Metadata } from "next";
 
@@ -15,14 +17,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f172a" />
-        <link rel="icon" href="/icons/icon-192.png" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-      </head>
+      <head />
       <body className="bg-background text-foreground font-sans">
-        {children}
+        <SessionLayout>{children}</SessionLayout>
       </body>
     </html>
   );

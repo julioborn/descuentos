@@ -2,7 +2,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import LogoutButton from '@/components/LogoutButton';
 
 export default function AdminPage() {
     const router = useRouter();
@@ -30,7 +29,6 @@ export default function AdminPage() {
                 >
                     Ver Empleados Registrados
                 </button>
-                <LogoutButton />
             </div>
         </main>
     );

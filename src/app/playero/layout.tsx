@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -12,5 +13,10 @@ export default async function PlayeroLayout({ children }: { children: React.Reac
         redirect("/admin");
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            <Header />
+            <main>{children}</main>
+        </>
+    );
 }
