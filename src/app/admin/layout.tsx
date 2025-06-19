@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         redirect("/login");
     }
 
-    if (session.user.role === "playero") {
+    if (session.user.rol === "playero") {
         redirect("/playero");
     }
 

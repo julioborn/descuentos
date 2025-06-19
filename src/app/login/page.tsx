@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const [username, setUsername] = useState("");
+    const [nombre, setNombre] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
 
@@ -13,7 +13,7 @@ export default function LoginPage() {
         e.preventDefault();
 
         const res = await signIn("credentials", {
-            username,
+            nombre,
             password,
             redirect: false,
         });
@@ -22,9 +22,9 @@ export default function LoginPage() {
             const sessionRes = await fetch("/api/auth/session");
             const session = await sessionRes.json();
 
-            if (session?.user?.role === "admin") {
+            if (session?.user?.rol === "admin") {
                 router.push("/admin");
-            } else if (session?.user?.role === "playero") {
+            } else if (session?.user?.rol === "playero") {
                 router.push("/playero");
             } else {
                 router.push("/");
@@ -42,8 +42,8 @@ export default function LoginPage() {
                     <input
                         type="text"
                         placeholder="Usuario"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
+                        value={nombre}
+                        onChange={e => setNombre(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                     />
                     <input

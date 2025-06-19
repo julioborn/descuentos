@@ -6,17 +6,20 @@ declare module "next-auth" {
             name: string;
             email?: string;
             image?: string;
-            role: string; // <-- agregamos el rol
+            role: string;
+            moneda: string; // ✅
         };
     }
 
     interface User {
         role: string;
+        moneda: string; // ✅
     }
 }
 
 declare module "next-auth/jwt" {
     interface JWT {
         role: string;
+        moneda: string; // ✅
     }
 }

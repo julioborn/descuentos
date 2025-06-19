@@ -15,10 +15,15 @@ export const authOptions: AuthOptions = {
             async authorize(credentials) {
                 await connectMongoDB();
 
-                const user = await Usuario.findOne({ username: credentials?.username });
+                const user = await Usuario.findOne({ nombre: credentials?.username });
 
                 if (user && credentials?.password === user.password) {
-                    return { id: user._id.toString(), name: user.username, role: user.role };
+                    return {
+                        id: user._id.toString(),
+                        name: user.nombre,
+                        role: user.role,
+                        moneda: user.moneda,
+                    };
                 }
 
                 return null;
@@ -27,11 +32,17 @@ export const authOptions: AuthOptions = {
     ],
     callbacks: {
         async session({ session, token }) {
-            if (session.user) session.user.role = token.role;
+            if (session.user) {
+                session.user.role = token.role;
+                session.user.moneda = token.moneda; // ✅
+            }
             return session;
         },
         async jwt({ token, user }) {
-            if (user) token.role = user.role;
+            if (user) {
+                token.role = user.role;
+                token.moneda = user.moneda; // ✅
+            }
             return token;
         },
     },
