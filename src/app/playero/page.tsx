@@ -27,6 +27,7 @@ export default function PlayeroPage() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
     const moneda = precios.find(p => p.producto === form.producto)?.moneda || '';
+    const [camaraActiva, setCamaraActiva] = useState(false);
 
     useEffect(() => {
         const fetchPrecios = async () => {
@@ -58,40 +59,6 @@ export default function PlayeroPage() {
         }
     }, []);
 
-    useEffect(() => {
-        const startScanner = async () => {
-            try {
-                codeReader.current = new BrowserQRCodeReader();
-                const preview = videoRef.current;
-                if (!preview) return;
-
-                await codeReader.current.decodeFromVideoDevice(undefined, preview, async (result) => {
-                    if (result) {
-                        const token = new URL(result.getText()).searchParams.get('token');
-                        if (token) {
-                            try {
-                                const res = await fetch(`/api/empleados/token/${token}`);
-                                if (!res.ok) throw new Error('Empleado no encontrado');
-                                const data = await res.json();
-                                setEmpleado(data);
-                                (codeReader.current as any)?.stopContinuousDecode?.();
-                            } catch {
-                                setScanError('QR inválido o empleado no encontrado.');
-                            }
-                        }
-                    }
-                });
-            } catch {
-                setScanError('Error al iniciar la cámara');
-            }
-        };
-
-        startScanner();
-        return () => {
-            (codeReader.current as any)?.stopContinuousDecode?.();
-        };
-    }, []);
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -99,7 +66,6 @@ export default function PlayeroPage() {
     const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
     const litros = parseFloat(form.litros) || 0;
     const precioFinal = precioUnitario * litros;
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -131,6 +97,47 @@ export default function PlayeroPage() {
         }
     };
 
+    const toggleCamara = async () => {
+        if (!camaraActiva) {
+            if (codeReader.current) {
+                (codeReader.current as any)?.stopContinuousDecode?.();
+                codeReader.current = null;
+            }
+
+            setScanError('');
+            setCamaraActiva(true);
+            codeReader.current = new BrowserQRCodeReader();
+
+            try {
+                await codeReader.current.decodeFromVideoDevice(undefined, videoRef.current!, async (result) => {
+                    if (result) {
+                        const token = new URL(result.getText()).searchParams.get('token');
+                        if (token) {
+                            try {
+                                const res = await fetch(`/api/empleados/token/${token}`);
+                                if (!res.ok) throw new Error("Empleado no encontrado");
+                                const data = await res.json();
+                                setEmpleado(data);
+                                setCamaraActiva(false);
+                                (codeReader.current as any)?.stopContinuousDecode?.();
+                            } catch {
+                                setScanError("QR inválido o empleado no encontrado.");
+                            }
+                        }
+                    }
+                });
+            } catch {
+                setScanError("Error al iniciar la cámara.");
+                setCamaraActiva(false);
+            }
+
+        } else {
+            // Apagar escaneo
+            (codeReader.current as any)?.stopContinuousDecode?.();
+            setCamaraActiva(false);
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
             <div className="flex justify-between items-center mb-6">
@@ -138,6 +145,25 @@ export default function PlayeroPage() {
             </div>
 
             {!empleado && (
+                <div className="flex justify-center mb-6">
+                    <label className="inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={camaraActiva}
+                            onChange={toggleCamara}
+                        />
+                        <div className="w-16 h-9 bg-gray-600 peer-checked:bg-green-500 rounded-full peer peer-focus:ring-2 ring-green-300 transition-all relative">
+                            <div className="w-7 h-7 bg-white rounded-full absolute top-1 left-1 peer-checked:translate-x-7 transition-all" />
+                        </div>
+                        <span className="ml-3 text-lg font-medium">
+                            {camaraActiva ? 'Cámara encendida' : 'Cámara apagada'}
+                        </span>
+                    </label>
+                </div>
+            )}
+
+            {camaraActiva && !empleado && (
                 <div className="mb-6">
                     <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
                     {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
