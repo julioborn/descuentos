@@ -165,7 +165,13 @@ export default function PlayeroPage() {
 
             {camaraActiva && !empleado && (
                 <div className="mb-6">
-                    <video ref={videoRef} className="w-full rounded shadow border border-white/10" />
+                    <video
+                        ref={videoRef}
+                        className="w-full rounded shadow border border-white/10"
+                        autoPlay
+                        muted
+                        playsInline
+                    />
                     {scanError && <p className="text-red-400 mt-4">{scanError}</p>}
                 </div>
             )}
