@@ -30,13 +30,15 @@ export default function Header() {
                 <div className="hidden sm:flex items-center gap-4 text-sm sm:text-base">
                     {role === 'admin' && (
                         <>
+                            <Link href="/admin" className="hover:text-red-800 transition font-semibold">Inicio</Link>
+                            <Link href="/admin/registrar-empleado" className="hover:text-red-800 transition font-semibold">Registrar Empleado</Link>
                             <Link href="/admin/empleados" className="hover:text-red-800 transition font-semibold">Empleados</Link>
                             <Link href="/admin/cargas" className="hover:text-red-800 transition font-semibold">Cargas</Link>
                             <Link href="/admin/precios" className="hover:text-red-800 transition font-semibold">Precios</Link>
                         </>
                     )}
                     {role === 'playero' && (
-                        <Link href="/playero" className="hover:text-red-800 transition">Panel</Link>
+                        <Link href="/playero" className="hover:text-red-800 transition">Inicio</Link>
                     )}
                     <LogoutButton />
                 </div>
