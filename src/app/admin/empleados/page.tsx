@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import Loader from '@/components/Loader';
 
 type Empleado = {
     _id: string;
@@ -65,7 +66,7 @@ export default function EmpleadosPage() {
                                     {qrMap[emp._id] ? (
                                         <img src={qrMap[emp._id]} alt="QR" className="w-16 h-16 rounded border border-white/20" />
                                     ) : (
-                                        <span className="text-gray-400">Cargando...</span>
+                                        <Loader />
                                     )}
                                 </td>
                             </tr>

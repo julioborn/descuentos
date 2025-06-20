@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Loader from '@/components/Loader';
 
 type Empleado = {
     _id: string;
@@ -70,7 +71,7 @@ export default function CargaPage() {
         }
     };
 
-    if (!empleado) return <p className="text-white p-6">Cargando empleado...</p>;
+    if (!empleado) return <Loader />;
 
     return (
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
