@@ -42,7 +42,7 @@ export default function CargaPage() {
 
     const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
     const moneda = precios.find(p => p.producto === form.producto)?.moneda || '';
-    const litros = parseFloat(form.litros) || 0;
+    const litros = parseFloat(form.litros.replace(',', '.')) || 0;
     const precioFinal = precioUnitario * litros;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ export default function CargaPage() {
                         onChange={handleChange}
                         className="appearance-none w-full p-5 text-lg sm:text-xl rounded bg-gray-800 text-white pr-12"
                     >
-                        <option value="">Seleccionar producto</option>
+                        <option value="">Producto</option>
                         {precios.map(p => (
                             <option key={p.producto} value={p.producto}>
                                 {p.producto} - {p.precio.toLocaleString()} {p.moneda}
