@@ -74,12 +74,11 @@ export default function CargaPage() {
 
     return (
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
-            <h1 className="text-2xl font-bold mb-4">Registrar carga</h1>
 
-            <div className="mb-6 bg-white/10 p-6 rounded-lg">
-                <p className="text-xl font-bold">{empleado.nombre} {empleado.apellido}</p>
-                <p>DNI: {empleado.dni}</p>
-                <p>Empresa: {empleado.empresa}</p>
+            <div className="mb-6 bg-white/10 p-6 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-2xl font-bold">{empleado.nombre} {empleado.apellido}</p>
+                <p className="text-2xl">DNI: {empleado.dni}</p>
+                <p className="text-2xl">Empresa: {empleado.empresa}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white/10 p-6 rounded-lg max-w-md mx-auto">
