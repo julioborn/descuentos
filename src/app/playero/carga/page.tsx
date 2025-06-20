@@ -82,24 +82,33 @@ export default function CargaPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white/10 p-6 rounded-lg max-w-md mx-auto">
-                <select
-                    name="producto"
-                    value={form.producto}
-                    onChange={handleChange}
-                    className="w-full p-5 text-lg sm:text-xl rounded bg-gray-800 text-white"
-                >
-                    <option value="">Seleccionar producto</option>
-                    {precios.map(p => (
-                        <option key={p.producto} value={p.producto}>
-                            {p.producto} - {p.precio.toLocaleString()} {p.moneda}
-                        </option>
-                    ))}
-                </select>
+                <div className="relative">
+                    <select
+                        name="producto"
+                        value={form.producto}
+                        onChange={handleChange}
+                        className="appearance-none w-full p-5 text-lg sm:text-xl rounded bg-gray-800 text-white pr-12"
+                    >
+                        <option value="">Seleccionar producto</option>
+                        {precios.map(p => (
+                            <option key={p.producto} value={p.producto}>
+                                {p.producto} - {p.precio.toLocaleString()} {p.moneda}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Icono de flechita */}
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
 
                 <input
                     type="number"
                     inputMode="decimal"
-                    step="any"            
+                    step="any"
                     name="litros"
                     value={form.litros}
                     onChange={handleChange}
