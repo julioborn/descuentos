@@ -12,16 +12,17 @@ export default function QRScannerPage() {
 
     useEffect(() => {
         codeReader.current = new BrowserQRCodeReader();
-        let scanned = false;
 
         const startScanner = async () => {
+            let scanned = false;
+
             try {
                 await codeReader.current!.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
                     if (result && !scanned) {
                         scanned = true;
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
-                            stopScanner(); // Detenemos el stream y el decoder
+                            (codeReader.current as any)?.stopContinuousDecode?.();
                             router.push(`/playero/carga?token=${token}`);
                         }
                     }
@@ -36,21 +37,10 @@ export default function QRScannerPage() {
             }
         };
 
-        const stopScanner = () => {
-            (codeReader.current as any)?.reset();
-
-            const video = videoRef.current;
-            const stream = video?.srcObject as MediaStream;
-            stream?.getTracks().forEach(track => track.stop());
-            if (video) {
-                video.srcObject = null;
-            }
-        };
-
         startScanner();
 
         return () => {
-            stopScanner();
+            (codeReader.current as any)?.stopContinuousDecode?.();
         };
     }, [router]);
 
