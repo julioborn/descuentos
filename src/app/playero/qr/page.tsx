@@ -52,9 +52,9 @@ export default function QRScannerPage() {
             />
             <button
                 onClick={() => router.push('/playero')}
-                className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
+                className="mt-6 w-fit bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
             >
-                Volver al Inicio
+                Inicio
             </button>
         </main>
     );

@@ -55,7 +55,7 @@ export default function Header() {
                         </>
                     )}
                     {role === 'playero' && (
-                        <Link href="/playero" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Panel</Link>
+                        <Link href="/playero" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Inicio</Link>
                     )}
                     <div className="pt-2 border-t border-white/20">
                         <LogoutButton />
