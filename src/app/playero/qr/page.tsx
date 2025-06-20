@@ -1,14 +1,14 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrowserQRCodeReader } from '@zxing/browser';
+import Swal from 'sweetalert2';
 
 export default function QRScannerPage() {
     const router = useRouter();
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         codeReader.current = new BrowserQRCodeReader();
@@ -25,7 +25,12 @@ export default function QRScannerPage() {
                     }
                 });
             } catch {
-                setError('No se pudo iniciar la cámara.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al iniciar la cámara',
+                    text: 'Por favor, asegurate de que la cámara esté habilitada en tu dispositivo y navegador.',
+                    confirmButtonColor: '#991b1b',
+                }).then(() => router.push('/playero'));
             }
         };
 
@@ -46,8 +51,6 @@ export default function QRScannerPage() {
                 muted
                 playsInline
             />
-            {error && <p className="text-red-400 mt-4">{error}</p>}
-
             <button
                 onClick={() => router.push('/playero')}
                 className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Loader from '@/components/Loader';
+import Swal from 'sweetalert2';
 
 type Empleado = {
     _id: string;
@@ -28,12 +29,31 @@ export default function CargaPage() {
     const [form, setForm] = useState({ producto: '', litros: '' });
 
     useEffect(() => {
-        fetch('/api/precios').then(res => res.json()).then(setPrecios);
+        fetch('/api/precios')
+            .then(res => res.json())
+            .then(setPrecios)
+            .catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los precios.',
+                });
+            });
+
         if (token) {
             fetch(`/api/empleados/token/${token}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error();
+                    return res.json();
+                })
                 .then(setEmpleado)
-                .catch(() => alert('Empleado no encontrado'));
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Empleado no encontrado',
+                        text: 'Verificá el enlace o el token QR.',
+                    });
+                });
         }
     }, [token]);
 
@@ -50,6 +70,28 @@ export default function CargaPage() {
         e.preventDefault();
         if (!empleado) return;
 
+        // Validación: producto seleccionado
+        if (!form.producto) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Producto requerido',
+                text: 'Por favor seleccioná un producto.',
+            });
+        }
+
+        // Validación: litros > 0
+        const litros = parseFloat(form.litros.replace(',', '.'));
+        if (isNaN(litros) || litros <= 0) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Litros inválidos',
+                text: 'Ingresá una cantidad válida de litros.',
+            });
+        }
+
+        const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
+        const precioFinal = precioUnitario * litros;
+
         const res = await fetch('/api/cargas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -64,10 +106,21 @@ export default function CargaPage() {
         });
 
         if (res.ok) {
-            alert('Carga registrada');
-            router.push('/playero'); // 👈 redirección
+            Swal.fire({
+                icon: 'success',
+                title: 'Carga registrada',
+                showConfirmButton: false,
+                timer: 1500,
+                toast: true,
+                position: 'top-end',
+            });
+            router.push('/playero');
         } else {
-            alert('Error al registrar');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo registrar la carga.',
+            });
         }
     };
 

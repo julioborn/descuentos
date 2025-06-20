@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import Loader from '@/components/Loader'; // Asegurate de que esta ruta coincida
 
 type Carga = {
     _id: string;
@@ -15,14 +17,32 @@ type Carga = {
 
 export default function CargasPage() {
     const [cargas, setCargas] = useState<Carga[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchCargas = async () => {
-            const res = await fetch('/api/cargas');
-            if (res.ok) setCargas(await res.json());
+            try {
+                const res = await fetch('/api/cargas');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCargas(data);
+                } else {
+                    throw new Error('Error al cargar los datos');
+                }
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar las cargas registradas.',
+                });
+            } finally {
+                setLoading(false);
+            }
         };
         fetchCargas();
     }, []);
+
+    if (loading) return <Loader />;
 
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700">
@@ -48,7 +68,10 @@ export default function CargasPage() {
                                 <td className="p-3">{c.dniEmpleado}</td>
                                 <td className="p-3">{c.producto}</td>
                                 <td className="p-3">{c.litros}</td>
-                                <td className="p-3"> {c.precioFinal.toLocaleString()} <span className="text-sm">{c.moneda}</span> </td>
+                                <td className="p-3">
+                                    {c.precioFinal.toLocaleString()}{' '}
+                                    <span className="text-sm">{c.moneda}</span>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

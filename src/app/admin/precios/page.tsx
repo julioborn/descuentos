@@ -1,5 +1,8 @@
 'use client';
+
 import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import Loader from '@/components/Loader';
 
 type Producto = {
     _id: string;
@@ -10,16 +13,23 @@ type Producto = {
 
 export default function AdminPreciosPage() {
     const [productos, setProductos] = useState<Producto[]>([]);
-    const [mensaje, setMensaje] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPrecios = async () => {
             try {
                 const res = await fetch('/api/precios');
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 setProductos(data);
             } catch (err) {
-                setMensaje("Error al cargar productos.");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los productos.',
+                });
+            } finally {
+                setLoading(false);
             }
         };
         fetchPrecios();
@@ -41,22 +51,33 @@ export default function AdminPreciosPage() {
                 body: JSON.stringify({ precio: producto.precio }),
             });
             if (!res.ok) throw new Error();
-            setMensaje(`✅ Precio actualizado: ${producto.producto}`);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Precio actualizado',
+                text: `Producto: ${producto.producto}`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+            });
         } catch {
-            setMensaje(`❌ Error al guardar ${producto.producto}`);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `No se pudo actualizar el producto: ${producto.producto}`,
+            });
         }
     };
 
     const productosGs = productos.filter(p => p.moneda === 'Gs');
     const productosARS = productos.filter(p => p.moneda === 'ARS');
 
+    if (loading) return <Loader />;
+
     return (
         <main className="min-h-screen p-6 bg-gray-700 text-gray-900">
             <h1 className="text-2xl font-bold text-white mb-6">Editar Precios</h1>
-
-            {mensaje && (
-                <p className="mb-4 text-blue-600 font-medium">{mensaje}</p>
-            )}
 
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Gs */}
@@ -90,7 +111,7 @@ export default function AdminPreciosPage() {
                     <h2 className="text-xl font-semibold mb-4 text-white">Moneda: Pesos Argentinos (ARS)</h2>
                     <div className="space-y-4">
                         {productosARS.length === 0 ? (
-                            <p className="text-gray-500">Aún no hay productos en ARS.</p>
+                            <p className="text-gray-400">Aún no hay productos en ARS.</p>
                         ) : (
                             productosARS.map(p => (
                                 <div key={p._id} className="bg-white p-4 rounded shadow">
