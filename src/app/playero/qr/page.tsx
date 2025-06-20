@@ -43,10 +43,9 @@ export default function QRScannerPage() {
 
     return (
         <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
-            <h1 className="text-2xl font-bold mb-4">Escaneando...</h1>
             <video
                 ref={videoRef}
-                className="w-full h-64 object-cover rounded shadow border border-white/10 bg-black"
+                className="w-72 h-72 object-cover rounded shadow border border-white/10 bg-black mx-auto"
                 autoPlay
                 muted
                 playsInline
