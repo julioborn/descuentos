@@ -151,7 +151,6 @@ export default function CargaPage() {
                         ))}
                     </select>
 
-                    {/* Icono de flechita */}
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -160,9 +159,9 @@ export default function CargaPage() {
                 </div>
 
                 <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    step="any"
+                    pattern="[0-9]*[.,]?[0-9]*"
                     name="litros"
                     value={form.litros}
                     onChange={handleChange}
