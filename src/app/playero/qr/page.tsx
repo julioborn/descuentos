@@ -14,9 +14,12 @@ export default function QRScannerPage() {
         codeReader.current = new BrowserQRCodeReader();
 
         const startScanner = async () => {
+            let scanned = false;
+
             try {
                 await codeReader.current!.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
-                    if (result) {
+                    if (result && !scanned) {
+                        scanned = true;
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
                             (codeReader.current as any)?.stopContinuousDecode?.();
@@ -51,7 +54,10 @@ export default function QRScannerPage() {
                 playsInline
             />
             <button
-                onClick={() => router.push('/playero')}
+                onClick={() => {
+                    (codeReader.current as any)?.stopContinuousDecode?.(); // Detenemos el scanner
+                    router.push('/playero');
+                }}
                 className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
             >
                 Inicio
