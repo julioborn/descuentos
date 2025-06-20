@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Empleado = {
     _id: string;
@@ -19,6 +19,7 @@ type PrecioProducto = {
 };
 
 export default function CargaPage() {
+    const router = useRouter();
     const params = useSearchParams();
     const token = params.get('token');
     const [empleado, setEmpleado] = useState<Empleado | null>(null);
@@ -63,6 +64,7 @@ export default function CargaPage() {
 
         if (res.ok) {
             alert('Carga registrada');
+            router.push('/playero'); // 👈 redirección
         } else {
             alert('Error al registrar');
         }
@@ -85,7 +87,7 @@ export default function CargaPage() {
                     name="producto"
                     value={form.producto}
                     onChange={handleChange}
-                    className="w-full p-4 rounded bg-gray-800 text-white"
+                    className="w-full p-5 text-lg sm:text-xl rounded bg-gray-800 text-white"
                 >
                     <option value="">Seleccionar producto</option>
                     {precios.map(p => (
@@ -97,10 +99,12 @@ export default function CargaPage() {
 
                 <input
                     type="number"
+                    inputMode="decimal"
+                    step="any"            
                     name="litros"
                     value={form.litros}
                     onChange={handleChange}
-                    className="w-full p-4 text-2xl text-center bg-gray-800 text-white rounded"
+                    className="w-full p-5 text-2xl text-center bg-gray-800 text-white rounded"
                     placeholder="Litros"
                 />
 

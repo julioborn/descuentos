@@ -19,7 +19,7 @@ export default function QRScannerPage() {
                     if (result) {
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
-                            (codeReader.current as any)?.stopContinuousDecode?.();;
+                            (codeReader.current as any)?.stopContinuousDecode?.();
                             router.push(`/playero/carga?token=${token}`);
                         }
                     }
@@ -32,7 +32,7 @@ export default function QRScannerPage() {
         startScanner();
 
         return () => {
-            (codeReader.current as any)?.stopContinuousDecode?.();;
+            (codeReader.current as any)?.stopContinuousDecode?.();
         };
     }, [router]);
 
@@ -47,6 +47,13 @@ export default function QRScannerPage() {
                 playsInline
             />
             {error && <p className="text-red-400 mt-4">{error}</p>}
+
+            <button
+                onClick={() => router.push('/playero')}
+                className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
+            >
+                Volver al Inicio
+            </button>
         </main>
     );
 }
