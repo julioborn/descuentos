@@ -146,7 +146,8 @@ export default function CargaPage() {
                         <option value="">Producto</option>
                         {precios.map(p => (
                             <option key={p.producto} value={p.producto}>
-                                {p.producto} - {p.precio.toLocaleString()} {p.moneda}
+                                {p.producto} 
+                                {/* - {p.precio.toLocaleString()} {p.moneda} */}
                             </option>
                         ))}
                     </select>

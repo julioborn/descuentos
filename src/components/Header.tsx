@@ -21,7 +21,7 @@ export default function Header() {
                 {/* Botón hamburguesa (solo visible en mobile) */}
                 <button
                     onClick={toggleMenu}
-                    className="sm:hidden text-white text-2xl focus:outline-none"
+                    className="sm:hidden text-white text-2xl mr-2 focus:outline-none"
                 >
                     {isOpen ? <HiX /> : <HiMenu />}
                 </button>
