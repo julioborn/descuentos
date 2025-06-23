@@ -5,9 +5,11 @@ const CargaSchema = new mongoose.Schema({
     dniEmpleado: String,
     producto: String,
     litros: Number,
-    precioFinal: Number,
-    precioUnitario: Number, 
-    moneda: String,         
+    precioUnitario: Number,
+    precioFinal: Number, 
+    precioFinalSinDescuento: Number, 
+    porcentajeDescuento: Number,     
+    moneda: String,
     fecha: Date,
 });
 

@@ -35,6 +35,7 @@ export default function Header() {
                             <Link href="/admin/empleados" className="hover:text-red-800 transition font-semibold">Empleados</Link>
                             <Link href="/admin/cargas" className="hover:text-red-800 transition font-semibold">Cargas</Link>
                             <Link href="/admin/precios" className="hover:text-red-800 transition font-semibold">Precios</Link>
+                            <Link href="/admin/descuentos" className="hover:text-red-800 transition font-semibold">Descuentos</Link>
                         </>
                     )}
                     {role === 'playero' && (

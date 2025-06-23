@@ -2,6 +2,7 @@
 import { authOptions } from "@/lib/authOptions";
 import { connectMongoDB } from "@/lib/mongodb";
 import { Carga } from "@/models/Carga";
+import { Descuento } from "@/models/Descuento";
 import { Precio } from "@/models/Precio";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { producto, litros } = body;
+    const { nombreEmpleado, dniEmpleado, producto, litros, empresa } = body;
 
     try {
         // Buscar el precio del producto según la moneda del playero
@@ -35,15 +36,25 @@ export async function POST(req: NextRequest) {
         }
 
         const precioUnitario = precio.precio;
-        const precioFinal = litros * precioUnitario;
+        const precioFinalSinDescuento = litros * precioUnitario;
+
+        // Buscar descuento por empresa
+        const descuento = await Descuento.findOne({ empresa });
+        const porcentajeDescuento = descuento?.porcentaje || 0;
+
+        // Aplicar descuento si existe
+        const precioFinal = precioFinalSinDescuento * (1 - porcentajeDescuento / 100);
 
         const nuevaCarga = await Carga.create({
-            nombreEmpleado: body.nombreEmpleado,
-            dniEmpleado: body.dniEmpleado,
+            nombreEmpleado,
+            dniEmpleado,
+            empresa,
             producto,
             litros,
             precioUnitario,
             precioFinal,
+            precioFinalSinDescuento,
+            porcentajeDescuento,
             moneda: session.user.moneda,
             fecha: new Date(),
         });

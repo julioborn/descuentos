@@ -11,6 +11,7 @@ type Carga = {
     producto: string;
     litros: number;
     precioFinal: number;
+    precioFinalSinDescuento: number;
     fecha: string;
     moneda: string;
 };
@@ -57,7 +58,8 @@ export default function CargasPage() {
                             <th className="p-3">DNI</th>
                             <th className="p-3">Producto</th>
                             <th className="p-3">Litros</th>
-                            <th className="p-3">Precio</th>
+                            <th className="p-3">Precio sin descuento</th>
+                            <th className="p-3">Precio final</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -69,8 +71,10 @@ export default function CargasPage() {
                                 <td className="p-3">{c.producto}</td>
                                 <td className="p-3">{c.litros}</td>
                                 <td className="p-3">
-                                    {c.precioFinal.toLocaleString()}{' '}
-                                    <span className="text-sm">{c.moneda}</span>
+                                    {c.precioFinalSinDescuento?.toLocaleString() || '-'} <span className="text-sm">{c.moneda}</span>
+                                </td>
+                                <td className="p-3">
+                                    {c.precioFinal.toLocaleString()} <span className="text-sm">{c.moneda}</span>
                                 </td>
                             </tr>
                         ))}

@@ -30,6 +30,7 @@ export default function CargaPage() {
     const [form, setForm] = useState({ producto: '', litros: '' });
     const { data: session } = useSession();
     const username = session?.user?.name; // asumimos que 'name' es 'playeropy' o 'playeroarg'
+    const [porcentajeDescuento, setPorcentajeDescuento] = useState(0);
 
     // 1. Primero: buscar al empleado con el token
     useEffect(() => {
@@ -74,6 +75,24 @@ export default function CargaPage() {
             });
     }, [username]);
 
+    useEffect(() => {
+        if (!empleado) return;
+
+        fetch('/api/descuentos')
+            .then(res => res.json())
+            .then(data => {
+                const descuento = data.find((d: { empresa: string }) => d.empresa === empleado.empresa);
+                setPorcentajeDescuento(descuento?.porcentaje || 0);
+            })
+            .catch(() => {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'No se pudo obtener el descuento de la empresa.',
+                });
+            });
+    }, [empleado]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -81,7 +100,9 @@ export default function CargaPage() {
     const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
     const moneda = precios.find(p => p.producto === form.producto)?.moneda || '';
     const litros = parseFloat(form.litros.replace(',', '.')) || 0;
-    const precioFinal = precioUnitario * litros;
+    const precioSinDescuento = precioUnitario * litros;
+    const descuentoAplicado = precioSinDescuento * (porcentajeDescuento / 100);
+    const precioFinal = precioSinDescuento - descuentoAplicado;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -115,8 +136,12 @@ export default function CargaPage() {
             body: JSON.stringify({
                 nombreEmpleado: `${empleado.nombre} ${empleado.apellido}`,
                 dniEmpleado: empleado.dni,
+                empresa: empleado.empresa,
                 producto: form.producto,
                 litros,
+                precioSinDescuento,
+                porcentajeDescuento,
+                descuentoAplicado,
                 precioFinal,
                 fecha: new Date().toISOString(),
             }),
@@ -189,6 +214,9 @@ export default function CargaPage() {
 
                 <div className="text-center font-bold text-xl">
                     Total: {precioFinal.toLocaleString()} {moneda}
+                    {porcentajeDescuento > 0 && (
+                        <p className="text-sm text-green-300">Descuento aplicado: {porcentajeDescuento}%</p>
+                    )}
                 </div>
 
                 <button className="w-full bg-red-600 py-3 rounded text-white text-xl font-semibold">
