@@ -31,6 +31,26 @@ export default function CargaPage() {
     const { data: session } = useSession();
     const username = session?.user?.name; // asumimos que 'name' es 'playeropy' o 'playeroarg'
 
+    // 1. Primero: buscar al empleado con el token
+    useEffect(() => {
+        if (!token) return;
+
+        fetch(`/api/empleados/token/${token}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Token inválido");
+                return res.json();
+            })
+            .then(data => setEmpleado(data))
+            .catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Token inválido',
+                    text: 'No se pudo encontrar al empleado.',
+                }).then(() => router.push('/playero'));
+            });
+    }, [token, router]);
+
+    // 2. Segundo: cargar los precios según el usuario logueado
     useEffect(() => {
         if (!username) return;
 
