@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Loader from '@/components/Loader';
 import Swal from 'sweetalert2';
+import { useSession } from 'next-auth/react';
 
 type Empleado = {
     _id: string;
@@ -27,11 +28,23 @@ export default function CargaPage() {
     const [empleado, setEmpleado] = useState<Empleado | null>(null);
     const [precios, setPrecios] = useState<PrecioProducto[]>([]);
     const [form, setForm] = useState({ producto: '', litros: '' });
+    const { data: session } = useSession();
+    const username = session?.user?.name; // asumimos que 'name' es 'playeropy' o 'playeroarg'
 
     useEffect(() => {
+        if (!username) return;
+
         fetch('/api/precios')
             .then(res => res.json())
-            .then(setPrecios)
+            .then(data => {
+                if (username === 'playeropy') {
+                    setPrecios(data.filter((p: PrecioProducto) => p.moneda === 'Gs'));
+                } else if (username === 'playeroarg') {
+                    setPrecios(data.filter((p: PrecioProducto) => p.moneda === 'ARS'));
+                } else {
+                    setPrecios([]);
+                }
+            })
             .catch(() => {
                 Swal.fire({
                     icon: 'error',
@@ -39,23 +52,7 @@ export default function CargaPage() {
                     text: 'No se pudieron cargar los precios.',
                 });
             });
-
-        if (token) {
-            fetch(`/api/empleados/token/${token}`)
-                .then(res => {
-                    if (!res.ok) throw new Error();
-                    return res.json();
-                })
-                .then(setEmpleado)
-                .catch(() => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Empleado no encontrado',
-                        text: 'Verificá el enlace o el token QR.',
-                    });
-                });
-        }
-    }, [token]);
+    }, [username]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -146,7 +143,7 @@ export default function CargaPage() {
                         <option value="">Producto</option>
                         {precios.map(p => (
                             <option key={p.producto} value={p.producto}>
-                                {p.producto} 
+                                {p.producto}
                                 {/* - {p.precio.toLocaleString()} {p.moneda} */}
                             </option>
                         ))}
