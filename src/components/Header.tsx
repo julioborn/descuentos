@@ -50,9 +50,12 @@ export default function Header() {
                 <div className="sm:hidden mt-3 space-y-2 px-2 text-sm">
                     {role === 'admin' && (
                         <>
-                            <Link href="/admin/empleados" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Empleados</Link>
-                            <Link href="/admin/cargas" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Cargas</Link>
-                            <Link href="/admin/precios" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Precios</Link>
+                            <Link href="/admin" className="hover:text-red-800 transition font-semibold">Inicio</Link>
+                            <Link href="/admin/registrar-empleado" className="hover:text-red-800 transition font-semibold">Registrar Empleado</Link>
+                            <Link href="/admin/empleados" className="hover:text-red-800 transition font-semibold">Empleados</Link>
+                            <Link href="/admin/cargas" className="hover:text-red-800 transition font-semibold">Cargas</Link>
+                            <Link href="/admin/precios" className="hover:text-red-800 transition font-semibold">Precios</Link>
+                            <Link href="/admin/descuentos" className="hover:text-red-800 transition font-semibold">Descuentos</Link>
                         </>
                     )}
                     {role === 'playero' && (
