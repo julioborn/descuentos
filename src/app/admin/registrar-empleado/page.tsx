@@ -5,11 +5,19 @@ import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
+import html2canvas from 'html2canvas';
+import { useRef } from 'react';
 
 export default function RegistrarEmpleadoPage() {
     const [form, setForm] = useState({ nombre: '', apellido: '', dni: '', telefono: '', empresa: '' });
     const [qrUrl, setQrUrl] = useState('');
     const [loading, setLoading] = useState(false);
+    const [empleadoGenerado, setEmpleadoGenerado] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        empresa: '',
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,6 +59,13 @@ export default function RegistrarEmpleadoPage() {
                 timer: 2000,
             });
 
+            setEmpleadoGenerado({
+                nombre: form.nombre,
+                apellido: form.apellido,
+                dni: form.dni,
+                empresa: form.empresa,
+            });
+
             setForm({ nombre: '', apellido: '', dni: '', telefono: '', empresa: '' });
         } catch {
             Swal.fire({
@@ -60,6 +75,22 @@ export default function RegistrarEmpleadoPage() {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const tarjetaRef = useRef<HTMLDivElement>(null);
+
+    const descargarTarjeta = async () => {
+        if (tarjetaRef.current) {
+            const canvas = await html2canvas(tarjetaRef.current, {
+                scale: 2, // mejora la resolución de la imagen exportada
+            });
+            const image = canvas.toDataURL('image/png');
+
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `tarjeta-${empleadoGenerado.nombre}-${empleadoGenerado.apellido}.png`;
+            link.click();
         }
     };
 
@@ -97,18 +128,41 @@ export default function RegistrarEmpleadoPage() {
                 )}
 
                 {qrUrl && (
-                    <div className="text-center mt-6">
-                        <h3 className="text-lg mb-2 font-semibold">QR generado</h3>
-                        <img src={qrUrl} alt="QR" className="w-48 h-48 mx-auto rounded shadow-lg" />
-                        <a
-                            href={qrUrl}
-                            download="qr-empleado.png"
-                            className="text-blue-400 hover:underline block mt-2"
-                        >
-                            Descargar QR
-                        </a>
-                    </div>
+                    <>
+                        <div className="flex justify-center mt-10">
+                            <div
+                                ref={tarjetaRef}
+                                className="bg-white text-black p-6 rounded-lg shadow-xl w-[320px] space-y-4 relative"
+                            >
+                                <div className="flex justify-center">
+                                    <img src="/idescuentos.png" alt="Logo" className="w-100 h-18" />
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <img src={qrUrl} alt="QR Code" className="w-52 h-52" />
+
+                                </div>
+
+                                <div className="text-sm text-center">
+                                    <strong>{empleadoGenerado.nombre} {empleadoGenerado.apellido}</strong>
+                                    <p>{empleadoGenerado.dni}</p>
+                                    <p>{empleadoGenerado.empresa}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Botón FUERA del contenedor */}
+                        <div className="text-center mt-4">
+                            <button
+                                onClick={descargarTarjeta}
+                                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                            >
+                                Descargar Tarjeta
+                            </button>
+                        </div>
+                    </>
                 )}
+
             </form>
         </main>
     );
