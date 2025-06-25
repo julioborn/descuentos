@@ -179,7 +179,7 @@ export default function CargasPage() {
 
     const banderaPorMoneda = (moneda: string) => {
         if (moneda === 'ARS') return '🇦🇷';
-        if (moneda === 'GS') return '🇵🇾';
+        if (moneda === 'Gs') return '🇵🇾';
         return '';
     };
 
