@@ -177,6 +177,12 @@ export default function CargasPage() {
         }
     };
 
+    const banderaPorMoneda = (moneda: string) => {
+        if (moneda === 'ARS') return '🇦🇷';
+        if (moneda === 'GS') return '🇵🇾';
+        return '';
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
@@ -202,9 +208,15 @@ export default function CargasPage() {
                     className="rounded px-3 py-2 bg-gray-800 border border-gray-600"
                 >
                     <option value="TODOS">Todos los productos</option>
-                    {productosUnicos.map((p) => (
-                        <option key={p}>{p}</option>
-                    ))}
+                    {productosUnicos.map((p) => {
+                        const cargaDelProducto = cargas.find(c => c.producto === p);
+                        const bandera = cargaDelProducto ? banderaPorMoneda(cargaDelProducto.moneda) : '';
+                        return (
+                            <option key={p} value={p}>
+                                {bandera} {p}
+                            </option>
+                        );
+                    })}
                 </select>
             </section>
 
@@ -229,7 +241,7 @@ export default function CargasPage() {
                                 <td className="p-3">{new Date(c.fecha).toLocaleString()}</td>
                                 <td className="p-3">{c.nombreEmpleado}</td>
                                 <td className="p-3">{c.dniEmpleado}</td>
-                                <td className="p-3">{c.producto}</td>
+                                <td className="p-3">{banderaPorMoneda(c.moneda)} {c.producto}</td>
                                 <td className="p-3">{c.litros}</td>
                                 <td className="p-3">
                                     {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
@@ -276,7 +288,7 @@ export default function CargasPage() {
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
                             <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300">
-                                {c.producto}
+                                {banderaPorMoneda(c.moneda)} {c.producto}
                             </span>
                         </div>
 
