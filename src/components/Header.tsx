@@ -5,13 +5,26 @@ import { useSession } from 'next-auth/react';
 import LogoutButton from './LogoutButton';
 import { useState } from 'react';
 import { HiMenu, HiX } from 'react-icons/hi';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
     const { data: session } = useSession();
     const role = session?.user?.role;
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleMenu = () => setIsOpen(prev => !prev);
+
+    const isActive = (href: string) => {
+        if (href === '/admin') {
+            return pathname === '/admin';
+        }
+        return pathname.startsWith(href);
+    };
+
+    const linkClass = (href: string) =>
+        `block transition font-semibold ${isActive(href) ? 'text-red-500' : 'hover:text-red-400'
+        }`;
 
     return (
         <header className="bg-gray-900 text-white px-4 py-3 shadow-md">
@@ -30,16 +43,16 @@ export default function Header() {
                 <div className="hidden sm:flex items-center gap-4 text-sm sm:text-base">
                     {role === 'admin' && (
                         <>
-                            <Link href="/admin" className="hover:text-red-800 transition font-semibold">Inicio</Link>
-                            <Link href="/admin/registrar-empleado" className="hover:text-red-800 transition font-semibold">Registrar Empleado</Link>
-                            <Link href="/admin/empleados" className="hover:text-red-800 transition font-semibold">Empleados</Link>
-                            <Link href="/admin/cargas" className="hover:text-red-800 transition font-semibold">Cargas</Link>
-                            <Link href="/admin/precios" className="hover:text-red-800 transition font-semibold">Precios</Link>
-                            <Link href="/admin/descuentos" className="hover:text-red-800 transition font-semibold">Descuentos</Link>
+                            <Link href="/admin" className={linkClass('/admin')}>Inicio</Link>
+                            {/* <Link href="/admin/registrar-empleado" className={linkClass('/admin/registrar-empleado')}>Registrar Empleado</Link> */}
+                            <Link href="/admin/empleados" className={linkClass('/admin/empleados')}>Empleados</Link>
+                            <Link href="/admin/cargas" className={linkClass('/admin/cargas')}>Cargas</Link>
+                            <Link href="/admin/precios" className={linkClass('/admin/precios')}>Precios</Link>
+                            <Link href="/admin/descuentos" className={linkClass('/admin/descuentos')}>Descuentos</Link>
                         </>
                     )}
                     {role === 'playero' && (
-                        <Link href="/playero" className="hover:text-red-800 transition">Inicio</Link>
+                        <Link href="/playero" className={linkClass('/playero')}>Inicio</Link>
                     )}
                     <LogoutButton />
                 </div>
@@ -50,16 +63,16 @@ export default function Header() {
                 <div className="sm:hidden mt-3 space-y-2 px-2 text-sm">
                     {role === 'admin' && (
                         <>
-                            <Link href="/admin" className="hover:text-red-800 transition font-semibold">Inicio</Link>
-                            <Link href="/admin/registrar-empleado" className="hover:text-red-800 transition font-semibold">Registrar Empleado</Link>
-                            <Link href="/admin/empleados" className="hover:text-red-800 transition font-semibold">Empleados</Link>
-                            <Link href="/admin/cargas" className="hover:text-red-800 transition font-semibold">Cargas</Link>
-                            <Link href="/admin/precios" className="hover:text-red-800 transition font-semibold">Precios</Link>
-                            <Link href="/admin/descuentos" className="hover:text-red-800 transition font-semibold">Descuentos</Link>
+                            <Link href="/admin" className={linkClass('/admin')} onClick={toggleMenu}>Inicio</Link>
+                            {/* <Link href="/admin/registrar-empleado" className={linkClass('/admin/registrar-empleado')} onClick={toggleMenu}>Registrar Empleado</Link> */}
+                            <Link href="/admin/empleados" className={linkClass('/admin/empleados')} onClick={toggleMenu}>Empleados</Link>
+                            <Link href="/admin/cargas" className={linkClass('/admin/cargas')} onClick={toggleMenu}>Cargas</Link>
+                            <Link href="/admin/precios" className={linkClass('/admin/precios')} onClick={toggleMenu}>Precios</Link>
+                            <Link href="/admin/descuentos" className={linkClass('/admin/descuentos')} onClick={toggleMenu}>Descuentos</Link>
                         </>
                     )}
                     {role === 'playero' && (
-                        <Link href="/playero" className="block hover:text-red-800" onClick={() => setIsOpen(false)}>Inicio</Link>
+                        <Link href="/playero" className={linkClass('/playero')} onClick={toggleMenu}>Inicio</Link>
                     )}
                     <div className="pt-2 border-t border-white/20">
                         <LogoutButton />

@@ -67,7 +67,7 @@ export default function AdminDescuentosPage() {
 
     return (
         <main className="min-h-screen p-6 bg-gray-700 text-white">
-            <h1 className="text-2xl font-bold mb-6">Descuentos por empresa</h1>
+            <h1 className="text-3xl font-bold text-center mb-8 text-white">Descuentos</h1>
 
             <div className="space-y-4 mb-2 max-w-md mx-auto">
                 {descuentos.map(d => (
