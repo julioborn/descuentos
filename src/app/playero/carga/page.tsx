@@ -104,11 +104,11 @@ export default function CargaPage() {
     const descuentoAplicado = precioSinDescuento * (porcentajeDescuento / 100);
     const precioFinal = precioSinDescuento - descuentoAplicado;
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!empleado) return;
+        if (!empleado || isSubmitting) return;
 
-        // Validación: producto seleccionado
         if (!form.producto) {
             return Swal.fire({
                 icon: 'warning',
@@ -117,7 +117,6 @@ export default function CargaPage() {
             });
         }
 
-        // Validación: litros > 0
         const litros = parseFloat(form.litros.replace(',', '.'));
         if (isNaN(litros) || litros <= 0) {
             return Swal.fire({
@@ -129,6 +128,17 @@ export default function CargaPage() {
 
         const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
         const precioFinal = precioUnitario * litros;
+
+        setIsSubmitting(true);
+
+        // 🌀 Mostrar loader
+        Swal.fire({
+            title: 'Registrando carga...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
 
         const res = await fetch('/api/cargas', {
             method: 'POST',
@@ -146,6 +156,9 @@ export default function CargaPage() {
                 fecha: new Date().toISOString(),
             }),
         });
+
+        Swal.close();
+        setIsSubmitting(false);
 
         if (res.ok) {
             Swal.fire({
