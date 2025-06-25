@@ -93,14 +93,14 @@ export default function AdminDescuentosPage() {
             <div className="max-w-md mx-auto mb-8">
                 <button
                     onClick={guardarCambios}
-                    className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded text-lg"
+                    className="w-full bg-red-800 hover:bg-red-700 text-white py-2 rounded"
                 >
                     Guardar cambios
                 </button>
             </div>
 
             <div className="bg-white text-black p-4 rounded shadow max-w-md mx-auto">
-                <h2 className="text-xl font-semibold mb-2">Agregar nueva empresa</h2>
+                <h2 className="text-xl font-semibold mb-2">Agregar empresa</h2>
                 <input
                     type="text"
                     value={nuevaEmpresa}
@@ -117,7 +117,7 @@ export default function AdminDescuentosPage() {
                 />
                 <button
                     onClick={agregarDescuento}
-                    className="w-full bg-green-700 hover:bg-green-600 text-white py-2 rounded"
+                    className="w-full bg-red-800 hover:bg-red-700 text-white py-2 rounded"
                 >
                     Agregar empresa
                 </button>
