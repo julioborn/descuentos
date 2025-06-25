@@ -95,6 +95,87 @@ export default function EmpleadosPage() {
 
     if (loading) return <Loader />;
 
+    /* ---------- acciones ---------- */
+    const eliminarEmpleado = async (id: string) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Eliminar empleado?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            setEmpleados((prev) => prev.filter((e) => e._id !== id));
+            Swal.fire('Eliminado', 'El empleado fue eliminado.', 'success');
+        } catch {
+            Swal.fire('Error', 'No se pudo eliminar el empleado.', 'error');
+        }
+    };
+
+    const editarEmpleado = async (id: string) => {
+        try {
+            const res = await fetch(`/api/empleados/${id}`);
+            if (!res.ok) throw new Error();
+            const empleado = await res.json();
+
+            const { value: values } = await Swal.fire({
+                title: 'Editar empleado',
+                html: `
+                <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
+                <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
+                <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
+                <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
+            `,
+                focusConfirm: false,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                showCancelButton: true,
+                customClass: {
+                    confirmButton: 'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    cancelButton: 'swal2-cancel px-6 py-2 rounded',
+                },
+                preConfirm: () => {
+                    const nombre = (document.getElementById('swal-nombre') as HTMLInputElement).value.trim();
+                    const apellido = (document.getElementById('swal-apellido') as HTMLInputElement).value.trim();
+                    const telefono = (document.getElementById('swal-telefono') as HTMLInputElement).value.trim();
+                    const empresa = (document.getElementById('swal-empresa') as HTMLInputElement).value.trim();
+
+                    if (!nombre || !apellido || !telefono || !empresa) {
+                        Swal.showValidationMessage('Todos los campos son obligatorios');
+                        return;
+                    }
+
+                    return { nombre, apellido, telefono, empresa };
+                },
+            });
+
+            if (!values) return; // cancelado
+
+            const updateRes = await fetch(`/api/empleados/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values),
+            });
+
+            if (!updateRes.ok) throw new Error();
+            const actualizado = await updateRes.json();
+
+            setEmpleados((prev) =>
+                prev.map((e) => (e._id === id ? { ...e, ...actualizado } : e))
+            );
+
+            Swal.fire('Actualizado', 'El empleado fue editado correctamente.', 'success');
+        } catch {
+            Swal.fire('Error', 'No se pudo editar el empleado.', 'error');
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Empleados</h1>
@@ -162,6 +243,7 @@ export default function EmpleadosPage() {
                             <th className="p-3">Teléfono</th>
                             <th className="p-3">Empresa</th>
                             <th className="p-3">QR</th>
+                            <th className="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -182,6 +264,30 @@ export default function EmpleadosPage() {
                                     ) : (
                                         <Loader />
                                     )}
+                                </td>
+                                <td className="p-2 text-center">
+                                    {/* Editar */}
+                                    <button
+                                        onClick={() => editarEmpleado(emp._id)}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 mr-2"
+                                        title="Editar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                            <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                        </svg>
+                                    </button>
+
+                                    {/* Eliminar */}
+                                    <button
+                                        onClick={() => eliminarEmpleado(emp._id)}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600"
+                                        title="Eliminar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -206,6 +312,25 @@ export default function EmpleadosPage() {
                             ) : (
                                 <Loader />
                             )}
+                        </div>
+                        <div className="mt-4 flex justify-end gap-2">
+                            <button
+                                onClick={() => editarEmpleado(emp._id)}
+                                className="px-3 py-1 rounded-full bg-yellow-600 hover:bg-yellow-500 text-sm"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                </svg>
+                            </button>
+                            <button
+                                onClick={() => eliminarEmpleado(emp._id)}
+                                className="px-3 py-1 rounded-full bg-red-700 hover:bg-red-600 text-sm"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 ))}

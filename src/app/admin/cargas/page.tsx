@@ -74,6 +74,109 @@ export default function CargasPage() {
 
     if (loading) return <Loader />;
 
+    const editarCarga = async (id: string) => {
+        try {
+            const res = await fetch(`/api/cargas/${id}`);
+            if (!res.ok) throw new Error();
+            const carga = await res.json();
+
+            const { value: values } = await Swal.fire({
+                title: 'Editar carga',
+                html: `
+                        <div style="display: flex; flex-direction: column; gap: 16px; text-align: center;">
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <label for="swal-litros" style="font-weight: 500; margin-bottom: 6px;">Litros</label>
+                                <input id="swal-litros" class="swal2-input" type="number"
+                                    value="${carga.litros}" style="width: 80%;">
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <label for="swal-precio" style="font-weight: 500; margin-bottom: 6px;">Precio final</label>
+                                <input id="swal-precio" class="swal2-input" type="number"
+                                    value="${carga.precioFinal}" style="width: 80%;">
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <label for="swal-precioSin" style="font-weight: 500; margin-bottom: 6px;">Precio sin descuento</label>
+                                <input id="swal-precioSin" class="swal2-input" type="number"
+                                    value="${carga.precioFinalSinDescuento || ''}" style="width: 80%;">
+                            </div>
+                        </div>
+                    `,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton:
+                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    cancelButton:
+                        'swal2-cancel px-6 py-2 rounded',
+                },
+                focusConfirm: false,
+                preConfirm: () => {
+                    const litros = parseFloat(
+                        (document.getElementById('swal-litros') as HTMLInputElement).value
+                    );
+                    const precioFinal = parseFloat(
+                        (document.getElementById('swal-precio') as HTMLInputElement).value
+                    );
+                    const precioFinalSinDescuento = parseFloat(
+                        (document.getElementById('swal-precioSin') as HTMLInputElement).value
+                    );
+
+                    if (isNaN(litros) || isNaN(precioFinal)) {
+                        Swal.showValidationMessage('Campos numéricos inválidos');
+                        return;
+                    }
+
+                    return { litros, precioFinal, precioFinalSinDescuento };
+                },
+            });
+
+            if (!values) return;
+
+            const updateRes = await fetch(`/api/cargas/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values),
+            });
+
+            if (!updateRes.ok) throw new Error();
+            const actualizado = await updateRes.json();
+
+            setCargas(prev =>
+                prev.map(c => (c._id === id ? { ...c, ...actualizado } : c))
+            );
+
+            Swal.fire('Actualizado', 'La carga fue editada correctamente.', 'success');
+        } catch {
+            Swal.fire('Error', 'No se pudo editar la carga.', 'error');
+        }
+    };
+
+    const eliminarCarga = async (id: string) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Eliminar?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/cargas/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+
+            setCargas((prev) => prev.filter((c) => c._id !== id));
+
+            Swal.fire('Eliminado', 'La carga fue eliminada.', 'success');
+        } catch {
+            Swal.fire('Error', 'No se pudo eliminar.', 'error');
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
@@ -115,8 +218,9 @@ export default function CargasPage() {
                             <th className="p-3">DNI</th>
                             <th className="p-3">Producto</th>
                             <th className="p-3">Litros</th>
-                            <th className="p-3">Precio sin desc.</th>
+                            <th className="p-3">Precio sin descuento</th>
                             <th className="p-3">Precio final</th>
+                            <th className="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -133,6 +237,28 @@ export default function CargasPage() {
                                 <td className="p-3">
                                     {c.precioFinal.toLocaleString()} {c.moneda}
                                 </td>
+                                {/* Botones */}
+                                <td className="p-3 text-center whitespace-nowrap">
+                                    {/* <button
+                                        onClick={() => editarCarga(c._id)}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 mr-2"
+                                        title="Editar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                            <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                        </svg>
+                                    </button> */}
+                                    <button
+                                        onClick={() => eliminarCarga(c._id)}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600"
+                                        title="Eliminar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -140,18 +266,72 @@ export default function CargasPage() {
             </div>
 
             {/* -------- Cards mobile -------- */}
-            <div className="sm:hidden flex flex-col gap-4 max-w-xl mx-auto">
+            <div className="sm:hidden flex flex-col gap-6 max-w-xl mx-auto">
                 {pageList.map((c) => (
                     <div
                         key={c._id}
-                        className="bg-white/5 rounded-lg p-4 border border-white/10 shadow-lg"
+                        className="bg-gray-800 text-white rounded-2xl p-5 border border-gray-600 shadow-xl"
                     >
-                        <p><b>{c.nombreEmpleado}</b> – {c.producto}</p>
-                        <p>DNI: {c.dniEmpleado}</p>
-                        <p>Litros: {c.litros}</p>
-                        <p>Fecha: {new Date(c.fecha).toLocaleString()}</p>
-                        <p>Comp. sin desc.: {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}</p>
-                        <p>Total: {c.precioFinal.toLocaleString()} {c.moneda}</p>
+                        {/* Cabecera: nombre y producto */}
+                        <div className="flex justify-between items-center mb-2">
+                            <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
+                            <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300">
+                                {c.producto}
+                            </span>
+                        </div>
+
+                        {/* Info principal */}
+                        <div className="space-y-1 text-sm">
+                            <p>
+                                <span className="font-semibold text-gray-300">DNI:</span> {c.dniEmpleado}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-300">Litros:</span> {c.litros}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-300">Fecha:</span>{' '}
+                                {new Date(c.fecha).toLocaleString()}
+                            </p>
+                        </div>
+
+                        <hr className="my-3 border-white/10" />
+
+                        {/* Precios */}
+                        <div className="text-sm space-y-1 mb-4">
+                            <p>
+                                <span className="text-gray-400">Precio sin descuento:</span>{' '}
+                                <span className="text-red-400 font-semibold">
+                                    {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
+                                </span>
+                            </p>
+                            <p>
+                                <span className="text-gray-400">Precio final:</span>{' '}
+                                <span className="text-green-400 font-semibold">
+                                    {c.precioFinal.toLocaleString()} {c.moneda}
+                                </span>
+                            </p>
+                        </div>
+
+                        {/* Botones editar/eliminar */}
+                        <div className="flex justify-end gap-3">
+                            {/* <button
+                                onClick={() => editarCarga(c._id)}
+                                className="px-4 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 rounded-full"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                </svg>
+                            </button> */}
+                            <button
+                                onClick={() => eliminarCarga(c._id)}
+                                className="px-4 py-1 text-sm bg-red-700 hover:bg-red-600 rounded-full"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
