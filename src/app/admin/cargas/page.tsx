@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 type Carga = {
     _id: string;
@@ -26,6 +28,8 @@ export default function CargasPage() {
     const [busqueda, setBusqueda] = useState('');
     const [productoFiltro, setProductoFiltro] = useState<'TODOS' | string>('TODOS');
     const [pagina, setPagina] = useState(1);
+    const [añoFiltro, setAñoFiltro] = useState<'TODOS' | number>('TODOS');
+    const [mesFiltro, setMesFiltro] = useState<number>(0); // 0 = Todos los meses
 
     useEffect(() => {
         const fetchCargas = async () => {
@@ -42,6 +46,32 @@ export default function CargasPage() {
         fetchCargas();
     }, []);
 
+    const añosDisponibles = useMemo(() => {
+        const añosSet = new Set<number>();
+        cargas.forEach(c => {
+            const fecha = new Date(c.fecha);
+            añosSet.add(fecha.getFullYear());
+        });
+        return Array.from(añosSet).sort((a, b) => b - a); // del más reciente al más viejo
+    }, [cargas]);
+
+    const mesesDelAño = useMemo(() => {
+        return [
+            { nombre: 'Enero', numero: 1 },
+            { nombre: 'Febrero', numero: 2 },
+            { nombre: 'Marzo', numero: 3 },
+            { nombre: 'Abril', numero: 4 },
+            { nombre: 'Mayo', numero: 5 },
+            { nombre: 'Junio', numero: 6 },
+            { nombre: 'Julio', numero: 7 },
+            { nombre: 'Agosto', numero: 8 },
+            { nombre: 'Septiembre', numero: 9 },
+            { nombre: 'Octubre', numero: 10 },
+            { nombre: 'Noviembre', numero: 11 },
+            { nombre: 'Diciembre', numero: 12 },
+        ];
+    }, []);
+
     /* productos únicos para select */
     const productosUnicos = useMemo(
         () => Array.from(new Set(cargas.map((c) => c.producto))).sort(),
@@ -53,16 +83,21 @@ export default function CargasPage() {
         const txt = busqueda.trim().toLowerCase();
 
         return cargas.filter((c) => {
+            const fecha = new Date(c.fecha);
+
             const coincideTxt =
-                !txt ||
-                `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
+                !txt || `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
 
             const coincideProd =
                 productoFiltro === 'TODOS' || c.producto === productoFiltro;
 
-            return coincideTxt && coincideProd;
+            const coincideAño = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
+            const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
+
+            return coincideTxt && coincideProd && coincideAño && coincideMes;
         });
-    }, [cargas, busqueda, productoFiltro]);
+    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro]);
+
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / ITEMS);
@@ -183,6 +218,48 @@ export default function CargasPage() {
         return '';
     };
 
+    const exportarExcel = async () => {
+        try {
+            const data = filtradas;
+
+            const dataFormateada = data.map(c => ({
+                Fecha: new Date(c.fecha).toLocaleString(),
+                Empleado: c.nombreEmpleado,
+                DNI: c.dniEmpleado,
+                Producto: c.producto,
+                Litros: c.litros,
+                'Precio sin descuento': c.precioFinalSinDescuento || '-',
+                'Precio final': c.precioFinal,
+                Moneda: c.moneda
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataFormateada);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Cargas');
+
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+            let nombreArchivo = 'cargas';
+
+            if (añoFiltro !== 'TODOS') nombreArchivo += `-${añoFiltro}`;
+            if (mesFiltro !== 0) {
+                const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre.toLowerCase();
+                if (nombreMes) nombreArchivo += `-${nombreMes}`;
+            }
+
+            if (añoFiltro === 'TODOS' && mesFiltro === 0) {
+                nombreArchivo += `-todas`;
+            }
+
+            nombreArchivo += `.xlsx`;
+
+            saveAs(blob, nombreArchivo);
+
+        } catch (err) {
+            Swal.fire('Error', 'No se pudieron exportar las cargas.', 'error');
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
@@ -218,6 +295,45 @@ export default function CargasPage() {
                         );
                     })}
                 </select>
+                <select
+                    value={añoFiltro}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
+                        setMesFiltro(0); // reiniciar a "Todos los meses" como número
+                        setPagina(1);
+                    }}
+                    className="rounded px-1 py-2 bg-gray-800 border border-gray-600"
+                >
+                    <option value="TODOS">Todos los años</option>
+                    {añosDisponibles.map((año) => (
+                        <option key={año} value={año}>{año}</option>
+                    ))}
+                </select>
+
+                <select
+                    value={mesFiltro}
+                    onChange={(e) => {
+                        setMesFiltro(Number(e.target.value));
+                        setPagina(1);
+                    }}
+                    className="rounded px-3 py-2 bg-gray-800 border border-gray-600"
+                >
+                    <option value="0">Todos los meses</option>
+                    {mesesDelAño.map((m) => (
+                        <option key={m.numero} value={m.numero}>
+                            {m.nombre}
+                        </option>
+                    ))}
+                </select>
+
+                <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 rounded bg-green-800 hover:bg-green-700 text-white px-4 py-2 w-full sm:w-fit"
+                >
+                    Descargar Excel
+                </button>
+
             </section>
 
             {/* -------- Tabla desktop -------- */}
