@@ -9,7 +9,14 @@ import html2canvas from 'html2canvas';
 import { useRef } from 'react';
 
 export default function RegistrarEmpleadoPage() {
-    const [form, setForm] = useState({ nombre: '', apellido: '', dni: '', telefono: '', empresa: '' });
+    const [form, setForm] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        telefono: '',
+        empresa: '',
+        pais: '',
+    });
     const [qrUrl, setQrUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [empleadoGenerado, setEmpleadoGenerado] = useState({
@@ -27,11 +34,11 @@ export default function RegistrarEmpleadoPage() {
         e.preventDefault();
 
         // Validación mínima
-        if (!form.nombre || !form.apellido || !form.dni) {
+        if (!form.nombre || !form.apellido || !form.dni || !form.pais) {
             return Swal.fire({
                 icon: 'warning',
                 title: 'Campos obligatorios',
-                text: 'Completá nombre, apellido y DNI.',
+                text: 'Completá nombre, apellido, DNI y país.',
             });
         }
 
@@ -66,7 +73,7 @@ export default function RegistrarEmpleadoPage() {
                 empresa: form.empresa,
             });
 
-            setForm({ nombre: '', apellido: '', dni: '', telefono: '', empresa: '' });
+            setForm({ nombre: '', apellido: '', dni: '', telefono: '', empresa: '', pais: '' });
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -100,18 +107,32 @@ export default function RegistrarEmpleadoPage() {
 
             <form onSubmit={handleSubmit} className="bg-white/10 p-6 rounded-xl border border-white/20 shadow-xl space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {Object.entries(form).map(([key, value]) => (
-                        <input
-                            key={key}
-                            name={key}
-                            placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-                            value={value}
-                            onChange={handleChange}
-                            className="p-3 rounded bg-slate-800 border border-slate-600 placeholder-gray-400 text-white"
-                            required
-                        />
-                    ))}
+                    {Object.entries(form)
+                        .filter(([key]) => key !== 'pais') // ⬅️ excluye el campo 'pais'
+                        .map(([key, value]) => (
+                            <input
+                                key={key}
+                                name={key}
+                                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                                value={value}
+                                onChange={handleChange}
+                                className="p-3 rounded bg-slate-800 border border-slate-600 placeholder-gray-400 text-white"
+                                required
+                            />
+                        ))}
                 </div>
+
+                <select
+                    name="pais"
+                    value={form.pais}
+                    onChange={(e) => setForm({ ...form, pais: e.target.value })}
+                    className="w-full p-3 rounded bg-slate-800 border border-slate-600 text-white"
+                    required
+                >
+                    <option value="">Seleccioná un país</option>
+                    <option value="AR">Argentina</option>
+                    <option value="PY">Paraguay</option>
+                </select>
 
                 <button
                     type="submit"

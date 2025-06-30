@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 type Empleado = {
     _id: string;
@@ -14,7 +15,7 @@ type Empleado = {
     telefono: string;
     empresa: string;
     qrToken: string;
-    // opcionalmente podrías incluir moneda o rol…
+    pais: string;
 };
 
 const ITEMS = 5;
@@ -30,18 +31,32 @@ export default function EmpleadosPage() {
     const [busqueda, setBusqueda] = useState('');
     const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
     const [pagina, setPagina] = useState(1);
+    const { data: session, status } = useSession();
+    const role = session?.user?.role;
 
     /* ---------- fetch inicial ---------- */
     useEffect(() => {
+        if (!role) return;
+
         const fetchEmpleados = async () => {
             try {
                 const res = await fetch('/api/empleados');
                 if (!res.ok) throw new Error();
 
-                const data = (await res.json()) as Empleado[];
+                let data = (await res.json()) as Empleado[];
+
+                // 🔴 Filtrado por país según el rol
+                const paisesPorRol: Record<string, string> = {
+                    admin_arg: 'AR',
+                    admin_py: 'PY',
+                };
+
+                if (role && paisesPorRol[role]) {
+                    data = data.filter((emp) => emp.pais === paisesPorRol[role]);
+                }
+
                 setEmpleados(data);
 
-                // generar QR en paralelo
                 const qrData = await Promise.all(
                     data.map((emp) =>
                         QRCode.toDataURL(
@@ -58,8 +73,9 @@ export default function EmpleadosPage() {
                 setLoading(false);
             }
         };
+
         fetchEmpleados();
-    }, []);
+    }, [role]);
 
     /* ---------- conjunto de empresas para desplegable ---------- */
     const empresasUnicas = useMemo(
@@ -93,7 +109,7 @@ export default function EmpleadosPage() {
         págActual * ITEMS
     );
 
-    if (loading) return <Loader />;
+    if (status === 'loading') return <Loader />;
 
     /* ---------- acciones ---------- */
     const eliminarEmpleado = async (id: string) => {

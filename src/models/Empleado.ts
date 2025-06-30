@@ -1,13 +1,16 @@
-import mongoose from "mongoose";
+// models/Empleado.ts
+import mongoose, { Schema } from 'mongoose';
 
-const EmpleadoSchema = new mongoose.Schema({
+const EmpleadoSchema = new Schema({
     nombre: String,
     apellido: String,
     dni: String,
     telefono: String,
     empresa: String,
-    qrToken: { type: String, unique: true },
+    qrToken: String,
     activo: { type: Boolean, default: true },
+    pais: { type: String, enum: ['AR', 'PY'], required: true } // 👈 nuevo
 });
 
-export const Empleado = mongoose.models.Empleado || mongoose.model("Empleado", EmpleadoSchema);
+export const Empleado = mongoose.models.Empleado ||
+    mongoose.model('Empleado', EmpleadoSchema);

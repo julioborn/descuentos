@@ -1,19 +1,21 @@
 // src/app/api/empleados/route.ts
+import { authOptions } from "@/lib/authOptions";
 import { connectMongoDB } from "@/lib/mongodb";
 import { Empleado } from "@/models/Empleado";
+import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET: Listar todos los empleados
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
     await connectMongoDB();
 
-    try {
-        const empleados = await Empleado.find().sort({ apellido: 1, nombre: 1 });
-        return NextResponse.json(empleados);
-    } catch (error) {
-        console.error("Error al obtener empleados:", error);
-        return NextResponse.json({ error: "Error al obtener empleados" }, { status: 500 });
-    }
+    const match: any = { activo: true };
+    if (session?.user.role === 'admin_arg') match.pais = 'AR';
+    if (session?.user.role === 'admin_py') match.pais = 'PY';
+
+    const empleados = await Empleado.find(match);
+    return NextResponse.json(empleados);
 }
 
 // POST: Crear nuevo empleado

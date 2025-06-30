@@ -40,11 +40,11 @@ export default function Header() {
                 </button>
 
                 {/* Navegación para desktop */}
+                {/* Navegación para desktop */}
                 <div className="hidden sm:flex items-center gap-4 text-sm sm:text-base">
-                    {role === 'admin' && (
+                    {role && ['superadmin', 'admin_arg', 'admin_py'].includes(role) && (
                         <>
                             <Link href="/admin" className={linkClass('/admin')}>Inicio</Link>
-                            {/* <Link href="/admin/registrar-empleado" className={linkClass('/admin/registrar-empleado')}>Registrar Empleado</Link> */}
                             <Link href="/admin/empleados" className={linkClass('/admin/empleados')}>Empleados</Link>
                             <Link href="/admin/cargas" className={linkClass('/admin/cargas')}>Cargas</Link>
                             <Link href="/admin/precios" className={linkClass('/admin/precios')}>Precios</Link>
@@ -59,12 +59,12 @@ export default function Header() {
             </div>
 
             {/* Menú desplegable para mobile */}
+            {/* Menú desplegable para mobile */}
             {isOpen && (
                 <div className="sm:hidden mt-3 space-y-2 px-2 text-sm">
-                    {role === 'admin' && (
+                    {role && ['superadmin', 'admin_arg', 'admin_py'].includes(role) && (
                         <>
                             <Link href="/admin" className={linkClass('/admin')} onClick={toggleMenu}>Inicio</Link>
-                            {/* <Link href="/admin/registrar-empleado" className={linkClass('/admin/registrar-empleado')} onClick={toggleMenu}>Registrar Empleado</Link> */}
                             <Link href="/admin/empleados" className={linkClass('/admin/empleados')} onClick={toggleMenu}>Empleados</Link>
                             <Link href="/admin/cargas" className={linkClass('/admin/cargas')} onClick={toggleMenu}>Cargas</Link>
                             <Link href="/admin/precios" className={linkClass('/admin/precios')} onClick={toggleMenu}>Precios</Link>

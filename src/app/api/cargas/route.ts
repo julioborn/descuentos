@@ -8,8 +8,14 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+    const session = await getServerSession(authOptions);
     await connectMongoDB();
-    const cargas = await Carga.find().sort({ fecha: -1 });
+
+    const match: any = {};
+    if (session?.user.role === 'admin_arg') match.moneda = 'ARS';
+    if (session?.user.role === 'admin_py') match.moneda = 'Gs';
+
+    const cargas = await Carga.find(match);
     return NextResponse.json(cargas);
 }
 

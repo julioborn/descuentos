@@ -12,9 +12,11 @@ export default function HomePage() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (session?.user?.role === 'admin') {
+    const rol = session?.user?.role;
+
+    if (rol === 'superadmin' || rol === 'admin_arg' || rol === 'admin_py') {
       router.replace('/admin');
-    } else if (session?.user?.role === 'playero') {
+    } else if (rol === 'playero') {
       router.replace('/playero');
     } else {
       router.replace('/login');

@@ -22,9 +22,11 @@ export default function LoginPage() {
             const sessionRes = await fetch("/api/auth/session");
             const session = await sessionRes.json();
 
-            if (session?.user?.role === "admin") {
+            const rol = session?.user?.role;
+
+            if (rol === "superadmin" || rol === "admin_arg" || rol === "admin_py") {
                 router.push("/admin");
-            } else if (session?.user?.role === "playero") {
+            } else if (rol === "playero") {
                 router.push("/playero");
             } else {
                 router.push("/");
@@ -32,6 +34,7 @@ export default function LoginPage() {
         } else {
             alert("Usuario o contraseña incorrectos");
         }
+
     };
 
     return (
