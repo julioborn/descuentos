@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
+import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 
@@ -12,17 +13,40 @@ type Producto = {
 };
 
 export default function AdminPreciosPage() {
+    /* ---------------- estado ---------------- */
     const [productos, setProductos] = useState<Producto[]>([]);
     const [loading, setLoading] = useState(true);
 
+    /* ---------------- sesión ---------------- */
+    const { data: session, status } = useSession();
+    const monedaUsuario = session?.user?.moneda as 'ARS' | 'Gs' | undefined;
+
+    /* ---------------- fetch inicial ---------------- */
     useEffect(() => {
+        if (status !== 'authenticated') return;
+
         const fetchPrecios = async () => {
             try {
                 const res = await fetch('/api/precios');
                 if (!res.ok) throw new Error();
-                const data = await res.json();
-                setProductos(data);
-            } catch (err) {
+                const data = (await res.json()) as Producto[];
+                console.log("Moneda del usuario:", monedaUsuario);
+                console.log("Productos recibidos:", data);
+
+                const filtrados = monedaUsuario
+                    ? data.filter((p) => p.moneda === monedaUsuario)
+                    : [];
+
+                const ordenDeseado = ['GAS OIL', 'EURO', 'NAFTA SUPER', 'NAFTA ECO'];
+
+                const ordenados = filtrados.sort((a, b) => {
+                    const idxA = ordenDeseado.indexOf(a.producto.toUpperCase());
+                    const idxB = ordenDeseado.indexOf(b.producto.toUpperCase());
+                    return idxA - idxB;
+                });
+
+                setProductos(ordenados);
+            } catch {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -32,12 +56,14 @@ export default function AdminPreciosPage() {
                 setLoading(false);
             }
         };
-        fetchPrecios();
-    }, []);
 
+        fetchPrecios();
+    }, [status, monedaUsuario]);
+
+    /* ---------------- handlers ---------------- */
     const handlePrecioChange = (id: string, value: string) => {
-        setProductos(prev =>
-            prev.map(p =>
+        setProductos((prev) =>
+            prev.map((p) =>
                 p._id === id ? { ...p, precio: parseFloat(value) } : p
             )
         );
@@ -70,72 +96,46 @@ export default function AdminPreciosPage() {
         }
     };
 
-    const productosGs = productos.filter(p => p.moneda === 'Gs');
-    const productosARS = productos.filter(p => p.moneda === 'ARS');
-
-    if (loading) return <Loader />;
+    /* ---------------- UI ---------------- */
+    if (status === 'loading' || loading) return <Loader />;
 
     return (
-        <main className="min-h-screen p-6 bg-gray-700 text-gray-900">
-            <h1 className="text-3xl font-bold text-center mb-8 text-white">Precios</h1>
+        <main className="min-h-screen p-6 bg-gray-700 text-white">
+            <h1 className="text-3xl font-bold text-center mb-8">
+                Precios {monedaUsuario}
+            </h1>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Gs */}
-                <section>
-                    <h2 className="text-xl font-semibold mb-4 text-white">Moneda: Guaraníes (Gs)</h2>
-                    <div className="space-y-4">
-                        {productosGs.map(p => (
-                            <div key={p._id} className="bg-white p-4 rounded shadow">
-                                <div className="mb-2 font-semibold">{p.producto}</div>
-                                <input
-                                    type="number"
-                                    value={p.precio}
-                                    step="0.01"
-                                    onChange={e => handlePrecioChange(p._id, e.target.value)}
-                                    className="w-full border p-2 rounded mb-2"
-                                    placeholder="Precio en Gs"
-                                />
-                                <button
-                                    onClick={() => guardarCambios(p)}
-                                    className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
-                                >
-                                    Guardar
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+            {productos.length === 0 ? (
+                <p className="text-center text-gray-300">
+                    Aún no hay productos registrados para esta moneda.
+                </p>
+            ) : (
+                <div className="max-w-3xl mx-auto space-y-6">
+                    {productos.map((p) => (
+                        <div key={p._id} className="bg-white text-gray-900 p-4 rounded shadow">
+                            <div className="mb-2 font-semibold">{p.producto}</div>
 
-                {/* ARS */}
-                <section>
-                    <h2 className="text-xl font-semibold mb-4 text-white">Moneda: Pesos Argentinos (ARS)</h2>
-                    <div className="space-y-4">
-                        {productosARS.length === 0 ? (
-                            <p className="text-gray-400">Aún no hay productos en ARS.</p>
-                        ) : (
-                            productosARS.map(p => (
-                                <div key={p._id} className="bg-white p-4 rounded shadow">
-                                    <div className="mb-2 font-semibold">{p.producto}</div>
-                                    <input
-                                        type="number"
-                                        value={p.precio}
-                                        step="0.01"
-                                        onChange={e => handlePrecioChange(p._id, e.target.value)}
-                                        className="w-full border p-2 rounded mb-2"
-                                        placeholder="Precio en ARS"
-                                    />
-                                    <button
-                                        onClick={() => guardarCambios(p)}
-                                        className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
-                                    >
-                                        Guardar
-                                    </button>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </section>
-            </div>
+                            <input
+                                type="number"
+                                value={p.precio}
+                                step="0.01"
+                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                    handlePrecioChange(p._id, e.target.value)
+                                }
+                                className="w-full border p-2 rounded mb-2"
+                                placeholder={`Precio en ${p.moneda}`}
+                            />
+
+                            <button
+                                onClick={() => guardarCambios(p)}
+                                className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </main>
     );
 }
