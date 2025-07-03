@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import LogoutButton from './LogoutButton';
 import { useState } from 'react';
-import { HiMenu, HiX } from 'react-icons/hi';
 import { usePathname } from 'next/navigation';
+import { HiMenu, HiX } from 'react-icons/hi';
+import LogoutButton from './LogoutButton';
+import clsx from 'clsx';
 
 export default function Header() {
     const { data: session } = useSession();
@@ -13,72 +14,74 @@ export default function Header() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
 
-    const toggleMenu = () => setIsOpen(prev => !prev);
+    const toggleMenu = () => setIsOpen(!isOpen);
 
-    const isActive = (href: string) => {
-        if (href === '/admin') {
-            return pathname === '/admin';
-        }
-        return pathname.startsWith(href);
-    };
+    const isActive = (href: string) =>
+        href === pathname || pathname.startsWith(href);
 
-    const linkClass = (href: string) =>
-        `block transition font-semibold ${isActive(href) ? 'text-red-500' : 'hover:text-red-400'
-        }`;
+    const navItems = role && ['superadmin', 'admin_arg', 'admin_py'].includes(role)
+        ? [
+            { label: 'Inicio', href: '/admin' },
+            { label: 'Empleados', href: '/admin/empleados' },
+            { label: 'Cargas', href: '/admin/cargas' },
+            { label: 'Precios', href: '/admin/precios' },
+            { label: 'Descuentos', href: '/admin/descuentos' },
+        ]
+        : role === 'playero'
+            ? [{ label: 'Inicio', href: '/playero' }]
+            : [];
 
     return (
-        <header className="bg-gray-900 text-white px-4 py-3 shadow-md">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <img src="/icons/icon-512.png" alt="Logo" className="w-16 h-16 rounded-md" />
-
-                {/* Botón hamburguesa (solo visible en mobile) */}
-                <button
-                    onClick={toggleMenu}
-                    className="sm:hidden text-white text-2xl mr-2 focus:outline-none"
-                >
+        <>
+            {/* Encabezado superior */}
+            <header className="bg-gray-900 text-white shadow-md px-4 py-3 flex justify-between items-center flex-row-reverse">
+                <img src="/icons/icon-512.png" alt="Logo" className="w-14 h-14" />
+                <button onClick={toggleMenu} className="text-3xl" aria-label="Abrir menú">
                     {isOpen ? <HiX /> : <HiMenu />}
                 </button>
+            </header>
 
-                {/* Navegación para desktop */}
-                {/* Navegación para desktop */}
-                <div className="hidden sm:flex items-center gap-4 text-sm sm:text-base">
-                    {role && ['superadmin', 'admin_arg', 'admin_py'].includes(role) && (
-                        <>
-                            <Link href="/admin" className={linkClass('/admin')}>Inicio</Link>
-                            <Link href="/admin/empleados" className={linkClass('/admin/empleados')}>Empleados</Link>
-                            <Link href="/admin/cargas" className={linkClass('/admin/cargas')}>Cargas</Link>
-                            <Link href="/admin/precios" className={linkClass('/admin/precios')}>Precios</Link>
-                            <Link href="/admin/descuentos" className={linkClass('/admin/descuentos')}>Descuentos</Link>
-                        </>
-                    )}
-                    {role === 'playero' && (
-                        <Link href="/playero" className={linkClass('/playero')}>Inicio</Link>
-                    )}
-                    <LogoutButton />
+
+            {/* Menú lateral deslizante */}
+            <aside
+                className={clsx(
+                    'fixed top-0 left-0 h-full w-64 bg-gray-800 text-white z-50 shadow-lg transform transition-transform duration-300',
+                    isOpen ? 'translate-x-0' : '-translate-x-full'
+                )}
+            >
+                <div className="px-6 py-4 flex items-center justify-between border-b border-white/10">
+                    <h2 className="text-xl font-bold">Menú</h2>
+                    <button onClick={toggleMenu} className="text-2xl" aria-label="Cerrar menú">
+                        <HiX />
+                    </button>
                 </div>
-            </div>
-
-            {/* Menú desplegable para mobile */}
-            {/* Menú desplegable para mobile */}
-            {isOpen && (
-                <div className="sm:hidden mt-3 space-y-2 px-2 text-sm">
-                    {role && ['superadmin', 'admin_arg', 'admin_py'].includes(role) && (
-                        <>
-                            <Link href="/admin" className={linkClass('/admin')} onClick={toggleMenu}>Inicio</Link>
-                            <Link href="/admin/empleados" className={linkClass('/admin/empleados')} onClick={toggleMenu}>Empleados</Link>
-                            <Link href="/admin/cargas" className={linkClass('/admin/cargas')} onClick={toggleMenu}>Cargas</Link>
-                            <Link href="/admin/precios" className={linkClass('/admin/precios')} onClick={toggleMenu}>Precios</Link>
-                            <Link href="/admin/descuentos" className={linkClass('/admin/descuentos')} onClick={toggleMenu}>Descuentos</Link>
-                        </>
-                    )}
-                    {role === 'playero' && (
-                        <Link href="/playero" className={linkClass('/playero')} onClick={toggleMenu}>Inicio</Link>
-                    )}
-                    <div className="pt-2 border-t border-white/20">
+                <nav className="flex flex-col px-4 py-6 space-y-4 text-lg">
+                    {navItems.map(({ label, href }) => (
+                        <Link
+                            key={href}
+                            href={href}
+                            onClick={toggleMenu}
+                            className={clsx(
+                                'block px-4 py-3 rounded-lg transition',
+                                isActive(href) ? 'bg-red-800 text-white' : 'hover:bg-white/10'
+                            )}
+                        >
+                            {label}
+                        </Link>
+                    ))}
+                    <div className="mt-6 border-t border-white/10 pt-4">
                         <LogoutButton />
                     </div>
-                </div>
+                </nav>
+            </aside>
+
+            {/* Fondo oscuro cuando está abierto (solo en mobile/tablet) */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                    onClick={toggleMenu}
+                />
             )}
-        </header>
+        </>
     );
 }
