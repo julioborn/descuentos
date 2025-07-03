@@ -55,6 +55,8 @@ export default function EmpleadosPage() {
                     data = data.filter((emp) => emp.pais === paisesPorRol[role]);
                 }
 
+                data.sort((a, b) => a.apellido.localeCompare(b.apellido));
+
                 setEmpleados(data);
 
                 const qrData = await Promise.all(
