@@ -16,8 +16,13 @@ export default function Header() {
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
-    const isActive = (href: string) =>
-        href === pathname || pathname.startsWith(href);
+    const isActive = (href: string) => {
+        // Si es la raíz exacta
+        if (href === '/admin') return pathname === '/admin';
+        if (href === '/playero') return pathname === '/playero';
+        // Para las demás rutas, permitimos que empiece por el prefijo
+        return pathname.startsWith(href);
+    };  
 
     const navItems = role && ['superadmin', 'admin_arg', 'admin_py'].includes(role)
         ? [
