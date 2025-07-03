@@ -11,18 +11,19 @@ export default function QRScannerPage() {
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
 
     useEffect(() => {
-        codeReader.current = new BrowserQRCodeReader();
+        const reader = new BrowserQRCodeReader();
+        codeReader.current = reader;
+
+        let active = true;
 
         const startScanner = async () => {
-            let scanned = false;
-
             try {
-                await codeReader.current!.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
-                    if (result && !scanned) {
-                        scanned = true;
+                await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
+                    if (result && active) {
+                        active = false;
                         const token = new URL(result.getText()).searchParams.get('token');
                         if (token) {
-                            (codeReader.current as any)?.stopContinuousDecode?.();
+                            stopCamera(); // 👈 liberar la cámara
                             router.push(`/playero/carga?token=${token}`);
                         }
                     }
@@ -37,10 +38,19 @@ export default function QRScannerPage() {
             }
         };
 
+        const stopCamera = () => {
+            const stream = videoRef.current?.srcObject as MediaStream | null;
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                videoRef.current!.srcObject = null; // 👈 limpiar referencia también
+            }
+        };
+
         startScanner();
 
         return () => {
-            (codeReader.current as any)?.stopContinuousDecode?.();
+            active = false;
+            stopCamera(); // 👈 liberar recursos al desmontar
         };
     }, [router]);
 
@@ -55,7 +65,8 @@ export default function QRScannerPage() {
             />
             <button
                 onClick={() => {
-                    (codeReader.current as any)?.stopContinuousDecode?.(); // Detenemos el scanner
+                    const stream = videoRef.current?.srcObject as MediaStream | null;
+                    stream?.getTracks().forEach((track) => track.stop()); // 🔴 También en botón
                     router.push('/playero');
                 }}
                 className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
