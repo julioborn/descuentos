@@ -71,7 +71,7 @@ export default function AdminDescuentosPage() {
 
             <div className="space-y-4 mb-2 max-w-md mx-auto">
                 {descuentos.map(d => (
-                    <div key={d._id} className="bg-white text-black p-4 rounded shadow">
+                    <div key={d._id} className="bg-gray-800 p-4 rounded shadow">
                         <div className="font-semibold mb-2">{d.empresa}</div>
 
                         <div className="relative">
@@ -79,7 +79,7 @@ export default function AdminDescuentosPage() {
                                 type="number"
                                 value={d.porcentaje}
                                 onChange={e => handleChange(d._id, e.target.value)}
-                                className="w-full border p-2 pr-10 rounded"
+                                className="w-full border p-2 pr-10 rounded text-black"
                                 placeholder="Porcentaje de descuento"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
@@ -99,20 +99,20 @@ export default function AdminDescuentosPage() {
                 </button>
             </div>
 
-            <div className="bg-white text-black p-4 rounded shadow max-w-md mx-auto">
+            <div className="bg-gray-800 p-4 rounded shadow max-w-md mx-auto">
                 <h2 className="text-xl font-semibold mb-2">Agregar empresa</h2>
                 <input
                     type="text"
                     value={nuevaEmpresa}
                     onChange={e => setNuevaEmpresa(e.target.value)}
-                    className="w-full border p-2 mb-2 rounded"
+                    className="w-full border p-2 mb-2 rounded text-black"
                     placeholder="Nombre de la empresa"
                 />
                 <input
                     type="number"
                     value={nuevoPorcentaje}
                     onChange={e => setNuevoPorcentaje(e.target.value)}
-                    className="w-full border p-2 mb-2 rounded"
+                    className="w-full border p-2 mb-2 rounded text-black"
                     placeholder="Porcentaje de descuento"
                 />
                 <button

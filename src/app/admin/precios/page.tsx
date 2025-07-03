@@ -112,7 +112,7 @@ export default function AdminPreciosPage() {
             ) : (
                 <div className="max-w-3xl mx-auto space-y-6">
                     {productos.map((p) => (
-                        <div key={p._id} className="bg-white text-gray-900 p-4 rounded shadow">
+                        <div key={p._id} className="bg-gray-800 p-4 rounded shadow">
                             <div className="mb-2 font-semibold">{p.producto}</div>
 
                             <input
@@ -122,7 +122,7 @@ export default function AdminPreciosPage() {
                                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                     handlePrecioChange(p._id, e.target.value)
                                 }
-                                className="w-full border p-2 rounded mb-2"
+                                className="w-full border p-2 rounded mb-2 text-black"
                                 placeholder={`Precio en ${p.moneda}`}
                             />
 

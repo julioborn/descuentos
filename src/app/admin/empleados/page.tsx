@@ -231,7 +231,7 @@ export default function EmpleadosPage() {
                         onClick={() => router.push('/admin/registrar-empleado')}
                         className="bg-red-800 px-4 py-2 rounded font-semibold hover:bg-red-700 flex items-center gap-2"
                     >
-                        <span>Registrar uno nuevo</span>
+                        <span>Registrar</span>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="w-5 h-5"
@@ -251,7 +251,7 @@ export default function EmpleadosPage() {
             </section>
 
             {/* ---------- Tabla (desktop) ---------- */}
-            <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-white/5 p-6 shadow-xl max-w-6xl mx-auto">
+            <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
                 <table className="min-w-[800px] w-full text-sm">
                     <thead className="text-left bg-white/5 text-white">
                         <tr>
