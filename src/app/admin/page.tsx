@@ -42,7 +42,7 @@ export default function AdminPage() {
 
     return (
         <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
-            <h1 className="text-4xl font-bold text-center mb-12">Panel de Administración</h1>
+            <h1 className="text-4xl font-bold text-center mb-12">Administración</h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
                 {secciones.map((item) => (
