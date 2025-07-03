@@ -329,8 +329,22 @@ export default function CargasPage() {
 
                 <button
                     onClick={exportarExcel}
-                    className="flex items-center gap-2 rounded bg-green-800 hover:bg-green-700 text-white px-4 py-2 w-full sm:w-fit"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-lg transition"
                 >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4.5 12.75l7.5 7.5 7.5-7.5m-7.5 7.5V3"
+                        />
+                    </svg>
                     Descargar Excel
                 </button>
 
