@@ -34,11 +34,18 @@ export default function Header() {
     return (
         <>
             {/* Encabezado superior */}
-            <header className="bg-gray-900 text-white shadow-md px-4 py-3 flex justify-between items-center flex-row-reverse">
-                <img src="/icons/icon-512.png" alt="Logo" className="w-14 h-14" />
-                <button onClick={toggleMenu} className="text-3xl" aria-label="Abrir menú">
+            <header className="relative bg-gray-900 text-white shadow-md h-20 flex items-center justify-start px-4">
+                {/* Botón hamburguesa a la izquierda */}
+                <button onClick={toggleMenu} className="text-3xl z-10" aria-label="Abrir menú">
                     {isOpen ? <HiX /> : <HiMenu />}
                 </button>
+
+                {/* Logo centrado */}
+                <img
+                    src="/icons/icon-512.png"
+                    alt="Logo"
+                    className="w-14 h-14 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                />
             </header>
 
 
