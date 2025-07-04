@@ -116,7 +116,6 @@ export default function AdminPreciosPage() {
                             <div className="mb-2 font-semibold">{p.producto}</div>
 
                             <div className="relative">
-                                {/* Signo de pesos al inicio */}
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
                                     $
                                 </span>
@@ -132,7 +131,6 @@ export default function AdminPreciosPage() {
                                     placeholder={`Precio en ${p.moneda}`}
                                 />
 
-                                {/* Abreviatura de moneda al final */}
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
                                     {p.moneda}
                                 </span>
