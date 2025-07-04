@@ -115,34 +115,37 @@ export default function AdminPreciosPage() {
                         <div key={p._id} className="bg-gray-800 p-4 rounded shadow">
                             <div className="mb-2 font-semibold">{p.producto}</div>
 
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
-                                    $
-                                </span>
+                            <div className="flex items-center gap-2">
+                                <div className="relative w-full">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+                                        $
+                                    </span>
 
-                                <input
-                                    type="number"
-                                    value={p.precio}
-                                    step="0.01"
-                                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                        handlePrecioChange(p._id, e.target.value)
-                                    }
-                                    className="w-full border p-2 pl-8 pr-12 rounded text-black"
-                                    placeholder={`Precio en ${p.moneda}`}
-                                />
+                                    <input
+                                        type="number"
+                                        value={p.precio}
+                                        step="0.01"
+                                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                            handlePrecioChange(p._id, e.target.value)
+                                        }
+                                        className="w-full border p-2 pl-8 pr-12 rounded text-black"
+                                        placeholder={`Precio en ${p.moneda}`}
+                                    />
 
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
-                                    {p.moneda}
-                                </span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+                                        {p.moneda}
+                                    </span>
+                                </div>
+
+                                <button
+                                    onClick={() => guardarCambios(p)}
+                                    className="bg-red-800 text-white px-4 py-2.5 rounded hover:bg-red-700 transition"
+                                >
+                                    Guardar
+                                </button>
                             </div>
-
-                            <button
-                                onClick={() => guardarCambios(p)}
-                                className="w-full bg-red-800 text-white py-1 rounded hover:bg-red-700 transition"
-                            >
-                                Guardar
-                            </button>
                         </div>
+
                     ))}
                 </div>
             )}
