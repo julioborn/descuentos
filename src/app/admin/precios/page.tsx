@@ -115,16 +115,28 @@ export default function AdminPreciosPage() {
                         <div key={p._id} className="bg-gray-800 p-4 rounded shadow">
                             <div className="mb-2 font-semibold">{p.producto}</div>
 
-                            <input
-                                type="number"
-                                value={p.precio}
-                                step="0.01"
-                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                                    handlePrecioChange(p._id, e.target.value)
-                                }
-                                className="w-full border p-2 rounded mb-2 text-black"
-                                placeholder={`Precio en ${p.moneda}`}
-                            />
+                            <div className="relative">
+                                {/* Signo de pesos al inicio */}
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+                                    $
+                                </span>
+
+                                <input
+                                    type="number"
+                                    value={p.precio}
+                                    step="0.01"
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                        handlePrecioChange(p._id, e.target.value)
+                                    }
+                                    className="w-full border p-2 pl-8 pr-12 rounded text-black"
+                                    placeholder={`Precio en ${p.moneda}`}
+                                />
+
+                                {/* Abreviatura de moneda al final */}
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+                                    {p.moneda}
+                                </span>
+                            </div>
 
                             <button
                                 onClick={() => guardarCambios(p)}

@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
 type Carga = {
     _id: string;
@@ -480,26 +481,42 @@ export default function CargasPage() {
 
             {/* -------- Paginación -------- */}
             {totalPag > 1 && (
-                <div className="flex justify-center mt-8 gap-4">
+                <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
+                    {/* Botón Anterior */}
                     <button
                         onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                         disabled={págActual === 1}
-                        className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-50"
+                        className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30 bg-gray-800 text-white"
                     >
-                        Anterior
+                        <HiChevronLeft size={22} />
                     </button>
-                    <span className="self-center">
-                        Página {págActual} de {totalPag}
-                    </span>
+
+                    {/* Números de página */}
+                    {Array.from({ length: totalPag }, (_, i) => i + 1).map((num) => (
+                        <button
+                            key={num}
+                            onClick={() => setPagina(num)}
+                            className={`w-9 h-9 rounded-full font-semibold transition 
+                    ${págActual === num
+                                    ? 'bg-red-700 text-white'
+                                    : 'bg-gray-700 text-white hover:bg-gray-600'
+                                }`}
+                        >
+                            {num}
+                        </button>
+                    ))}
+
+                    {/* Botón Siguiente */}
                     <button
                         onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                         disabled={págActual === totalPag}
-                        className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-50"
+                        className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30 bg-gray-800 text-white"
                     >
-                        Siguiente
+                        <HiChevronRight size={22} />
                     </button>
                 </div>
             )}
+
         </main>
     );
 }

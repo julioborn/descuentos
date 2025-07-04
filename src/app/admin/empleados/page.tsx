@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
 type Empleado = {
     _id: string;
@@ -357,23 +358,35 @@ export default function EmpleadosPage() {
             {/* ---------- Paginación ---------- */}
             {
                 totalPag > 1 && (
-                    <div className="flex justify-center mt-8 gap-4">
+                    <div className="flex justify-center mt-8 items-center gap-2 text-white">
                         <button
                             onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                             disabled={págActual === 1}
-                            className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-50"
+                            className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30"
                         >
-                            Anterior
+                            <HiChevronLeft size={22} />
                         </button>
-                        <span className="self-center">
-                            Página {págActual} de {totalPag}
-                        </span>
+
+                        {/* Números de página */}
+                        {Array.from({ length: totalPag }, (_, i) => i + 1).map((num) => (
+                            <button
+                                key={num}
+                                onClick={() => setPagina(num)}
+                                className={`w-9 h-9 rounded-full font-semibold transition
+                        ${págActual === num
+                                        ? 'bg-red-700 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600'}`}
+                            >
+                                {num}
+                            </button>
+                        ))}
+
                         <button
                             onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                             disabled={págActual === totalPag}
-                            className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-50"
+                            className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30"
                         >
-                            Siguiente
+                            <HiChevronRight size={22} />
                         </button>
                     </div>
                 )
