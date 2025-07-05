@@ -3,15 +3,18 @@ import { connectMongoDB } from "@/lib/mongodb";
 import { Descuento } from "@/models/Descuento";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     await connectMongoDB();
-    const descuentos = await Descuento.find();
+    const pais = req.nextUrl.searchParams.get('pais');
+
+    const query = pais ? { pais } : {};
+    const descuentos = await Descuento.find(query);
     return NextResponse.json(descuentos);
 }
 
 export async function PUT(req: NextRequest) {
     await connectMongoDB();
-    const body = await req.json(); // [{ empresa: 'IROSSINI', porcentaje: 5 }, ...]
+    const body = await req.json(); 
 
     const updates = await Promise.all(
         body.map((item: { empresa: string; porcentaje: number }) =>
@@ -28,7 +31,7 @@ export async function PUT(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     await connectMongoDB();
-    const body = await req.json(); // { empresa: string, porcentaje: number }
+    const body = await req.json(); // { empresa, porcentaje, pais }
 
     const yaExiste = await Descuento.findOne({ empresa: body.empresa });
     if (yaExiste) {
@@ -38,7 +41,12 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const nuevo = await Descuento.create(body);
+    const nuevo = await Descuento.create({
+        empresa: body.empresa,
+        porcentaje: body.porcentaje,
+        pais: body.pais,
+    });
+
     return NextResponse.json(nuevo);
 }
 

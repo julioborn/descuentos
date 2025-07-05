@@ -1,15 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
 
 type Descuento = {
     _id: string;
     empresa: string;
     porcentaje: number;
+    pais: 'arg' | 'py';           // ← ahora el modelo lo incluye
 };
 
 export default function AdminDescuentosPage() {
+    /* ---------- sesión ---------- */
+    const { data: session, status } = useSession();
+    const role = session?.user?.role;
+
+    // país según el rol
+    const pais: 'arg' | 'py' | undefined = role === 'admin_arg' ? 'arg' : role === 'admin_py' ? 'py' : undefined;
+
     /* ---------- estado ---------- */
     const [descuentos, setDescuentos] = useState<Descuento[]>([]);
     const [nuevaEmpresa, setNuevaEmpresa] = useState('');
@@ -17,13 +26,15 @@ export default function AdminDescuentosPage() {
 
     /* ---------- carga inicial ---------- */
     useEffect(() => {
-        fetch('/api/descuentos')
+        if (status !== 'authenticated' || !pais) return;
+
+        fetch(`/api/descuentos?pais=${pais}`)
             .then((res) => res.json())
             .then(setDescuentos)
             .catch(() =>
                 Swal.fire('Error', 'No se pudieron cargar los descuentos', 'error')
             );
-    }, []);
+    }, [status, pais]);
 
     /* ---------- helpers ---------- */
     const handleEditChange = (id: string, porcentaje: string) => {
@@ -59,15 +70,16 @@ export default function AdminDescuentosPage() {
     };
 
     const agregarDescuento = async () => {
-        if (!nuevaEmpresa || !nuevoPorcentaje) return;
+        if (!nuevaEmpresa || !nuevoPorcentaje || !pais) return;
 
         try {
             const res = await fetch('/api/descuentos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    empresa: nuevaEmpresa,
+                    empresa: nuevaEmpresa.trim(),
                     porcentaje: parseFloat(nuevoPorcentaje),
+                    pais, // 👈 enviamos el país según el rol
                 }),
             });
 
@@ -83,9 +95,23 @@ export default function AdminDescuentosPage() {
     };
 
     /* ---------- UI ---------- */
+    if (status === 'loading' || !pais) {
+        return (
+            <main className="min-h-screen flex items-center justify-center bg-gray-700 text-white">
+                <p>Cargando…</p>
+            </main>
+        );
+    }
+
     return (
         <main className="min-h-screen p-6 bg-gray-700 text-white">
-            <h1 className="text-3xl font-bold text-center mb-8">Descuentos</h1>
+            <h1 className="text-3xl font-bold text-center mb-8">
+                Descuentos
+                {/* &nbsp;
+                <span className="text-base font-normal">
+                    ({pais === 'arg' ? 'Argentina' : 'Paraguay'})
+                </span> */}
+            </h1>
 
             {/* Lista de empresas */}
             <div className="space-y-4 mb-10 max-w-md mx-auto">

@@ -2,8 +2,10 @@
 import mongoose, { Schema } from "mongoose";
 
 const DescuentoSchema = new Schema({
-    empresa: { type: String, required: true, unique: true }, // Ej: "IROSSINI"
-    porcentaje: { type: Number, required: true }, // Ej: 4 = 4%
+    empresa: { type: String, required: true, unique: true },
+    porcentaje: { type: Number, required: true },
+    pais: { type: String, enum: ['arg', 'py'], required: true }, 
 });
 
-export const Descuento = mongoose.models.Descuento || mongoose.model("Descuento", DescuentoSchema);
+export const Descuento =
+    mongoose.models.Descuento || mongoose.model("Descuento", DescuentoSchema);
