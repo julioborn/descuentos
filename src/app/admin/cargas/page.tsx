@@ -9,14 +9,15 @@ import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
 type Carga = {
     _id: string;
+    fecha: string;
     nombreEmpleado: string;
     dniEmpleado: string;
     producto: string;
     litros: number;
     precioFinal: number;
     precioFinalSinDescuento?: number;
-    fecha: string;
     moneda: string;
+    empresa?: string; // 👈 este
 };
 
 const ITEMS = 5;
@@ -31,6 +32,12 @@ export default function CargasPage() {
     const [pagina, setPagina] = useState(1);
     const [añoFiltro, setAñoFiltro] = useState<'TODOS' | number>('TODOS');
     const [mesFiltro, setMesFiltro] = useState<number>(0); // 0 = Todos los meses
+    const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
+    const empresasUnicas = useMemo(() => {
+        return Array.from(new Set(cargas.map((c) => c.empresa || '-')))
+            .filter((e) => e !== '-')
+            .sort();
+    }, [cargas]);
 
     useEffect(() => {
         const fetchCargas = async () => {
@@ -225,6 +232,7 @@ export default function CargasPage() {
 
             const dataFormateada = data.map(c => ({
                 Fecha: new Date(c.fecha).toLocaleString(),
+                Empresa: c.empresa || '-',
                 Empleado: c.nombreEmpleado,
                 DNI: c.dniEmpleado,
                 Producto: c.producto,
@@ -240,6 +248,7 @@ export default function CargasPage() {
 
             const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
             const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
             let nombreArchivo = 'cargas';
 
             if (añoFiltro !== 'TODOS') nombreArchivo += `-${añoFiltro}`;
@@ -266,7 +275,8 @@ export default function CargasPage() {
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
 
             {/* -------- filtros -------- */}
-            <section className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto mb-6">
+            <section className="flex flex-col md:flex-row md:items-center md:justify-center md:flex-wrap gap-4 max-w-6xl mx-auto mb-6">
+
                 <input
                     value={busqueda}
                     onChange={(e) => {
@@ -274,8 +284,22 @@ export default function CargasPage() {
                         setPagina(1);
                     }}
                     placeholder="Buscar por nombre o DNI…"
-                    className="flex-1 rounded px-4 py-2 bg-gray-800 border border-gray-600"
+                    className="w-full md:w-auto md:min-w-[200px] flex-1 rounded-lg px-4 py-2 bg-gray-800 border border-gray-600"
                 />
+
+                <select
+                    value={empresaFiltro}
+                    onChange={(e) => {
+                        setEmpresaFiltro(e.target.value);
+                        setPagina(1);
+                    }}
+                    className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                >
+                    <option value="TODAS">Todas las empresas</option>
+                    {empresasUnicas.map((empresa) => (
+                        <option key={empresa} value={empresa}>{empresa}</option>
+                    ))}
+                </select>
 
                 <select
                     value={productoFiltro}
@@ -283,28 +307,27 @@ export default function CargasPage() {
                         setProductoFiltro(e.target.value);
                         setPagina(1);
                     }}
-                    className="rounded px-3 py-2 bg-gray-800 border border-gray-600"
+                    className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
                 >
                     <option value="TODOS">Todos los productos</option>
                     {productosUnicos.map((p) => {
-                        const cargaDelProducto = cargas.find(c => c.producto === p);
-                        const bandera = cargaDelProducto ? banderaPorMoneda(cargaDelProducto.moneda) : '';
+                        const carga = cargas.find(c => c.producto === p);
+                        const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
                         return (
-                            <option key={p} value={p}>
-                                {bandera} {p}
-                            </option>
+                            <option key={p} value={p}>{bandera} {p}</option>
                         );
                     })}
                 </select>
+
                 <select
                     value={añoFiltro}
                     onChange={(e) => {
                         const val = e.target.value;
                         setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
-                        setMesFiltro(0); // reiniciar a "Todos los meses" como número
+                        setMesFiltro(0);
                         setPagina(1);
                     }}
-                    className="rounded px-1 py-2 bg-gray-800 border border-gray-600"
+                    className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
                 >
                     <option value="TODOS">Todos los años</option>
                     {añosDisponibles.map((año) => (
@@ -318,38 +341,33 @@ export default function CargasPage() {
                         setMesFiltro(Number(e.target.value));
                         setPagina(1);
                     }}
-                    className="rounded px-3 py-2 bg-gray-800 border border-gray-600"
+                    className="w-full md:w-auto md:min-w-[150px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
                 >
                     <option value="0">Todos los meses</option>
                     {mesesDelAño.map((m) => (
-                        <option key={m.numero} value={m.numero}>
-                            {m.nombre}
-                        </option>
+                        <option key={m.numero} value={m.numero}>{m.nombre}</option>
                     ))}
                 </select>
 
                 <button
                     onClick={exportarExcel}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-lg transition"
+                    className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
                         viewBox="0 0 24 24"
-                        strokeWidth={1.5}
+                        fill="none"
                         stroke="currentColor"
+                        strokeWidth={1.5}
                         className="w-5 h-5"
                     >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M4.5 12.75l7.5 7.5 7.5-7.5m-7.5 7.5V3"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l7.5 7.5 7.5-7.5m-7.5 7.5V3" />
                     </svg>
                     Descargar Excel
                 </button>
 
             </section>
+
 
             {/* -------- Tabla desktop -------- */}
             <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
@@ -359,6 +377,7 @@ export default function CargasPage() {
                             <th className="p-3">Fecha</th>
                             <th className="p-3">Empleado</th>
                             <th className="p-3">DNI</th>
+                            <th className="p-3">Empresa</th>
                             <th className="p-3">Producto</th>
                             <th className="p-3">Litros</th>
                             <th className="p-3">Precio sin descuento</th>
@@ -372,6 +391,7 @@ export default function CargasPage() {
                                 <td className="p-3">{new Date(c.fecha).toLocaleString()}</td>
                                 <td className="p-3">{c.nombreEmpleado}</td>
                                 <td className="p-3">{c.dniEmpleado}</td>
+                                <td className="p-3">{c.empresa || '-'}</td>
                                 <td className="p-3">{banderaPorMoneda(c.moneda)} {c.producto}</td>
                                 <td className="p-3">{c.litros}</td>
                                 <td className="p-3">
@@ -434,6 +454,9 @@ export default function CargasPage() {
                             <p>
                                 <span className="font-semibold text-gray-300">Fecha:</span>{' '}
                                 {new Date(c.fecha).toLocaleString()}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-300">Empresa:</span> {c.empresa || '-'}
                             </p>
                         </div>
 

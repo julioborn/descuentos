@@ -93,9 +93,7 @@ export default function EmpleadosPage() {
         return empleados.filter((e) => {
             const coincideTexto =
                 !texto ||
-                `${e.nombre} ${e.apellido} ${e.dni}`
-                    .toLowerCase()
-                    .includes(texto);
+                `${e.nombre} ${e.apellido} ${e.dni}`.toLowerCase().includes(texto);
 
             const coincideEmpresa =
                 empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;
