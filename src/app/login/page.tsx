@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
     const [nombre, setNombre] = useState("");
     const [password, setPassword] = useState("");
+    const [mostrarPassword, setMostrarPassword] = useState(false);
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -34,7 +35,6 @@ export default function LoginPage() {
         } else {
             alert("Usuario o contraseña incorrectos");
         }
-
     };
 
     return (
@@ -49,13 +49,24 @@ export default function LoginPage() {
                         onChange={e => setNombre(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
                     />
+
                     <input
-                        type="password"
+                        type={mostrarPassword ? "text" : "password"}
                         placeholder="Contraseña"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
                     />
+
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                            type="checkbox"
+                            checked={mostrarPassword}
+                            onChange={() => setMostrarPassword(prev => !prev)}
+                        />
+                        Mostrar contraseña
+                    </label>
+
                     <button
                         type="submit"
                         className="w-full bg-red-800 hover:bg-red-700 text-white font-semibold py-2 rounded-xl transition"
