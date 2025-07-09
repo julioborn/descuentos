@@ -90,20 +90,22 @@ export default function CargasPage() {
     const filtradas = useMemo(() => {
         const txt = busqueda.trim().toLowerCase();
 
-        return cargas.filter((c) => {
-            const fecha = new Date(c.fecha);
+        return cargas
+            .filter((c) => {
+                const fecha = new Date(c.fecha);
 
-            const coincideTxt =
-                !txt || `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
+                const coincideTxt =
+                    !txt || `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
 
-            const coincideProd =
-                productoFiltro === 'TODOS' || c.producto === productoFiltro;
+                const coincideProd =
+                    productoFiltro === 'TODOS' || c.producto === productoFiltro;
 
-            const coincideAño = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
-            const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
+                const coincideAño = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
+                const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
 
-            return coincideTxt && coincideProd && coincideAño && coincideMes;
-        });
+                return coincideTxt && coincideProd && coincideAño && coincideMes;
+            })
+            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()); // 👈 orden por fecha DESC
     }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro]);
 
 
@@ -117,85 +119,85 @@ export default function CargasPage() {
 
     if (loading) return <Loader />;
 
-    const editarCarga = async (id: string) => {
-        try {
-            const res = await fetch(`/api/cargas/${id}`);
-            if (!res.ok) throw new Error();
-            const carga = await res.json();
+    // const editarCarga = async (id: string) => {
+    //     try {
+    //         const res = await fetch(`/api/cargas/${id}`);
+    //         if (!res.ok) throw new Error();
+    //         const carga = await res.json();
 
-            const { value: values } = await Swal.fire({
-                title: 'Editar carga',
-                html: `
-                        <div style="display: flex; flex-direction: column; gap: 16px; text-align: center;">
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <label for="swal-litros" style="font-weight: 500; margin-bottom: 6px;">Litros</label>
-                                <input id="swal-litros" class="swal2-input" type="number"
-                                    value="${carga.litros}" style="width: 80%;">
-                            </div>
+    //         const { value: values } = await Swal.fire({
+    //             title: 'Editar carga',
+    //             html: `
+    //                     <div style="display: flex; flex-direction: column; gap: 16px; text-align: center;">
+    //                         <div style="display: flex; flex-direction: column; align-items: center;">
+    //                             <label for="swal-litros" style="font-weight: 500; margin-bottom: 6px;">Litros</label>
+    //                             <input id="swal-litros" class="swal2-input" type="number"
+    //                                 value="${carga.litros}" style="width: 80%;">
+    //                         </div>
 
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <label for="swal-precio" style="font-weight: 500; margin-bottom: 6px;">Precio final</label>
-                                <input id="swal-precio" class="swal2-input" type="number"
-                                    value="${carga.precioFinal}" style="width: 80%;">
-                            </div>
+    //                         <div style="display: flex; flex-direction: column; align-items: center;">
+    //                             <label for="swal-precio" style="font-weight: 500; margin-bottom: 6px;">Precio final</label>
+    //                             <input id="swal-precio" class="swal2-input" type="number"
+    //                                 value="${carga.precioFinal}" style="width: 80%;">
+    //                         </div>
 
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <label for="swal-precioSin" style="font-weight: 500; margin-bottom: 6px;">Precio sin descuento</label>
-                                <input id="swal-precioSin" class="swal2-input" type="number"
-                                    value="${carga.precioFinalSinDescuento || ''}" style="width: 80%;">
-                            </div>
-                        </div>
-                    `,
-                showCancelButton: true,
-                confirmButtonText: 'Guardar',
-                cancelButtonText: 'Cancelar',
-                customClass: {
-                    confirmButton:
-                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
-                    cancelButton:
-                        'swal2-cancel px-6 py-2 rounded',
-                },
-                focusConfirm: false,
-                preConfirm: () => {
-                    const litros = parseFloat(
-                        (document.getElementById('swal-litros') as HTMLInputElement).value
-                    );
-                    const precioFinal = parseFloat(
-                        (document.getElementById('swal-precio') as HTMLInputElement).value
-                    );
-                    const precioFinalSinDescuento = parseFloat(
-                        (document.getElementById('swal-precioSin') as HTMLInputElement).value
-                    );
+    //                         <div style="display: flex; flex-direction: column; align-items: center;">
+    //                             <label for="swal-precioSin" style="font-weight: 500; margin-bottom: 6px;">Precio sin descuento</label>
+    //                             <input id="swal-precioSin" class="swal2-input" type="number"
+    //                                 value="${carga.precioFinalSinDescuento || ''}" style="width: 80%;">
+    //                         </div>
+    //                     </div>
+    //                 `,
+    //             showCancelButton: true,
+    //             confirmButtonText: 'Guardar',
+    //             cancelButtonText: 'Cancelar',
+    //             customClass: {
+    //                 confirmButton:
+    //                     'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+    //                 cancelButton:
+    //                     'swal2-cancel px-6 py-2 rounded',
+    //             },
+    //             focusConfirm: false,
+    //             preConfirm: () => {
+    //                 const litros = parseFloat(
+    //                     (document.getElementById('swal-litros') as HTMLInputElement).value
+    //                 );
+    //                 const precioFinal = parseFloat(
+    //                     (document.getElementById('swal-precio') as HTMLInputElement).value
+    //                 );
+    //                 const precioFinalSinDescuento = parseFloat(
+    //                     (document.getElementById('swal-precioSin') as HTMLInputElement).value
+    //                 );
 
-                    if (isNaN(litros) || isNaN(precioFinal)) {
-                        Swal.showValidationMessage('Campos numéricos inválidos');
-                        return;
-                    }
+    //                 if (isNaN(litros) || isNaN(precioFinal)) {
+    //                     Swal.showValidationMessage('Campos numéricos inválidos');
+    //                     return;
+    //                 }
 
-                    return { litros, precioFinal, precioFinalSinDescuento };
-                },
-            });
+    //                 return { litros, precioFinal, precioFinalSinDescuento };
+    //             },
+    //         });
 
-            if (!values) return;
+    //         if (!values) return;
 
-            const updateRes = await fetch(`/api/cargas/${id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
-            });
+    //         const updateRes = await fetch(`/api/cargas/${id}`, {
+    //             method: 'PATCH',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify(values),
+    //         });
 
-            if (!updateRes.ok) throw new Error();
-            const actualizado = await updateRes.json();
+    //         if (!updateRes.ok) throw new Error();
+    //         const actualizado = await updateRes.json();
 
-            setCargas(prev =>
-                prev.map(c => (c._id === id ? { ...c, ...actualizado } : c))
-            );
+    //         setCargas(prev =>
+    //             prev.map(c => (c._id === id ? { ...c, ...actualizado } : c))
+    //         );
 
-            Swal.fire('Actualizado', 'La carga fue editada correctamente.', 'success');
-        } catch {
-            Swal.fire('Error', 'No se pudo editar la carga.', 'error');
-        }
-    };
+    //         Swal.fire('Actualizado', 'La carga fue editada correctamente.', 'success');
+    //     } catch {
+    //         Swal.fire('Error', 'No se pudo editar la carga.', 'error');
+    //     }
+    // };
 
     const eliminarCarga = async (id: string) => {
         const { isConfirmed } = await Swal.fire({
