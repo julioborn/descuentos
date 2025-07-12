@@ -370,7 +370,6 @@ export default function CargasPage() {
 
             </section>
 
-
             {/* -------- Tabla desktop -------- */}
             <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
                 <table className="min-w-[800px] w-full text-sm">

@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
             empresa: body.empresa,
             qrToken: body.qrToken,
             activo: true,
+            pais: body.pais,
         });
 
         return NextResponse.json(nuevoEmpleado);
