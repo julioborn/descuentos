@@ -176,7 +176,7 @@ export default function RegistrarEmpleadoPage() {
                         <div className="text-center mt-4">
                             <button
                                 onClick={descargarTarjeta}
-                                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                                className="inline-block bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded"
                             >
                                 Descargar Tarjeta
                             </button>
