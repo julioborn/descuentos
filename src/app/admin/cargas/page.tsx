@@ -232,17 +232,26 @@ export default function CargasPage() {
         try {
             const data = filtradas;
 
-            const dataFormateada = data.map(c => ({
-                Fecha: new Date(c.fecha).toLocaleString(),
-                Empresa: c.empresa || '-',
-                Empleado: c.nombreEmpleado,
-                DNI: c.dniEmpleado,
-                Producto: c.producto,
-                Litros: c.litros,
-                'Precio sin descuento': c.precioFinalSinDescuento || '-',
-                'Precio final': c.precioFinal,
-                Moneda: c.moneda
-            }));
+            const dataFormateada = data.map(c => {
+                const fechaObj = new Date(c.fecha);
+                const dia = String(fechaObj.getDate()).padStart(2, '0');
+                const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                const año = fechaObj.getFullYear();
+                const hora = fechaObj.toLocaleTimeString('es-AR', { hour12: false }); // ✅ 24hs
+
+                return {
+                    Fecha: `${dia}/${mes}/${año}`,
+                    Hora: hora,
+                    Empresa: c.empresa || '-',
+                    Empleado: c.nombreEmpleado,
+                    DNI: c.dniEmpleado,
+                    Producto: c.producto,
+                    Litros: c.litros,
+                    'Precio sin descuento': c.precioFinalSinDescuento || '-',
+                    'Precio final': c.precioFinal,
+                    Moneda: c.moneda
+                };
+            });
 
             const worksheet = XLSX.utils.json_to_sheet(dataFormateada);
             const workbook = XLSX.utils.book_new();
@@ -252,17 +261,12 @@ export default function CargasPage() {
             const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
 
             let nombreArchivo = 'cargas';
-
             if (añoFiltro !== 'TODOS') nombreArchivo += `-${añoFiltro}`;
             if (mesFiltro !== 0) {
                 const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre.toLowerCase();
                 if (nombreMes) nombreArchivo += `-${nombreMes}`;
             }
-
-            if (añoFiltro === 'TODOS' && mesFiltro === 0) {
-                nombreArchivo += `-todas`;
-            }
-
+            if (añoFiltro === 'TODOS' && mesFiltro === 0) nombreArchivo += `-todas`;
             nombreArchivo += `.xlsx`;
 
             saveAs(blob, nombreArchivo);
@@ -376,6 +380,7 @@ export default function CargasPage() {
                     <thead className="bg-white/5 text-white">
                         <tr>
                             <th className="p-3">Fecha</th>
+                            <th className="p-3">Hora</th>
                             <th className="p-3">Empleado</th>
                             <th className="p-3">DNI</th>
                             <th className="p-3">Empresa</th>
@@ -389,7 +394,21 @@ export default function CargasPage() {
                     <tbody>
                         {pageList.map((c) => (
                             <tr key={c._id} className="hover:bg-white/10 transition">
-                                <td className="p-3">{new Date(c.fecha).toLocaleString()}</td>
+                                <td className="p-3">
+                                    {new Date(c.fecha).toLocaleDateString('es-AR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric'
+                                    })}
+                                </td>
+                                <td className="p-3">
+                                    {new Date(c.fecha).toLocaleTimeString('es-AR', {
+                                        hour12: false,
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit'
+                                    })}
+                                </td>
                                 <td className="p-3">{c.nombreEmpleado}</td>
                                 <td className="p-3">{c.dniEmpleado}</td>
                                 <td className="p-3">{c.empresa || '-'}</td>
@@ -454,7 +473,20 @@ export default function CargasPage() {
                             </p>
                             <p>
                                 <span className="font-semibold text-gray-300">Fecha:</span>{' '}
-                                {new Date(c.fecha).toLocaleString()}
+                                {new Date(c.fecha).toLocaleDateString('es-AR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                })}
+                            </p>
+                            <p>
+                                <span className="font-semibold text-gray-300">Hora:</span>{' '}
+                                {new Date(c.fecha).toLocaleTimeString('es-AR', {
+                                    hour12: false,
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit'
+                                })}
                             </p>
                             <p>
                                 <span className="font-semibold text-gray-300">Empresa:</span> {c.empresa || '-'}
