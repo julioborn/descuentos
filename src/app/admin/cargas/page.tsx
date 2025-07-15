@@ -469,8 +469,7 @@ export default function CargasPage() {
                                 <span className="font-semibold text-gray-300">DNI:</span> {c.dniEmpleado}
                             </p>
                             <p>
-                                <span className="font-semibold text-gray-300">Litros:</span> {c.litros}
-                            </p>
+                                <span className="font-semibold text-gray-300">Empresa:</span> {c.empresa || '-'}
                             <p>
                                 <span className="font-semibold text-gray-300">Fecha:</span>{' '}
                                 {new Date(c.fecha).toLocaleDateString('es-AR', {
@@ -488,8 +487,9 @@ export default function CargasPage() {
                                     second: '2-digit'
                                 })}
                             </p>
+                            </p>
                             <p>
-                                <span className="font-semibold text-gray-300">Empresa:</span> {c.empresa || '-'}
+                                <span className="font-semibold text-gray-300">Litros:</span> {c.litros}
                             </p>
                         </div>
 
