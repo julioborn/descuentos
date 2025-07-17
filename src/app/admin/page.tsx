@@ -7,7 +7,8 @@ import {
     TagIcon,
     UsersIcon,
     DollarSign,
-    Percent
+    Percent,
+    BarChart3
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -37,6 +38,12 @@ export default function AdminPage() {
             path: '/admin/descuentos',
             icon: <Percent className="w-8 h-8 text-white" />,
             bg: 'bg-gradient-to-r from-indigo-500 to-purple-600',
+        },
+        {
+            label: 'Estadísticas',
+            path: '/admin/estadisticas',
+            icon: <BarChart3 className="w-8 h-8 text-white" />,
+            bg: 'bg-gradient-to-r from-cyan-500 to-blue-600',
         },
     ];
 
