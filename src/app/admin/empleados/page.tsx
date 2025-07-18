@@ -17,6 +17,7 @@ type Empleado = {
     empresa: string;
     qrToken: string;
     pais: string;
+    localidad: string;
 };
 
 const ITEMS = 5;
@@ -34,6 +35,12 @@ export default function EmpleadosPage() {
     const [pagina, setPagina] = useState(1);
     const { data: session, status } = useSession();
     const role = session?.user?.role;
+    const [localidadFiltro, setLocalidadFiltro] = useState<'TODAS' | string>('TODAS');
+
+    const localidadesUnicas = useMemo(
+        () => Array.from(new Set(empleados.map((e) => e.localidad))).sort(),
+        [empleados]
+    );
 
     /* ---------- fetch inicial ---------- */
     useEffect(() => {
@@ -98,9 +105,12 @@ export default function EmpleadosPage() {
             const coincideEmpresa =
                 empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;
 
-            return coincideTexto && coincideEmpresa;
+            const coincideLocalidad =
+                localidadFiltro === 'TODAS' || e.localidad === localidadFiltro;
+
+            return coincideTexto && coincideEmpresa && coincideLocalidad;
         });
-    }, [empleados, busqueda, empresaFiltro]);
+    }, [empleados, busqueda, empresaFiltro, localidadFiltro]);
 
     /* ---------- paginación ---------- */
     const totalPag = Math.ceil(empleadosFiltrados.length / ITEMS);
@@ -148,6 +158,7 @@ export default function EmpleadosPage() {
                 <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
                 <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
                 <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
+                <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
             `,
                 focusConfirm: false,
                 confirmButtonText: 'Guardar',
@@ -162,13 +173,12 @@ export default function EmpleadosPage() {
                     const apellido = (document.getElementById('swal-apellido') as HTMLInputElement).value.trim();
                     const telefono = (document.getElementById('swal-telefono') as HTMLInputElement).value.trim();
                     const empresa = (document.getElementById('swal-empresa') as HTMLInputElement).value.trim();
-
-                    if (!nombre || !apellido || !telefono || !empresa) {
+                    const localidad = (document.getElementById('swal-localidad') as HTMLInputElement).value.trim();
+                    if (!nombre || !apellido || !telefono || !empresa || !localidad) {
                         Swal.showValidationMessage('Todos los campos son obligatorios');
                         return;
                     }
-
-                    return { nombre, apellido, telefono, empresa };
+                    return { nombre, apellido, telefono, empresa, localidad };
                 },
             });
 
@@ -223,6 +233,20 @@ export default function EmpleadosPage() {
                             <option key={empr}>{empr}</option>
                         ))}
                     </select>
+
+                    <select
+                        value={localidadFiltro}
+                        onChange={(e) => {
+                            setLocalidadFiltro(e.target.value);
+                            setPagina(1);
+                        }}
+                        className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
+                    >
+                        <option value="TODAS">Todas las localidades</option>
+                        {localidadesUnicas.map((loc) => (
+                            <option key={loc}>{loc}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="w-full sm:w-auto flex justify-center sm:justify-end">
@@ -259,6 +283,7 @@ export default function EmpleadosPage() {
                             <th className="p-3">DNI</th>
                             <th className="p-3">Teléfono</th>
                             <th className="p-3">Empresa</th>
+                            <th className="p-3">Localidad</th>
                             <th className="p-3">QR</th>
                             <th className="p-3 text-center">Acciones</th>
                         </tr>
@@ -271,6 +296,7 @@ export default function EmpleadosPage() {
                                 <td className="p-2">{emp.dni}</td>
                                 <td className="p-2">{emp.telefono}</td>
                                 <td className="p-2">{emp.empresa}</td>
+                                <td className="p-2">{emp.localidad}</td>
                                 <td className="p-2">
                                     {qrMap[emp._id] ? (
                                         <img
@@ -323,6 +349,7 @@ export default function EmpleadosPage() {
                         <p>DNI: {emp.dni}</p>
                         <p>Tel: {emp.telefono}</p>
                         <p>Empresa: {emp.empresa}</p>
+                        <p>Localidad: {emp.localidad}</p>
                         <div className="mt-2 flex justify-center">
                             {qrMap[emp._id] ? (
                                 <img src={qrMap[emp._id]} alt="QR" className="w-32 h-32" />
