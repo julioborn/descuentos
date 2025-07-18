@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
 // POST: Crear nuevo empleado
 export async function POST(req: NextRequest) {
     await connectMongoDB();
-
     const body = await req.json();
 
     try {
@@ -31,9 +30,10 @@ export async function POST(req: NextRequest) {
             dni: body.dni,
             telefono: body.telefono,
             empresa: body.empresa,
+            localidad: body.localidad,  // ✅ AGREGADO
             qrToken: body.qrToken,
             activo: true,
-            pais: body.pais,
+            pais: body.pais,            // (si lo estás usando)
         });
 
         return NextResponse.json(nuevoEmpleado);

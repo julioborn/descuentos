@@ -13,6 +13,7 @@ type Empleado = {
     dni: string;
     telefono: string;
     empresa: string;
+    localidad: string; // ✅ nuevo
     qrUrl: string;
 };
 
@@ -42,7 +43,11 @@ export default function ImportarEmpleados() {
                 const res = await fetch('/api/empleados', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...emp, qrToken: token }),
+                    body: JSON.stringify({
+                        ...emp,
+                        localidad: emp.localidad, // ✅ aseguramos que se envía
+                        qrToken: token
+                    }),
                 });
                 if (!res.ok) throw new Error();
 
