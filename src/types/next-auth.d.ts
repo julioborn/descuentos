@@ -7,19 +7,22 @@ declare module "next-auth" {
             email?: string;
             image?: string;
             role: string;
-            moneda: "ARS" | "Gs"; // ✅
+            moneda: "ARS" | "Gs";
+            localidad: string; // ✅ añadimos localidad
         };
     }
 
     interface User {
         role: string;
-        moneda: "ARS" | "Gs"; // ✅
+        moneda: "ARS" | "Gs";
+        localidad: string; // ✅ también aquí
     }
 }
 
 declare module "next-auth/jwt" {
     interface JWT {
         role: string;
-        moneda: "ARS" | "Gs"; // ✅
+        moneda: "ARS" | "Gs";
+        localidad: string; // ✅ también en el JWT
     }
 }

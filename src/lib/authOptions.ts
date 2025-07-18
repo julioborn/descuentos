@@ -26,6 +26,7 @@ export const authOptions: AuthOptions = {
                             name: user.nombre,
                             role: user.rol,
                             moneda: user.moneda,
+                            localidad: user.localidad, // ✅ agregamos la localidad
                         };
                     }
                 }
@@ -38,7 +39,8 @@ export const authOptions: AuthOptions = {
         async session({ session, token }) {
             if (session.user) {
                 session.user.role = token.role;
-                session.user.moneda = token.moneda; // ✅
+                session.user.moneda = token.moneda;
+                session.user.localidad = token.localidad; // ✅ añadimos la localidad del playero
             }
             return session;
         },
@@ -46,6 +48,7 @@ export const authOptions: AuthOptions = {
             if (user) {
                 token.role = user.role;
                 token.moneda = user.moneda;
+                token.localidad = user.localidad; // ✅ también aquí
             }
             return token;
         },

@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
             porcentajeDescuento,
             moneda: session.user.moneda,
             fecha: new Date(),
+            localidad: session.user.localidad, // ✅ agregamos la localidad del playero
         });
 
         return NextResponse.json(nuevaCarga);
