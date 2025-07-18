@@ -53,18 +53,12 @@ export default function CargaPage() {
 
     // 2. Segundo: cargar los precios según el usuario logueado
     useEffect(() => {
-        if (!username) return;
+        if (!session?.user?.moneda) return;
 
         fetch('/api/precios')
             .then(res => res.json())
             .then(data => {
-                if (username === 'playeropy') {
-                    setPrecios(data.filter((p: PrecioProducto) => p.moneda === 'Gs'));
-                } else if (username === 'playeroarg') {
-                    setPrecios(data.filter((p: PrecioProducto) => p.moneda === 'ARS'));
-                } else {
-                    setPrecios([]);
-                }
+                setPrecios(data.filter((p: PrecioProducto) => p.moneda === session.user.moneda));
             })
             .catch(() => {
                 Swal.fire({
@@ -73,7 +67,7 @@ export default function CargaPage() {
                     text: 'No se pudieron cargar los precios.',
                 });
             });
-    }, [username]);
+    }, [session?.user?.moneda]);
 
     useEffect(() => {
         if (!empleado) return;
