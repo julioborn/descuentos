@@ -122,31 +122,37 @@ export default function CargaPage() {
 
         // ✅ Paso de confirmación
         const { isConfirmed } = await Swal.fire({
-            title: 'Confirmar carga',
+            title: '<h2 style="font-size: 22px; font-weight: bold;">Confirmar carga</h2>',
             html: `
-        <div style="text-align: left; font-size: 15px;">
+        <div style="text-align: left; font-size: 18px; line-height: 1.6;">
             <b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}<br/>
             <b>DNI:</b> ${empleado.dni}<br/>
             <b>Empresa:</b> ${empleado.empresa}<br/>
             <b>Producto:</b> ${form.producto}<br/>
             <b>Litros:</b> ${litros}<br/>
-            <hr style="margin: 8px 0; border: none; border-top: 1px solid #ccc;" />
-            <b>Total final:</b> <span style="color: #4ade80; font-size: 16px;">
+            <b>Precio sin descuento:</b> ${precioSinDescuento.toLocaleString()} ${moneda}<br/>
+            ${porcentajeDescuento > 0
+                    ? `<b>Descuento aplicado:</b> ${porcentajeDescuento}% (-${descuentoAplicado.toLocaleString()} ${moneda})<br/>`
+                    : ''
+                }
+            <hr style="margin: 12px 0; border: none; border-top: 1px solid #ccc;" />
+            <b>Total final:</b> <span style="color: #4ade80; font-size: 20px; font-weight: bold;">
                 ${precioFinal.toLocaleString()} ${moneda}
             </span>
         </div>
     `,
+            width: '420px', // ✅ Más ancho que el default (~32rem)
             showCancelButton: true,
             confirmButtonText: 'Confirmar',
             cancelButtonText: 'Cancelar',
             background: '#1f2937',
             color: '#fff',
-            backdrop: `rgba(0,0,0,0.9)`, // ✅ Fondo negro casi sólido
+            backdrop: `rgba(0,0,0,0.9)`,
             customClass: {
                 confirmButton:
-                    'bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    'bg-red-800 hover:bg-red-700 text-white font-bold text-lg px-8 py-3 rounded',
                 cancelButton:
-                    'bg-gray-600 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded'
+                    'bg-gray-600 hover:bg-gray-500 text-white font-bold text-lg px-8 py-3 rounded'
             },
             buttonsStyling: false
         });
