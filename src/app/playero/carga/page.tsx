@@ -122,7 +122,7 @@ export default function CargaPage() {
 
         // ✅ Paso de confirmación
         const { isConfirmed } = await Swal.fire({
-            title: '<h2 style="font-size: 22px; font-weight: bold;">Confirmar carga</h2>',
+            title: '<h2 style="font-size: 26px; font-weight: bold;">Confirmar carga</h2>',
             html: `
         <div style="text-align: left; font-size: 18px; line-height: 1.6;">
             <b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}<br/>
@@ -130,11 +130,6 @@ export default function CargaPage() {
             <b>Empresa:</b> ${empleado.empresa}<br/>
             <b>Producto:</b> ${form.producto}<br/>
             <b>Litros:</b> ${litros}<br/>
-            <b>Precio sin descuento:</b> ${precioSinDescuento.toLocaleString()} ${moneda}<br/>
-            ${porcentajeDescuento > 0
-                    ? `<b>Descuento aplicado:</b> ${porcentajeDescuento}% (-${descuentoAplicado.toLocaleString()} ${moneda})<br/>`
-                    : ''
-                }
             <hr style="margin: 12px 0; border: none; border-top: 1px solid #ccc;" />
             <b>Total final:</b> <span style="color: #4ade80; font-size: 20px; font-weight: bold;">
                 ${precioFinal.toLocaleString()} ${moneda}
