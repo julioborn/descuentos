@@ -377,31 +377,34 @@ export default function CargasPage() {
             </section>
 
             {/* -------- Tabla desktop -------- */}
-            <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
-                <table className="min-w-[800px] w-full text-sm">
-                    <thead className="bg-white/5 text-white">
-                        <tr>
-                            <th className="p-3">Fecha</th>
-                            <th className="p-3">Hora</th>
-                            <th className="p-3">Empleado</th>
-                            <th className="p-3">DNI</th>
-                            <th className="p-3">Empresa</th>
-                            <th className="p-3">Localidad</th> {/* ✅ Nueva columna */}
-                            <th className="p-3">Producto</th>
-                            <th className="p-3">Litros</th>
-                            <th className="p-3">Precio sin descuento</th>
-                            <th className="p-3">Precio final</th>
-                            <th className="p-3 text-center">Acciones</th>
+            <div className="hidden sm:block overflow-x-auto max-w-6xl mx-auto">
+                <table className="min-w-[900px] w-full text-sm border-separate border-spacing-y-2">
+                    <thead>
+                        <tr className="bg-gray-900/80 text-gray-200">
+                            <th className="p-3 text-left rounded-tl-lg">Fecha</th>
+                            <th className="p-3 text-left">Hora</th>
+                            <th className="p-3 text-left">Empleado</th>
+                            <th className="p-3 text-left">DNI</th>
+                            <th className="p-3 text-left">Empresa</th>
+                            <th className="p-3 text-left">Localidad</th>
+                            <th className="p-3 text-left">Producto</th>
+                            <th className="p-3 text-center">Litros</th>
+                            <th className="p-3 text-center">Sin desc.</th>
+                            <th className="p-3 text-center">Final</th>
+                            <th className="p-3 text-center rounded-tr-lg">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {pageList.map((c) => (
-                            <tr key={c._id} className="hover:bg-white/10 transition">
-                                <td className="p-3">
+                            <tr
+                                key={c._id}
+                                className="bg-gray-800/90 text-gray-100 hover:bg-gray-700/90 transition-all shadow-sm"
+                            >
+                                <td className="p-3 rounded-l-lg">
                                     {new Date(c.fecha).toLocaleDateString('es-AR', {
                                         day: '2-digit',
                                         month: '2-digit',
-                                        year: 'numeric'
+                                        year: 'numeric',
                                     })}
                                 </td>
                                 <td className="p-3">
@@ -409,30 +412,37 @@ export default function CargasPage() {
                                         hour12: false,
                                         hour: '2-digit',
                                         minute: '2-digit',
-                                        second: '2-digit'
                                     })}
                                 </td>
-                                <td className="p-3">{c.nombreEmpleado}</td>
+                                <td className="p-3 font-semibold">{c.nombreEmpleado}</td>
                                 <td className="p-3">{c.dniEmpleado}</td>
                                 <td className="p-3">{c.empresa || '-'}</td>
-                                <td className="p-3">{c.localidad || '-'}</td> {/* ✅ Localidad */}
+                                <td className="p-3">{c.localidad || '-'}</td>
                                 <td className="p-3">{banderaPorMoneda(c.moneda)} {c.producto}</td>
-                                <td className="p-3">{c.litros}</td>
-                                <td className="p-3">
+                                <td className="p-3 text-center font-semibold">{c.litros}</td>
+                                <td className="p-3 text-center text-gray-300">
                                     {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
                                 </td>
-                                <td className="p-3">
+                                <td className="p-3 text-center font-bold text-green-400">
                                     {c.precioFinal.toLocaleString()} {c.moneda}
                                 </td>
-                                {/* ✅ Botones de acciones siguen igual */}
-                                <td className="p-3 text-center whitespace-nowrap">
+                                <td className="p-3 text-center rounded-r-lg">
                                     <button
                                         onClick={() => eliminarCarga(c._id)}
-                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600"
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
                                         title="Eliminar"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            className="size-5"
+                                        >
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                                                clipRule="evenodd"
+                                            />
                                         </svg>
                                     </button>
                                 </td>

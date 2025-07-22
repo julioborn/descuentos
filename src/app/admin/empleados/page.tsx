@@ -203,6 +203,26 @@ export default function EmpleadosPage() {
         }
     };
 
+    const verQrGrande = (url: string, nombre: string, apellido: string) => {
+        Swal.fire({
+            html: `
+          <div class="flex flex-col items-center">
+            <h2 style="font-size:18px; font-weight:600; margin-bottom:10px;">
+              ${nombre} ${apellido}
+            </h2>
+            <img src="${url}" alt="QR"
+                style="width: 250px; height: 250px; border-radius: 10px; border: 2px solid #ccc;" />
+          </div>
+        `,
+            showConfirmButton: false,
+            background: '#1f2937',
+            color: '#fff',
+            customClass: {
+                popup: 'rounded-lg shadow-lg'
+            }
+        });
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Empleados</h1>
@@ -302,7 +322,8 @@ export default function EmpleadosPage() {
                                         <img
                                             src={qrMap[emp._id]}
                                             alt="QR"
-                                            className="w-14 h-14 rounded border border-white/20"
+                                            className="w-14 h-14 rounded border border-white/20 cursor-pointer hover:scale-110 transition"
+                                            onClick={() => verQrGrande(qrMap[emp._id], emp.nombre, emp.apellido)}
                                         />
                                     ) : (
                                         <Loader />
