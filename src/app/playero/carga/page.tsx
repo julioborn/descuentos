@@ -120,8 +120,38 @@ export default function CargaPage() {
             });
         }
 
-        const precioUnitario = precios.find(p => p.producto === form.producto)?.precio || 0;
-        const precioFinal = precioUnitario * litros;
+        // ✅ Paso de confirmación
+        const { isConfirmed } = await Swal.fire({
+            title: 'Confirmar carga',
+            html: `
+        <div style="text-align: left; font-size: 15px;">
+            <b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}<br/>
+            <b>DNI:</b> ${empleado.dni}<br/>
+            <b>Empresa:</b> ${empleado.empresa}<br/>
+            <b>Producto:</b> ${form.producto}<br/>
+            <b>Litros:</b> ${litros}<br/>
+            <hr style="margin: 8px 0; border: none; border-top: 1px solid #ccc;" />
+            <b>Total final:</b> <span style="color: #4ade80; font-size: 16px;">
+                ${precioFinal.toLocaleString()} ${moneda}
+            </span>
+        </div>
+    `,
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            background: '#1f2937',
+            color: '#fff',
+            backdrop: `rgba(0,0,0,0.9)`, // ✅ Fondo negro casi sólido
+            customClass: {
+                confirmButton:
+                    'bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                cancelButton:
+                    'bg-gray-600 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded'
+            },
+            buttonsStyling: false
+        });
+
+        if (!isConfirmed) return;
 
         setIsSubmitting(true);
 
