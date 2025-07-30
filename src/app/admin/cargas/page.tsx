@@ -55,6 +55,10 @@ export default function CargasPage() {
         fetchCargas();
     }, []);
 
+    useEffect(() => {
+        localStorage.setItem('ultimaVisitaCargas', new Date().toISOString());
+    }, []);
+
     const añosDisponibles = useMemo(() => {
         const añosSet = new Set<number>();
         cargas.forEach(c => {
@@ -108,7 +112,6 @@ export default function CargasPage() {
             })
             .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()); // 👈 orden por fecha DESC
     }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro]);
-
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / ITEMS);
@@ -582,4 +585,5 @@ export default function CargasPage() {
 
         </main>
     );
+
 }

@@ -1,10 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
-    BriefcaseIcon,
     FuelIcon,
-    TagIcon,
     UsersIcon,
     DollarSign,
     Percent,
@@ -13,6 +12,33 @@ import {
 
 export default function AdminPage() {
     const router = useRouter();
+    const [cargasNuevas, setCargasNuevas] = useState(0);
+
+    useEffect(() => {
+        const checkCargasNuevas = async () => {
+            try {
+                const res = await fetch('/api/cargas');
+                const data = await res.json();
+
+                const ultimaVisitaStr = localStorage.getItem('ultimaVisitaCargas');
+                const ultimaVisita = ultimaVisitaStr ? new Date(ultimaVisitaStr) : null;
+
+                // Si nunca se abrió la sección, mostramos todas como nuevas
+                if (!ultimaVisita) {
+                    setCargasNuevas(data.length);
+                    return;
+                }
+
+                // Filtramos las que tienen fecha posterior a la última visita
+                const nuevas = data.filter((c: any) => new Date(c.fecha) > ultimaVisita);
+                setCargasNuevas(nuevas.length);
+            } catch (err) {
+                console.error('Error al verificar cargas nuevas', err);
+            }
+        };
+
+        checkCargasNuevas();
+    }, []);
 
     const secciones = [
         {
@@ -56,12 +82,19 @@ export default function AdminPage() {
                     <button
                         key={item.label}
                         onClick={() => router.push(item.path)}
-                        className={`${item.bg} rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl`}
+                        className={`${item.bg} relative rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl`}
                     >
                         <div className="bg-black/20 p-3 rounded-full">
                             {item.icon}
                         </div>
                         <span className="text-xl font-semibold tracking-wide">{item.label}</span>
+
+                        {/* 🔴 Burbuja si hay cargas nuevas */}
+                        {item.label === 'Cargas' && cargasNuevas > 0 && (
+                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-3 py-1.5 rounded-full shadow-md">
+                                {cargasNuevas}
+                            </div>
+                        )}
                     </button>
                 ))}
             </div>
