@@ -56,8 +56,10 @@ export default function CargasPage() {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('ultimaVisitaCargas', new Date().toISOString());
-    }, []);
+        if (!loading && cargas.length > 0) {
+            localStorage.setItem('ultimaVisitaCargas', new Date().toISOString());
+        }
+    }, [loading, cargas]);
 
     const añosDisponibles = useMemo(() => {
         const añosSet = new Set<number>();
