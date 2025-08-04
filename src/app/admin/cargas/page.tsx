@@ -21,11 +21,10 @@ type Carga = {
     localidad: string;
 };
 
-const ITEMS = 5;
-
 export default function CargasPage() {
     const [cargas, setCargas] = useState<Carga[]>([]);
     const [loading, setLoading] = useState(true);
+    const [itemsPorPagina, setItemsPorPagina] = useState(10); // valor inicial configurable
 
     /* ---- filtros ---- */
     const [busqueda, setBusqueda] = useState('');
@@ -116,11 +115,11 @@ export default function CargasPage() {
     }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro]);
 
     /* paginación */
-    const totalPag = Math.ceil(filtradas.length / ITEMS);
+    const totalPag = Math.ceil(filtradas.length / itemsPorPagina);
     const págActual = Math.min(pagina, totalPag || 1);
     const pageList = filtradas.slice(
-        (págActual - 1) * ITEMS,
-        págActual * ITEMS
+        (págActual - 1) * itemsPorPagina,
+        págActual * itemsPorPagina
     );
 
     if (loading) return <Loader />;
@@ -359,6 +358,21 @@ export default function CargasPage() {
                     <option value="0">Todos los meses</option>
                     {mesesDelAño.map((m) => (
                         <option key={m.numero} value={m.numero}>{m.nombre}</option>
+                    ))}
+                </select>
+
+                <select
+                    value={itemsPorPagina}
+                    onChange={(e) => {
+                        setItemsPorPagina(parseInt(e.target.value));
+                        setPagina(1);
+                    }}
+                    className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                >
+                    {[5, 10, 20, 50, 100].map((cantidad) => (
+                        <option key={cantidad} value={cantidad}>
+                            Ver {cantidad} por página
+                        </option>
                     ))}
                 </select>
 
