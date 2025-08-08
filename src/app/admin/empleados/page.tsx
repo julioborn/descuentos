@@ -94,13 +94,15 @@ export default function EmpleadosPage() {
     );
 
     /* ---------- lista filtrada ---------- */
+    const eliminarAcentos = (texto: string) =>
+        texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
     const empleadosFiltrados = useMemo(() => {
-        const texto = busqueda.trim().toLowerCase();
+        const texto = eliminarAcentos(busqueda.trim());
 
         return empleados.filter((e) => {
-            const coincideTexto =
-                !texto ||
-                `${e.nombre} ${e.apellido} ${e.dni}`.toLowerCase().includes(texto);
+            const campos = `${e.nombre} ${e.apellido} ${e.dni}`;
+            const coincideTexto = !texto || eliminarAcentos(campos).includes(texto);
 
             const coincideEmpresa =
                 empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;

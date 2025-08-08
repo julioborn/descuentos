@@ -45,8 +45,9 @@ export default function ImportarEmpleados() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         ...emp,
-                        localidad: emp.localidad, // ✅ aseguramos que se envía
-                        qrToken: token
+                        localidad: emp.localidad,
+                        qrToken: token,
+                        pais: 'AR'
                     }),
                 });
                 if (!res.ok) throw new Error();
@@ -110,7 +111,7 @@ export default function ImportarEmpleados() {
             return { blob: null, nombreArchivo: '' };
         }
 
-        const nombreArchivo = `qr-${emp.nombre}-${emp.apellido}.png`;
+        const nombreArchivo = `qr-${emp.dni}.png`;
         return { blob, nombreArchivo };
     };
 
@@ -171,8 +172,8 @@ export default function ImportarEmpleados() {
                             <strong>
                                 {emp.nombre} {emp.apellido}
                             </strong>
-                            <p>{emp.dni}</p>
-                            <p>{emp.empresa}</p>
+                            {/* <p>{emp.dni}</p>
+                            <p>{emp.empresa}</p> */}
                         </div>
 
                         <button

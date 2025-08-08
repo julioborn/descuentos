@@ -212,7 +212,7 @@ export default function CargaPage() {
             <div className="mb-6 bg-white/10 p-6 rounded-lg flex flex-col justify-center items-center">
                 <p className="text-2xl font-bold">{empleado.nombre} {empleado.apellido}</p>
                 <p className="text-2xl">DNI: {empleado.dni}</p>
-                <p className="text-2xl">Empresa: {empleado.empresa}</p>
+                <p className="text-2xl">{empleado.empresa}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white/10 p-6 rounded-lg max-w-md mx-auto">

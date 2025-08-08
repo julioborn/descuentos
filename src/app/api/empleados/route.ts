@@ -30,10 +30,10 @@ export async function POST(req: NextRequest) {
             dni: body.dni,
             telefono: body.telefono,
             empresa: body.empresa,
-            localidad: body.localidad,  // ✅ AGREGADO
+            localidad: body.localidad,
             qrToken: body.qrToken,
             activo: true,
-            pais: body.pais,            // (si lo estás usando)
+            pais: body.pais,
         });
 
         return NextResponse.json(nuevoEmpleado);
