@@ -49,16 +49,3 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(nuevo);
 }
-
-export async function PATCH(req: NextRequest) {
-    await connectMongoDB();
-    const body = await req.json(); // [{ _id, porcentaje }]
-
-    const updates = await Promise.all(
-        body.map((item: { _id: string; porcentaje: number }) =>
-            Descuento.findByIdAndUpdate(item._id, { porcentaje: item.porcentaje }, { new: true })
-        )
-    );
-
-    return NextResponse.json({ message: "Descuentos actualizados", updates });
-}
