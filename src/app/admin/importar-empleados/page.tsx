@@ -35,6 +35,8 @@ export default function ImportarEmpleados() {
         const filas = XLSX.utils.sheet_to_json(hoja) as Omit<Empleado, 'qrUrl'>[];
 
         const lista: Empleado[] = [];
+        let nuevos = 0;
+        let repetidos = 0;
 
         for (const emp of filas) {
             const token = crypto.randomUUID();
@@ -50,13 +52,22 @@ export default function ImportarEmpleados() {
                         pais: 'AR'
                     }),
                 });
+
+                if (res.status === 409) {
+                    // Ya estaba cargado
+                    repetidos++;
+                    continue;
+                }
                 if (!res.ok) throw new Error();
+
+                nuevos++;
 
                 const qrUrl = await QRCode.toDataURL(
                     `${window.location.origin}/playero?token=${token}`,
                 );
 
                 lista.push({ ...emp, qrUrl });
+
             } catch (err) {
                 console.error('Falló el registro de', emp, err);
             }
@@ -64,6 +75,9 @@ export default function ImportarEmpleados() {
 
         setEmpleados(lista);
         setLoading(false);
+
+        // Mostrar resumen
+        alert(`✅ Nuevos: ${nuevos} | ⚠️ Repetidos: ${repetidos}`);
     };
 
     /* ───────────────────────────── 2. Descargar tarjeta individual ─────────────────────── */

@@ -92,6 +92,10 @@ export default function CargasPage() {
         [cargas]
     );
 
+    // arriba (opcional pero recomendado)
+    const norm = (s?: string) =>
+        (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
     /* lista filtrada */
     const filtradas = useMemo(() => {
         const txt = busqueda.trim().toLowerCase();
@@ -109,10 +113,16 @@ export default function CargasPage() {
                 const coincideAño = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
                 const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
 
-                return coincideTxt && coincideProd && coincideAño && coincideMes;
+                // 👇 NUEVO: filtro por empresa (robusto a espacios/acentos/mayúsculas)
+                const coincideEmpresa =
+                    empresaFiltro === 'TODAS' ||
+                    norm(c.empresa) === norm(empresaFiltro);
+
+                return coincideTxt && coincideProd && coincideAño && coincideMes && coincideEmpresa;
             })
-            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()); // 👈 orden por fecha DESC
-    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro]);
+            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro, empresaFiltro]);
+
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / itemsPorPagina);

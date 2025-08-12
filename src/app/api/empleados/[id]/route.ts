@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectMongoDB } from '@/lib/mongodb';
 import { Empleado } from '@/models/Empleado';
+import mongoose from 'mongoose';
+import Docente from '@/models/Docente';
 
 type Params = { params: { id: string } };
 
@@ -23,9 +25,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 // ⬇ DELETE: eliminar
-export async function DELETE(_: NextRequest, { params }: Params) {
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
     await connectMongoDB();
-    const eliminado = await Empleado.findByIdAndDelete(params.id);
-    if (!eliminado) return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 });
-    return NextResponse.json({ ok: true });
+    const session = await mongoose.startSession();
+
+    try {
+        await session.withTransaction(async () => {
+            await Docente.deleteMany({ empleadoId: params.id }).session(session);
+            await Empleado.findByIdAndDelete(params.id).session(session);
+        });
+
+        return NextResponse.json({ ok: true });
+    } catch (e) {
+        console.error("Error borrando empleado/docente:", e);
+        return NextResponse.json({ error: "No se pudo eliminar" }, { status: 500 });
+    } finally {
+        await session.endSession();
+    }
 }

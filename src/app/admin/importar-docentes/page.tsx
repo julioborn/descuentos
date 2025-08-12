@@ -23,143 +23,180 @@ export default function ImportarDocentes() {
     const [loading, setLoading] = useState(false)
 
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log('Archivo seleccionado');
         const file = e.target.files?.[0];
         if (!file) return;
 
         setLoading(true);
 
+        // 1) Leer Excel
         const data = await file.arrayBuffer();
         const wb = XLSX.read(data);
         const hoja = wb.Sheets[wb.SheetNames[0]];
         const filas = XLSX.utils.sheet_to_json<any>(hoja, { defval: '' });
 
-        console.log('Filas:', filas);
-
         const lista: Docente[] = [];
 
-        for (const fila of filas) {
-            const token = crypto.randomUUID();
-            const dni = fila.dni.toString();
-            const centrosArray: string[] = (fila.centroEducativo || '')
-                .split(',')
-                .map((c: string) => c.trim())
-                .filter((c: string) => c.length > 0);
+        try {
+            // 2) Traer empleados existentes UNA vez
+            const empleadosExistRes = await fetch('/api/empleados');
+            const empleadosExist = await empleadosExistRes.json();
 
-            try {
-                const empleadosExistRes = await fetch('/api/empleados');
-                const empleadosExist = await empleadosExistRes.json();
-                const yaExiste = empleadosExist.find((emp: any) => emp.dni === dni);
+            // Map por DNI para lookup rápido
+            const empleadoPorDni = new Map<string, any>(
+                empleadosExist.map((e: any) => [String(e.dni), e])
+            );
 
-                let empleadoId: string;
-                let qrUrl: string;
-                let mostrarTarjeta = true;
+            // Para evitar procesar el mismo DNI dos veces en el mismo Excel
+            const procesados = new Set<string>();
 
-                if (yaExiste) {
-                    console.log('Empleado ya existe:', yaExiste);
+            // 3) Iterar filas del Excel
+            for (const fila of filas) {
+                const dni = String(fila.dni || '').trim();
+                if (!dni || procesados.has(dni)) {
+                    console.log(`⏩ DNI ${dni || '(vacío)'} salteado (vacío o duplicado en Excel)`);
+                    continue;
+                }
+                procesados.add(dni);
 
-                    const docenteExistRes = await fetch(`/api/docentes?empleadoId=${yaExiste._id}`);
-                    const docenteExist = await docenteExistRes.json();
+                // Normalizar centros
+                const centrosArray: string[] = String(fila.centroEducativo || '')
+                    .split(',')
+                    .map((c: string) => c.trim().toUpperCase())
+                    .filter(Boolean);
 
-                    if (docenteExist && Array.isArray(docenteExist.centrosEducativos)) {
-                        const centrosSet = new Set([
-                            ...docenteExist.centrosEducativos,
-                            ...centrosArray,
-                        ]);
-                        const centrosActualizados = Array.from(centrosSet);
+                const token = crypto.randomUUID();
 
-                        // Actualizar solo si hay centros nuevos
-                        const yaEstabanTodos = centrosArray.every((centro) =>
-                            docenteExist.centrosEducativos.includes(centro)
-                        );
+                try {
+                    let mostrarTarjeta = false;
+                    let qrUrl = '';
+                    const existente = empleadoPorDni.get(dni);
 
-                        if (!yaEstabanTodos) {
-                            const updateDocenteRes = await fetch(`/api/docentes/${docenteExist._id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ centrosEducativos: centrosActualizados }),
-                            });
+                    // Función para normalizar nombres de centros (espacios, mayúsculas, tildes)
+                    const normalizarCentro = (c: string) =>
+                        c.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-                            if (!updateDocenteRes.ok)
-                                throw new Error('Error actualizando docente');
+                    if (existente) {
+                        const nombreCompleto = `${fila?.nombre ?? existente?.nombre ?? ''} ${fila?.apellido ?? existente?.apellido ?? ''}`.trim();
+
+                        // 1) Traer docente actual
+                        let prevCentros: string[] = [];
+                        try {
+                            const docRes = await fetch(`/api/docentes?empleadoId=${existente._id}`);
+                            if (docRes.ok) {
+                                const docData = await docRes.json();
+                                if (docData && Array.isArray(docData.centrosEducativos)) {
+                                    prevCentros = docData.centrosEducativos.map(normalizarCentro);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`(LOG) No pude leer docente actual para comparar (DNI ${dni})`, e);
                         }
 
-                        mostrarTarjeta = false; // 🔒 Nunca mostrar tarjeta si ya existía
+                        // 2) Normalizar y deduplicar entrada
+                        const entradaNorm = Array.from(new Set(centrosArray.map(normalizarCentro)));
+
+                        // 3) Calcular diferencia
+                        const nuevosCentrosNorm = entradaNorm.filter(c => !prevCentros.includes(c));
+
+                        if (nuevosCentrosNorm.length === 0) {
+                            console.log(`↺ Docente EXISTENTE sin cambios: ${nombreCompleto} (DNI ${dni}) — todos ya estaban: ${centrosArray.join(', ')}`);
+                        } else {
+                            // Mostrar los nombres originales de los que se agregan
+                            const nuevosCentrosOriginal = centrosArray.filter(c => nuevosCentrosNorm.includes(normalizarCentro(c)));
+                            console.log(`➕ Docente EXISTENTE actualizado: ${nombreCompleto} (DNI ${dni}) — se agregan: ${nuevosCentrosOriginal.join(', ')}`);
+
+                            const upsertDocente = await fetch('/api/docentes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    empleadoId: existente._id,
+                                    centrosEducativos: nuevosCentrosOriginal,
+                                }),
+                            });
+                            if (!upsertDocente.ok) throw new Error('Error creando/actualizando docente');
+                        }
+
+                        qrUrl = await QRCode.toDataURL(`${window.location.origin}/playero?token=${existente.qrToken}`);
+                        mostrarTarjeta = false;
+
                     } else {
-                        // Si no tenía docente asociado, se lo crea
-                        const docenteRes = await fetch('/api/docentes', {
+                        console.log(`🆕 Creando nuevo empleado: ${fila.nombre} ${fila.apellido} (DNI: ${dni})`);
+
+                        const empRes = await fetch('/api/empleados', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                empleadoId: yaExiste._id,
-                                centrosEducativos: centrosArray,
+                                nombre: fila.nombre,
+                                apellido: fila.apellido,
+                                dni,
+                                telefono: String(fila.telefono ?? ''),
+                                empresa: fila.empresa,
+                                localidad: fila.localidad,
+                                qrToken: token,
+                                pais: 'AR',
                             }),
                         });
 
-                        if (!docenteRes.ok) throw new Error('Error creando docente');
+                        if (empRes.status === 409) {
+                            console.warn(`⚠️ Empleado duplicado detectado en paralelo para DNI ${dni}`);
+                            const ya = empleadoPorDni.get(dni);
+                            if (!ya) throw new Error('Empleado duplicado pero no encontrado en cache');
 
-                        mostrarTarjeta = false; // 🔒 Incluso si se creó docente, no mostrar tarjeta si empleado ya existía
+                            const upsertDocente = await fetch('/api/docentes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    empleadoId: ya._id,
+                                    centrosEducativos: Array.from(new Set(centrosArray)),
+                                }),
+                            });
+                            if (!upsertDocente.ok) throw new Error('Error creando/actualizando docente');
+
+                            qrUrl = await QRCode.toDataURL(`${window.location.origin}/playero?token=${ya.qrToken}`);
+                            mostrarTarjeta = false;
+                        } else {
+                            if (!empRes.ok) throw new Error('Error creando empleado');
+                            const empleadoCreado = await empRes.json();
+                            empleadoPorDni.set(dni, empleadoCreado);
+
+                            console.log(`✅ Empleado creado correctamente: ${fila.nombre} ${fila.apellido} (DNI: ${dni})`);
+
+                            const docenteRes = await fetch('/api/docentes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    empleadoId: empleadoCreado._id,
+                                    centrosEducativos: Array.from(new Set(centrosArray)),
+                                }),
+                            });
+                            if (!docenteRes.ok) throw new Error('Error creando docente');
+
+                            console.log(`📚 Docente NUEVO asociado con centros: ${Array.from(new Set(centrosArray)).join(', ')}`);
+
+                            qrUrl = await QRCode.toDataURL(`${window.location.origin}/playero?token=${token}`);
+                            mostrarTarjeta = true;
+                        }
                     }
 
-                    qrUrl = await QRCode.toDataURL(
-                        `${window.location.origin}/playero?token=${yaExiste.qrToken}`
-                    );
-                    empleadoId = yaExiste._id;
-                } else {
-                    // Crear nuevo empleado y docente
-                    const empleadoRes = await fetch('/api/empleados', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
+                    if (mostrarTarjeta) {
+                        lista.push({
                             nombre: fila.nombre,
                             apellido: fila.apellido,
                             dni,
-                            telefono: fila.telefono.toString(),
+                            telefono: String(fila.telefono ?? ''),
                             empresa: fila.empresa,
                             localidad: fila.localidad,
-                            qrToken: token,
-                            pais: 'AR',
-                        }),
-                    });
-
-                    if (!empleadoRes.ok) throw new Error('Error creando empleado');
-
-                    const empleadoCreado = await empleadoRes.json();
-
-                    const docenteRes = await fetch('/api/docentes', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            empleadoId: empleadoCreado._id,
                             centrosEducativos: centrosArray,
-                        }),
-                    });
-
-                    if (!docenteRes.ok) throw new Error('Error creando docente');
-
-                    qrUrl = await QRCode.toDataURL(
-                        `${window.location.origin}/playero?token=${token}`
-                    );
-
-                    empleadoId = empleadoCreado._id;
-                    mostrarTarjeta = true; // ✅ Solo en este caso se muestra tarjeta
+                            qrUrl,
+                        });
+                    }
+                } catch (err) {
+                    console.error(`❌ Error al procesar DNI ${dni}:`, err);
                 }
 
-                if (mostrarTarjeta) {
-                    lista.push({
-                        nombre: fila.nombre,
-                        apellido: fila.apellido,
-                        dni,
-                        telefono: fila.telefono.toString(),
-                        empresa: fila.empresa,
-                        localidad: fila.localidad,
-                        centrosEducativos: centrosArray,
-                        qrUrl,
-                    });
-                }
-            } catch (err) {
-                console.error('❌ Error al procesar fila:', fila, err);
             }
+        } catch (e) {
+            console.error('❌ Error preparando importación:', e);
         }
 
         setDocentes(lista);

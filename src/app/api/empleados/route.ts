@@ -24,6 +24,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     try {
+        // 🔍 Verificar si ya existe
+        const existente = await Empleado.findOne({
+            dni: body.dni,
+            empresa: body.empresa,
+            pais: body.pais
+        });
+
+        if (existente) {
+            return NextResponse.json(
+                { mensaje: "Empleado ya registrado" },
+                { status: 409 } // Conflict
+            );
+        }
+
+        // ✅ Crear solo si no existe
         const nuevoEmpleado = await Empleado.create({
             nombre: body.nombre,
             apellido: body.apellido,
@@ -37,8 +52,12 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(nuevoEmpleado);
+
     } catch (error) {
         console.error("Error al crear empleado:", error);
-        return NextResponse.json({ error: "Error al crear empleado" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Error al crear empleado" },
+            { status: 500 }
+        );
     }
 }
