@@ -6,6 +6,8 @@ import Loader from '@/components/Loader';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type Carga = {
     _id: string;
@@ -243,16 +245,53 @@ export default function CargasPage() {
         return '';
     };
 
+    // Helpers reutilizables
+    const slugify = (str?: string) =>
+        (str ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-zA-Z0-9-_ ]/g, '')
+            .trim()
+            .replace(/\s+/g, '-')
+            .toLowerCase();
+
+    const buildNombreArchivo = (
+        base: string,
+        ext: 'pdf' | 'xlsx',
+        opts?: { timestamp?: boolean }
+    ) => {
+        const partes: string[] = [slugify(base) || 'cargas'];
+
+        if (añoFiltro !== 'TODOS') partes.push(slugify(String(añoFiltro)));
+        if (mesFiltro !== 0) {
+            const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre;
+            if (nombreMes) partes.push(slugify(nombreMes));
+        }
+        if (empresaFiltro && empresaFiltro !== 'TODAS') partes.push(`empresa-${slugify(empresaFiltro)}`);
+        if (productoFiltro && productoFiltro !== 'TODOS') partes.push(`producto-${slugify(productoFiltro)}`);
+        if (añoFiltro === 'TODOS' && mesFiltro === 0) partes.push('todas');
+
+        if (opts?.timestamp) {
+            const d = new Date();
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const sello = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+            partes.push(sello);
+        }
+
+        return `${partes.join('-').slice(0, 140)}.${ext}`;
+    };
+
+    // =========================
+    // EXPORTAR EXCEL
+    // =========================
     const exportarExcel = async () => {
         try {
-            const data = filtradas;
-
-            const dataFormateada = data.map(c => {
+            const dataFormateada = filtradas.map(c => {
                 const fechaObj = new Date(c.fecha);
                 const dia = String(fechaObj.getDate()).padStart(2, '0');
                 const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
                 const año = fechaObj.getFullYear();
-                const hora = fechaObj.toLocaleTimeString('es-AR', { hour12: false }); // ✅ 24hs
+                const hora = fechaObj.toLocaleTimeString('es-AR', { hour12: false });
 
                 return {
                     Fecha: `${dia}/${mes}/${año}`,
@@ -263,32 +302,136 @@ export default function CargasPage() {
                     DNI: c.dniEmpleado,
                     Producto: c.producto,
                     Litros: c.litros,
-                    'Precio sin descuento': c.precioFinalSinDescuento || '-',
-                    'Precio final': c.precioFinal,
+                    'Precio sin descuento': c.precioFinalSinDescuento != null
+                        ? Number(c.precioFinalSinDescuento).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '-',
+                    'Precio final': c.precioFinal != null
+                        ? Number(c.precioFinal).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '-',
                     Moneda: c.moneda
                 };
             });
 
             const worksheet = XLSX.utils.json_to_sheet(dataFormateada);
+
+            const partesHoja: string[] = ['Cargas'];
+            if (añoFiltro !== 'TODOS') partesHoja.push(String(añoFiltro));
+            if (mesFiltro !== 0) {
+                const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre;
+                if (nombreMes) partesHoja.push(nombreMes);
+            }
+            if (empresaFiltro && empresaFiltro !== 'TODAS') partesHoja.push(`Emp ${empresaFiltro}`);
+            if (productoFiltro && productoFiltro !== 'TODOS') partesHoja.push(`Prod ${productoFiltro}`);
+            if (añoFiltro === 'TODOS' && mesFiltro === 0) partesHoja.push('Todas');
+
+            const nombreHoja = partesHoja.join(' - ').slice(0, 31) || 'Cargas';
+
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Cargas');
+            XLSX.utils.book_append_sheet(workbook, worksheet, nombreHoja);
 
             const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
             const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
 
-            let nombreArchivo = 'cargas';
-            if (añoFiltro !== 'TODOS') nombreArchivo += `-${añoFiltro}`;
-            if (mesFiltro !== 0) {
-                const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre.toLowerCase();
-                if (nombreMes) nombreArchivo += `-${nombreMes}`;
-            }
-            if (añoFiltro === 'TODOS' && mesFiltro === 0) nombreArchivo += `-todas`;
-            nombreArchivo += `.xlsx`;
-
+            const nombreArchivo = buildNombreArchivo('Cargas', 'xlsx', { timestamp: false });
             saveAs(blob, nombreArchivo);
-
-        } catch (err) {
+        } catch {
             Swal.fire('Error', 'No se pudieron exportar las cargas.', 'error');
+        }
+    };
+
+    // =========================
+    // EXPORTAR PDF
+    // =========================
+    const exportarPDF = () => {
+        try {
+            const dataFormateada = filtradas.map(c => {
+                const fechaObj = new Date(c.fecha);
+                const dia = String(fechaObj.getDate()).padStart(2, '0');
+                const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                const año = fechaObj.getFullYear();
+                const hora = fechaObj.toLocaleTimeString('es-AR', { hour12: false });
+
+                return {
+                    Fecha: `${dia}/${mes}/${año}`,
+                    Hora: hora,
+                    Localidad: c.localidad,
+                    Empresa: c.empresa || '-',
+                    Empleado: c.nombreEmpleado,
+                    DNI: c.dniEmpleado,
+                    Producto: c.producto,
+                    Litros: c.litros,
+                    'Precio sin descuento': c.precioFinalSinDescuento != null
+                        ? Number(c.precioFinalSinDescuento).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '-',
+                    'Precio final': c.precioFinal != null
+                        ? Number(c.precioFinal).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '-',
+                    Moneda: c.moneda
+                };
+            });
+
+            const columns = [
+                'Fecha',
+                'Hora',
+                'Localidad',
+                'Empresa',
+                'Empleado',
+                'DNI',
+                'Producto',
+                'Litros',
+                'Precio sin descuento',
+                'Precio final',
+                'Moneda'
+            ] as const;
+
+            const rows = dataFormateada.map(r => [
+                r.Fecha,
+                r.Hora,
+                r.Localidad,
+                r.Empresa,
+                r.Empleado,
+                r.DNI,
+                r.Producto,
+                String(r.Litros ?? ''),
+                r['Precio sin descuento'],
+                r['Precio final'],
+                r.Moneda
+            ]);
+
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            doc.setFontSize(14);
+            doc.text('Cargas', 40, 40);
+
+            doc.setFontSize(10);
+            const descFiltros = [
+                añoFiltro !== 'TODOS' ? `Año: ${añoFiltro}` : 'Año: Todos',
+                mesFiltro !== 0 ? `Mes: ${mesesDelAño.find(m => m.numero === mesFiltro)?.nombre}` : 'Mes: Todos',
+                productoFiltro !== 'TODOS' ? `Producto: ${productoFiltro}` : 'Producto: Todos',
+                empresaFiltro !== 'TODAS' ? `Empresa: ${empresaFiltro}` : 'Empresa: Todas',
+            ].join('   |   ');
+            doc.text(descFiltros, 40, 58);
+
+            autoTable(doc, {
+                head: [columns as unknown as string[]],
+                body: rows,
+                startY: 80,
+                styles: { fontSize: 8, cellPadding: 4 },
+                headStyles: { fillColor: [31, 41, 55] },
+                didDrawPage: () => {
+                    const page = doc.getNumberOfPages();
+                    doc.setFontSize(9);
+                    doc.text(
+                        `Página ${page}`,
+                        doc.internal.pageSize.getWidth() - 80,
+                        doc.internal.pageSize.getHeight() - 20
+                    );
+                },
+            });
+
+            const nombreArchivo = buildNombreArchivo('Cargas', 'pdf', { timestamp: false });
+            doc.save(nombreArchivo);
+        } catch {
+            Swal.fire('Error', 'No se pudo exportar a PDF.', 'error');
         }
     };
 
@@ -390,17 +533,24 @@ export default function CargasPage() {
                     onClick={exportarExcel}
                     className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                        className="w-5 h-5"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l7.5 7.5 7.5-7.5m-7.5 7.5V3" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" strokeWidth={1.5}
+                        className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
                     </svg>
                     Descargar Excel
+                </button>
+
+                <button
+                    onClick={exportarPDF}
+                    className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-red-800 hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-md transition"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" strokeWidth={1.5}
+                        className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
+                    </svg>
+                    Descargar PDF
                 </button>
 
             </section>
