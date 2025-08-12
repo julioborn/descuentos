@@ -281,9 +281,7 @@ export default function CargasPage() {
         return `${partes.join('-').slice(0, 140)}.${ext}`;
     };
 
-    // =========================
     // EXPORTAR EXCEL
-    // =========================
     const exportarExcel = async () => {
         try {
             const dataFormateada = filtradas.map(c => {
@@ -339,9 +337,7 @@ export default function CargasPage() {
         }
     };
 
-    // =========================
     // EXPORTAR PDF
-    // =========================
     const exportarPDF = () => {
         try {
             const dataFormateada = filtradas.map(c => {
@@ -524,7 +520,7 @@ export default function CargasPage() {
                 >
                     {[5, 10, 20, 50, 100].map((cantidad) => (
                         <option key={cantidad} value={cantidad}>
-                            Ver {cantidad} por página
+                            Ver {cantidad}
                         </option>
                     ))}
                 </select>
