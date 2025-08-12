@@ -30,6 +30,7 @@ export default function Header() {
                 { label: 'Cargas', href: '/admin/cargas' },
                 { label: 'Precios', href: '/admin/precios' },
                 { label: 'Descuentos', href: '/admin/descuentos' },
+                { label: 'Estadísticas', href: '/admin/estadisticas' },
             ]
             : role === 'playero'
                 ? [{ label: 'Inicio', href: '/playero' }]
