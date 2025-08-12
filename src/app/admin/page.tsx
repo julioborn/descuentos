@@ -7,7 +7,8 @@ import {
     UsersIcon,
     DollarSign,
     Percent,
-    BarChart3
+    BarChart3,
+    GraduationCap
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -45,33 +46,40 @@ export default function AdminPage() {
             label: 'Empleados',
             path: '/admin/empleados',
             icon: <UsersIcon className="w-8 h-8 text-white" />,
-            bg: 'bg-gradient-to-r from-rose-500 to-red-600',
+            bg: 'bg-red-600',
+        },
+        {
+            label: 'Docentes',
+            path: '/admin/docentes',
+            icon: <GraduationCap className="w-8 h-8 text-white" />,
+            bg: 'bg-blue-600',
         },
         {
             label: 'Cargas',
             path: '/admin/cargas',
             icon: <FuelIcon className="w-8 h-8 text-white" />,
-            bg: 'bg-gradient-to-r from-yellow-500 to-amber-600',
+            bg: 'bg-yellow-500',
         },
         {
             label: 'Precios',
             path: '/admin/precios',
             icon: <DollarSign className="w-8 h-8 text-white" />,
-            bg: 'bg-gradient-to-r from-green-500 to-emerald-600',
+            bg: 'bg-green-600',
         },
         {
             label: 'Descuentos',
             path: '/admin/descuentos',
             icon: <Percent className="w-8 h-8 text-white" />,
-            bg: 'bg-gradient-to-r from-indigo-500 to-purple-600',
+            bg: 'bg-purple-600',
         },
         {
             label: 'Estadísticas',
             path: '/admin/estadisticas',
             icon: <BarChart3 className="w-8 h-8 text-white" />,
-            bg: 'bg-gradient-to-r from-cyan-500 to-blue-600',
+            bg: 'bg-cyan-600',
         },
     ];
+
 
     return (
         <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">

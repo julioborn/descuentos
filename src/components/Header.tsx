@@ -27,6 +27,7 @@ export default function Header() {
             ? [
                 { label: 'Inicio', href: '/admin' },
                 { label: 'Empleados', href: '/admin/empleados' },
+                { label: 'Docentes', href: '/admin/docentes' },
                 { label: 'Cargas', href: '/admin/cargas' },
                 { label: 'Precios', href: '/admin/precios' },
                 { label: 'Descuentos', href: '/admin/descuentos' },
