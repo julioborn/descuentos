@@ -378,7 +378,7 @@ export default function CargasPage() {
     };
 
     // ======================
-    // EXPORTAR PDF (totales visibles)
+    // EXPORTAR PDF (totales solo en la última página)
     // ======================
     const exportarPDF = () => {
         try {
@@ -442,16 +442,18 @@ export default function CargasPage() {
                 head: [columns as unknown as string[]],
                 body: rows,
                 startY: 80,
+                // (Opcional) margen inferior para asegurar espacio del pie en la última página
+                margin: { bottom: 60 },
                 styles: {
                     fontSize: 8,
                     cellPadding: 4,
-                    textColor: [0, 0, 0],          // 🔒 Asegura texto negro en el cuerpo
+                    textColor: [0, 0, 0], // cuerpo negro
                 },
                 headStyles: { fillColor: [31, 41, 55], textColor: [255, 255, 255] },
                 columnStyles: {
-                    7: { halign: 'right' },        // Litros
-                    8: { halign: 'right' },        // Precio surtidor
-                    9: { halign: 'right' },        // Precio con descuento
+                    7: { halign: 'right' }, // Litros
+                    8: { halign: 'right' }, // Precio surtidor
+                    9: { halign: 'right' }, // Precio con descuento
                 },
                 foot: [[
                     'Totales', '', '', '', '', '', '',
@@ -460,13 +462,13 @@ export default function CargasPage() {
                     fmt(totalConDescNum),
                     ''
                 ]],
+                showFoot: 'lastPage', // 👈 SOLO en la última página
                 footStyles: {
-                    fillColor: [31, 41, 55],       // 🟦 Fondo oscuro
-                    textColor: [255, 255, 255],    // 📝 Texto blanco
+                    fillColor: [31, 41, 55],
+                    textColor: [255, 255, 255],
                     fontStyle: 'bold',
                 },
                 didParseCell: (data) => {
-                    // Alinea la fila de pie por columnas
                     if (data.section === 'foot' && [7, 8, 9].includes(Number(data.column.dataKey))) {
                         data.cell.styles.halign = 'right';
                     }
