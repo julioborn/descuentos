@@ -653,7 +653,7 @@ export default function CargasPage() {
                                 <td className="p-3">{c.dniEmpleado}</td>
                                 <td className="p-3">{c.empresa || '-'}</td>
                                 <td className="p-3">{c.localidad || '-'}</td>
-                                <td className="p-3">{banderaPorMoneda(c.moneda)} {c.producto}</td>
+                                <td className="p-3">{/*{banderaPorMoneda(c.moneda)}*/} {c.producto}</td>
                                 <td className="p-3 text-center font-semibold">{c.litros}</td>
                                 <td className="p-3 text-center text-gray-300">
                                     {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
@@ -698,7 +698,7 @@ export default function CargasPage() {
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
                             <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300">
-                                {banderaPorMoneda(c.moneda)} {c.producto}
+                                {/*{banderaPorMoneda(c.moneda)}*/} {c.producto}
                             </span>
                         </div>
 
