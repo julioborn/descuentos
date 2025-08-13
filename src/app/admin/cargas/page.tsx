@@ -564,8 +564,8 @@ export default function CargasPage() {
                             <th className="p-3 text-left">Localidad</th>
                             <th className="p-3 text-left">Producto</th>
                             <th className="p-3 text-center">Litros</th>
-                            <th className="p-3 text-center">Sin desc.</th>
-                            <th className="p-3 text-center">Final</th>
+                            <th className="p-3 text-center">Precio Surtidor</th>
+                            <th className="p-3 text-center">Precio con Descuento</th>
                             <th className="p-3 text-center rounded-tr-lg">Acciones</th>
                         </tr>
                     </thead>
@@ -680,13 +680,13 @@ export default function CargasPage() {
                         {/* Precios */}
                         <div className="text-sm space-y-1 mb-4">
                             <p>
-                                <span className="text-gray-400">Precio sin descuento:</span>{' '}
+                                <span className="text-gray-400">Precio surtidor:</span>{' '}
                                 <span className="text-red-400 font-semibold">
                                     {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
                                 </span>
                             </p>
                             <p>
-                                <span className="text-gray-400">Precio final:</span>{' '}
+                                <span className="text-gray-400">Precio con descuento:</span>{' '}
                                 <span className="text-green-400 font-semibold">
                                     {c.precioFinal.toLocaleString()} {c.moneda}
                                 </span>
