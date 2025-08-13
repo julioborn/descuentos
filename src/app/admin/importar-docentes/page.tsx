@@ -48,6 +48,14 @@ export default function ImportarDocentes() {
         let cntDuplicadosBDParalelo = 0
         let cntErrores = 0
 
+        // listados para consola
+        const listadoNuevos: { nombre: string; apellido: string; dni: string }[] = []
+        const listadoExistActualizados: { nombre: string; apellido: string; dni: string; agregados: string }[] = []
+        const listadoExistSinCambios: { nombre: string; apellido: string; dni: string }[] = []
+        const listadoDupExcel: { nombre: string; apellido: string; dni: string }[] = []
+        const listadoDupBDParalelo: { nombre: string; apellido: string; dni: string }[] = []
+        const listadoErrores: { nombre?: string; apellido?: string; dni?: string; error: string }[] = []
+
         try {
             // 2) Traer empleados existentes UNA vez
             const empleadosExistRes = await fetch('/api/empleados')
@@ -64,9 +72,15 @@ export default function ImportarDocentes() {
             // 3) Iterar filas del Excel
             for (const fila of filas) {
                 const dni = String(fila.dni || '').trim()
+                const nombreFila = String(fila?.nombre || '').trim()
+                const apellidoFila = String(fila?.apellido || '').trim()
+
                 if (!dni || procesados.has(dni)) {
                     console.log(`⏩ DNI ${dni || '(vacío)'} salteado (vacío o duplicado en el Excel)`)
-                    if (dni) cntDuplicadosExcel++
+                    if (dni) {
+                        cntDuplicadosExcel++
+                        listadoDupExcel.push({ nombre: nombreFila, apellido: apellidoFila, dni })
+                    }
                     continue
                 }
                 procesados.add(dni)
@@ -116,6 +130,7 @@ export default function ImportarDocentes() {
                                 `↺ Docente EXISTENTE sin cambios: ${nombreCompleto} (DNI ${dni}) — ya estaban: ${centrosEntradaOriginal.join(', ') || '(sin centros)'}`
                             )
                             cntExistSinCambios++
+                            listadoExistSinCambios.push({ nombre: nombreFila || existente?.nombre, apellido: apellidoFila || existente?.apellido, dni })
                         } else {
                             // Volvemos a los nombres originales para guardar (el backend igual deduplica)
                             const nuevosCentrosOriginal = centrosEntradaOriginal.filter((c) =>
@@ -137,6 +152,12 @@ export default function ImportarDocentes() {
                             if (!upsertDocente.ok) throw new Error('Error creando/actualizando docente')
 
                             cntExistActualizados++
+                            listadoExistActualizados.push({
+                                nombre: nombreFila || existente?.nombre,
+                                apellido: apellidoFila || existente?.apellido,
+                                dni,
+                                agregados: nuevosCentrosOriginal.join(', ')
+                            })
                         }
 
                         // 3) QR con token existente (no mostramos tarjeta en existentes)
@@ -167,6 +188,8 @@ export default function ImportarDocentes() {
                         if (empRes.status === 409) {
                             console.warn(`⚠️ Empleado duplicado detectado en paralelo para DNI ${dni}`)
                             cntDuplicadosBDParalelo++
+                            listadoDupBDParalelo.push({ nombre: nombreFila, apellido: apellidoFila, dni })
+
                             const ya = empleadoPorDni.get(dni)
                             if (!ya) throw new Error('Empleado duplicado pero no encontrado en cache')
 
@@ -193,6 +216,7 @@ export default function ImportarDocentes() {
                                 `✅ Empleado creado: ${fila.nombre} ${fila.apellido} (DNI: ${dni})`
                             )
                             cntNuevosEmpleados++
+                            listadoNuevos.push({ nombre: nombreFila, apellido: apellidoFila, dni })
 
                             const docenteRes = await fetch('/api/docentes', {
                                 method: 'POST',
@@ -230,20 +254,43 @@ export default function ImportarDocentes() {
                             qrUrl,
                         })
                     }
-                } catch (err) {
+                } catch (err: any) {
                     cntErrores++
+                    listadoErrores.push({ nombre: nombreFila, apellido: apellidoFila, dni, error: String(err?.message || err) })
                     console.error(`❌ Error al procesar DNI ${dni}:`, err)
                 }
             }
-        } catch (e) {
+        } catch (e: any) {
             cntErrores++
+            listadoErrores.push({ error: `Error preparando importación: ${String(e?.message || e)}` })
             console.error('❌ Error preparando importación:', e)
         }
 
         setDocentes(lista)
         setLoading(false)
 
-        // Resumen
+        // 🔎 Resumen en consola (con nombres y apellidos)
+        console.groupCollapsed('📊 Resumen importación Docentes')
+        console.log('🆕 Empleados nuevos:', cntNuevosEmpleados)
+        if (listadoNuevos.length) console.table(listadoNuevos)
+
+        console.log('➕ Existentes actualizados (centros agregados):', cntExistActualizados)
+        if (listadoExistActualizados.length) console.table(listadoExistActualizados)
+
+        console.log('↺ Existentes sin cambios:', cntExistSinCambios)
+        if (listadoExistSinCambios.length) console.table(listadoExistSinCambios)
+
+        console.log('⏩ Duplicados en el Excel salteados:', cntDuplicadosExcel)
+        if (listadoDupExcel.length) console.table(listadoDupExcel)
+
+        console.log('⚠️ Duplicados en BD (paralelo):', cntDuplicadosBDParalelo)
+        if (listadoDupBDParalelo.length) console.table(listadoDupBDParalelo)
+
+        console.log('❌ Errores:', cntErrores)
+        if (listadoErrores.length) console.table(listadoErrores)
+        console.groupEnd()
+
+        // Resumen (alert como ya tenías)
         alert(
             [
                 `Resumen importación Docentes`,

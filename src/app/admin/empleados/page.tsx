@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import QRCode from 'qrcode';
+import { useEffect, useMemo, useState, useDeferredValue } from 'react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import { useRouter } from 'next/navigation';
@@ -20,111 +19,117 @@ type Empleado = {
     localidad: string;
 };
 
-const ITEMS = 5;
+/* --- utils --- */
+const sinAcentos = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+function buildPageWindow(total: number, current: number, maxButtons = 7) {
+    if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
+    const windowSize = maxButtons - 2; // reservamos 1 y total
+    let start = Math.max(2, current - Math.floor(windowSize / 2));
+    let end = Math.min(total - 1, start + windowSize - 1);
+    start = Math.max(2, Math.min(start, total - 1 - (windowSize - 1)));
+    const pages: (number | '…')[] = [1];
+    if (start > 2) pages.push('…');
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push('…');
+    pages.push(total);
+    return pages;
+}
 
 export default function EmpleadosPage() {
     const router = useRouter();
-
-    const [empleados, setEmpleados] = useState<Empleado[]>([]);
-    const [qrMap, setQrMap] = useState<Record<string, string>>({});
-    const [loading, setLoading] = useState(true);
-
-    /* ---------- filtros & paginación ---------- */
-    const [busqueda, setBusqueda] = useState('');
-    const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
-    const [pagina, setPagina] = useState(1);
     const { data: session, status } = useSession();
     const role = session?.user?.role;
-    const [localidadFiltro, setLocalidadFiltro] = useState<'TODAS' | string>('TODAS');
 
+    const [empleados, setEmpleados] = useState<Empleado[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    /* filtros & paginación */
+    const [busqueda, setBusqueda] = useState('');
+    const [localidadFiltro, setLocalidadFiltro] = useState<'TODAS' | string>('TODAS');
+    const [pagina, setPagina] = useState(1);
+    const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
+
+    /* fetch inicial */
+    useEffect(() => {
+        if (!role) return;
+
+        (async () => {
+            try {
+                const res = await fetch('/api/empleados');
+                if (!res.ok) throw new Error('empleados');
+
+                let data = (await res.json()) as Empleado[];
+
+                // Filtrado por país según rol (igual que tenías)
+                const paisesPorRol: Record<string, string> = {
+                    admin_arg: 'AR',
+                    admin_py: 'PY',
+                };
+                if (role && paisesPorRol[role]) {
+                    data = data.filter((emp) => emp.pais === paisesPorRol[role]);
+                }
+
+                // 🚫 dejar solo NO-DOCENTES
+                data = data.filter((emp) => emp.empresa !== 'DOCENTES');
+
+                // ordenar por apellido
+                data.sort((a, b) => a.apellido.localeCompare(b.apellido));
+
+                setEmpleados(data);
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'No se pudieron cargar los empleados.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [role]);
+
+    /* listas auxiliares */
     const localidadesUnicas = useMemo(
         () => Array.from(new Set(empleados.map((e) => e.localidad))).sort(),
         [empleados]
     );
 
-    /* ---------- fetch inicial ---------- */
-    useEffect(() => {
-        if (!role) return;
+    /* búsqueda diferida */
+    const deferredBusqueda = useDeferredValue(busqueda);
 
-        const fetchEmpleados = async () => {
-            try {
-                const res = await fetch('/api/empleados');
-                if (!res.ok) throw new Error();
-
-                let data = (await res.json()) as Empleado[];
-
-                // 🔴 Filtrado por país según el rol
-                const paisesPorRol: Record<string, string> = {
-                    admin_arg: 'AR',
-                    admin_py: 'PY',
-                };
-
-                if (role && paisesPorRol[role]) {
-                    data = data.filter((emp) => emp.pais === paisesPorRol[role]);
-                }
-
-                data.sort((a, b) => a.apellido.localeCompare(b.apellido));
-
-                setEmpleados(data);
-
-                const qrData = await Promise.all(
-                    data.map((emp) =>
-                        QRCode.toDataURL(
-                            `${window.location.origin}/playero?token=${emp.qrToken}`
-                        ).then((url) => ({ id: emp._id, url }))
-                    )
-                );
-                const mapa: Record<string, string> = {};
-                qrData.forEach(({ id, url }) => (mapa[id] = url));
-                setQrMap(mapa);
-            } catch {
-                Swal.fire('Error', 'No se pudieron cargar los empleados.', 'error');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchEmpleados();
-    }, [role]);
-
-    /* ---------- conjunto de empresas para desplegable ---------- */
+    const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
     const empresasUnicas = useMemo(
         () => Array.from(new Set(empleados.map((e) => e.empresa))).sort(),
         [empleados]
     );
 
-    /* ---------- lista filtrada ---------- */
-    const eliminarAcentos = (texto: string) =>
-        texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
+    /* lista filtrada (sin empresa porque ya excluimos DOCENTES) */
     const empleadosFiltrados = useMemo(() => {
-        const texto = eliminarAcentos(busqueda.trim());
-
+        const txt = sinAcentos(deferredBusqueda.trim());
         return empleados.filter((e) => {
-            const campos = `${e.nombre} ${e.apellido} ${e.dni}`;
-            const coincideTexto = !texto || eliminarAcentos(campos).includes(texto);
-
-            const coincideEmpresa =
-                empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;
-
-            const coincideLocalidad =
-                localidadFiltro === 'TODAS' || e.localidad === localidadFiltro;
-
-            return coincideTexto && coincideEmpresa && coincideLocalidad;
+            const coincideTxt =
+                !txt || sinAcentos(`${e.nombre} ${e.apellido} ${e.dni} ${e.localidad} ${e.empresa}`).includes(txt);
+            const coincideLoc = localidadFiltro === 'TODAS' || e.localidad === localidadFiltro;
+            const coincideEmp = empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;
+            return coincideTxt && coincideLoc && coincideEmp;
         });
-    }, [empleados, busqueda, empresaFiltro, localidadFiltro]);
+    }, [empleados, deferredBusqueda, localidadFiltro, empresaFiltro]);
 
-    /* ---------- paginación ---------- */
-    const totalPag = Math.ceil(empleadosFiltrados.length / ITEMS);
+    /* paginación */
+    const totalPag = Math.ceil(empleadosFiltrados.length / itemsPorPagina);
     const págActual = Math.min(pagina, totalPag || 1);
     const listaPagina = empleadosFiltrados.slice(
-        (págActual - 1) * ITEMS,
-        págActual * ITEMS
+        (págActual - 1) * itemsPorPagina,
+        págActual * itemsPorPagina
     );
 
-    if (status === 'loading') return <Loader />;
+    // clamp cuando cambian filtros y se achica totalPag
+    useEffect(() => {
+        setPagina((p) => Math.min(p, totalPag || 1));
+    }, [totalPag]);
 
-    /* ---------- acciones ---------- */
+    if (status === 'loading' || loading) return <Loader />;
+
+    /* acciones */
     const eliminarEmpleado = async (id: string) => {
         const { isConfirmed } = await Swal.fire({
             title: '¿Eliminar empleado?',
@@ -134,7 +139,6 @@ export default function EmpleadosPage() {
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
         });
-
         if (!isConfirmed) return;
 
         try {
@@ -156,18 +160,19 @@ export default function EmpleadosPage() {
             const { value: values } = await Swal.fire({
                 title: 'Editar empleado',
                 html: `
-                <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
-                <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
-                <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
-                <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
-                <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
-            `,
+          <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
+          <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
+          <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
+          <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
+          <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
+        `,
                 focusConfirm: false,
                 confirmButtonText: 'Guardar',
                 cancelButtonText: 'Cancelar',
                 showCancelButton: true,
                 customClass: {
-                    confirmButton: 'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    confirmButton:
+                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
                     cancelButton: 'swal2-cancel px-6 py-2 rounded',
                 },
                 preConfirm: () => {
@@ -184,120 +189,116 @@ export default function EmpleadosPage() {
                 },
             });
 
-            if (!values) return; // cancelado
+            if (!values) return;
 
             const updateRes = await fetch(`/api/empleados/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(values),
             });
-
             if (!updateRes.ok) throw new Error();
             const actualizado = await updateRes.json();
 
-            setEmpleados((prev) =>
-                prev.map((e) => (e._id === id ? { ...e, ...actualizado } : e))
-            );
-
+            setEmpleados((prev) => prev.map((e) => (e._id === id ? { ...e, ...actualizado } : e)));
             Swal.fire('Actualizado', 'El empleado fue editado correctamente.', 'success');
         } catch {
             Swal.fire('Error', 'No se pudo editar el empleado.', 'error');
         }
     };
 
-    const verQrGrande = (url: string, nombre: string, apellido: string) => {
-        Swal.fire({
-            html: `
-          <div class="flex flex-col items-center">
-            <h2 style="font-size:18px; font-weight:600; margin-bottom:10px;">
-              ${nombre} ${apellido}
-            </h2>
-            <img src="${url}" alt="QR"
-                style="width: 250px; height: 250px; border-radius: 10px; border: 2px solid #ccc;" />
+    /* Detalle + QR on-demand al tocar fila */
+    const verDetalle = async (emp: Empleado) => {
+        try {
+            const QR = await import('qrcode'); // carga diferida
+            const origin = typeof window !== 'undefined' ? window.location.origin : '';
+            const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`);
+
+            const html = `
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+          <div style="text-align:center">
+            <div style="font-size:18px;font-weight:700;">${emp.nombre} ${emp.apellido}</div>
+            <div style="opacity:.8">DNI: ${emp.dni} • Tel: ${emp.telefono}</div>
+            <div style="opacity:.8">Localidad: ${emp.localidad}</div>
+            <div style="opacity:.8">Empresa: ${emp.empresa}</div>
           </div>
-        `,
-            showConfirmButton: false,
-            background: '#1f2937',
-            color: '#fff',
-            customClass: {
-                popup: 'rounded-lg shadow-lg'
-            }
-        });
+          <img src="${qrUrl}" alt="QR" style="width:240px;height:240px;border-radius:8px;border:2px solid #ccc" />
+        </div>
+      `;
+            await Swal.fire({
+                html,
+                background: '#1f2937',
+                color: '#fff',
+                showConfirmButton: true,
+                confirmButtonText: 'Cerrar',
+                customClass: { popup: 'rounded-lg shadow-lg' },
+            });
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudo generar el QR.', 'error');
+        }
     };
 
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Empleados</h1>
 
-            {/* ---------- Controles de búsqueda / filtros ---------- */}
+            {/* Controles */}
             <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-w-6xl mx-auto mb-6">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
                     <input
                         value={busqueda}
-                        onChange={(e) => {
-                            setBusqueda(e.target.value);
-                            setPagina(1);
-                        }}
-                        placeholder="Buscar por nombre, apellido o DNI…"
+                        onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+                        placeholder="Buscar por nombre, apellido, DNI o localidad…"
                         className="flex-1 min-w-[200px] rounded px-4 py-2 bg-gray-800 border border-gray-600"
                     />
 
                     <select
+                        value={localidadFiltro}
+                        onChange={(e) => { setLocalidadFiltro(e.target.value); setPagina(1); }}
+                        className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
+                    >
+                        <option value="TODAS">Todas las localidades</option>
+                        {localidadesUnicas.map((loc) => <option key={loc}>{loc}</option>)}
+                    </select>
+
+                    <select
                         value={empresaFiltro}
-                        onChange={(e) => {
-                            setEmpresaFiltro(e.target.value);
-                            setPagina(1);
-                        }}
+                        onChange={(e) => { setEmpresaFiltro(e.target.value); setPagina(1); }}
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
                     >
                         <option value="TODAS">Todas las empresas</option>
                         {empresasUnicas.map((empr) => (
-                            <option key={empr}>{empr}</option>
+                            <option key={empr} value={empr}>{empr}</option>
                         ))}
                     </select>
 
+                    {/* items por página */}
                     <select
-                        value={localidadFiltro}
-                        onChange={(e) => {
-                            setLocalidadFiltro(e.target.value);
-                            setPagina(1);
-                        }}
-                        className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
+                        value={itemsPorPagina}
+                        onChange={(e) => { setItemsPorPagina(Number(e.target.value)); setPagina(1); }}
+                        className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[150px]"
                     >
-                        <option value="TODAS">Todas las localidades</option>
-                        {localidadesUnicas.map((loc) => (
-                            <option key={loc}>{loc}</option>
-                        ))}
+                        {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n} por página</option>)}
                     </select>
                 </div>
 
-                <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+                {/* <div className="w-full sm:w-auto flex justify-center sm:justify-end">
                     <button
                         onClick={() => router.push('/admin/registrar-empleado')}
                         className="bg-red-800 px-4 py-2 rounded font-semibold hover:bg-red-700 flex items-center gap-2"
                     >
                         <span>Registrar</span>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"
-                            />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                         </svg>
                     </button>
-                </div>
+                </div> */}
             </section>
 
-            {/* ---------- Tabla (desktop) ---------- */}
+            {/* Tabla (desktop) */}
             <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
-                <table className="min-w-[800px] w-full text-sm">
+                <table className="min-w-[900px] w-full text-sm">
                     <thead className="text-left bg-white/5 text-white">
                         <tr>
                             <th className="p-3">Nombre</th>
@@ -306,33 +307,28 @@ export default function EmpleadosPage() {
                             <th className="p-3">Teléfono</th>
                             <th className="p-3">Empresa</th>
                             <th className="p-3">Localidad</th>
-                            <th className="p-3">QR</th>
                             <th className="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {listaPagina.map((emp) => (
-                            <tr key={emp._id} className="hover:bg-white/10 transition">
+                            <tr
+                                key={emp._id}
+                                onClick={() => verDetalle(emp)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
+                                className="hover:bg-white/10 transition cursor-pointer focus:outline-none
+                           focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                title="Ver detalle y QR"
+                            >
                                 <td className="p-2">{emp.nombre}</td>
                                 <td className="p-2">{emp.apellido}</td>
                                 <td className="p-2">{emp.dni}</td>
                                 <td className="p-2">{emp.telefono}</td>
                                 <td className="p-2">{emp.empresa}</td>
                                 <td className="p-2">{emp.localidad}</td>
-                                <td className="p-2">
-                                    {qrMap[emp._id] ? (
-                                        <img
-                                            src={qrMap[emp._id]}
-                                            alt="QR"
-                                            className="w-14 h-14 rounded border border-white/20 cursor-pointer hover:scale-110 transition"
-                                            onClick={() => verQrGrande(qrMap[emp._id], emp.nombre, emp.apellido)}
-                                        />
-                                    ) : (
-                                        <Loader />
-                                    )}
-                                </td>
-                                <td className="p-2 text-center">
-                                    {/* Editar */}
+                                <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
                                     <button
                                         onClick={() => editarEmpleado(emp._id)}
                                         className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 mr-2"
@@ -343,8 +339,6 @@ export default function EmpleadosPage() {
                                             <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
                                         </svg>
                                     </button>
-
-                                    {/* Eliminar */}
                                     <button
                                         onClick={() => eliminarEmpleado(emp._id)}
                                         className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600"
@@ -361,26 +355,26 @@ export default function EmpleadosPage() {
                 </table>
             </div>
 
-            {/* ---------- Cards (mobile) ---------- */}
+            {/* Cards (mobile) */}
             <div className="sm:hidden flex flex-col gap-4 max-w-xl mx-auto">
                 {listaPagina.map((emp) => (
                     <div
                         key={emp._id}
-                        className="bg-white/5 rounded-lg p-4 border border-white/10 shadow-lg"
+                        onClick={() => verDetalle(emp)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
+                        className="bg-white/5 rounded-lg p-4 border border-white/10 shadow-lg cursor-pointer
+                       hover:bg-white/10 transition focus:outline-none
+                       focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700"
+                        title="Ver detalle y QR"
                     >
                         <p><b>{emp.nombre} {emp.apellido}</b></p>
                         <p>DNI: {emp.dni}</p>
                         <p>Tel: {emp.telefono}</p>
                         <p>Empresa: {emp.empresa}</p>
                         <p>Localidad: {emp.localidad}</p>
-                        <div className="mt-2 flex justify-center">
-                            {qrMap[emp._id] ? (
-                                <img src={qrMap[emp._id]} alt="QR" className="w-32 h-32" />
-                            ) : (
-                                <Loader />
-                            )}
-                        </div>
-                        <div className="mt-4 flex justify-end gap-2">
+                        <div className="mt-3 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             <button
                                 onClick={() => editarEmpleado(emp._id)}
                                 className="px-3 py-1 rounded-full bg-yellow-600 hover:bg-yellow-500 text-sm"
@@ -403,42 +397,71 @@ export default function EmpleadosPage() {
                 ))}
             </div>
 
-            {/* ---------- Paginación ---------- */}
-            {
-                totalPag > 1 && (
-                    <div className="flex justify-center mt-8 items-center gap-2 text-white">
+            {/* Paginación */}
+            {totalPag > 1 && (
+                <div className="flex flex-col items-center gap-3 mt-8 text-white">
+                    <div className="text-sm text-white/70">
+                        Mostrando{' '}
+                        <span className="font-semibold">
+                            {(págActual - 1) * itemsPorPagina + 1}
+                            {'–'}
+                            {Math.min(págActual * itemsPorPagina, empleadosFiltrados.length)}
+                        </span>{' '}
+                        de <span className="font-semibold">{empleadosFiltrados.length}</span>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center items-center gap-1">
+                        <button
+                            onClick={() => setPagina(1)}
+                            disabled={págActual === 1}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Primera"
+                        >
+                            «
+                        </button>
                         <button
                             onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                             disabled={págActual === 1}
-                            className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30"
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Anterior"
                         >
-                            <HiChevronLeft size={22} />
+                            <HiChevronLeft size={20} />
                         </button>
 
-                        {/* Números de página */}
-                        {Array.from({ length: totalPag }, (_, i) => i + 1).map((num) => (
-                            <button
-                                key={num}
-                                onClick={() => setPagina(num)}
-                                className={`w-9 h-9 rounded-full font-semibold transition
-                        ${págActual === num
-                                        ? 'bg-red-700 text-white'
-                                        : 'bg-gray-700 hover:bg-gray-600'}`}
-                            >
-                                {num}
-                            </button>
-                        ))}
+                        {buildPageWindow(totalPag, págActual, 7).map((it, idx) =>
+                            it === '…' ? (
+                                <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-white/70">…</span>
+                            ) : (
+                                <button
+                                    key={it}
+                                    onClick={() => setPagina(it as number)}
+                                    className={`w-9 h-9 rounded-full font-semibold transition
+                    ${págActual === it ? 'bg-red-700 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                >
+                                    {it}
+                                </button>
+                            )
+                        )}
 
                         <button
                             onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                             disabled={págActual === totalPag}
-                            className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30"
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Siguiente"
                         >
-                            <HiChevronRight size={22} />
+                            <HiChevronRight size={20} />
+                        </button>
+                        <button
+                            onClick={() => setPagina(totalPag)}
+                            disabled={págActual === totalPag}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Última"
+                        >
+                            »
                         </button>
                     </div>
-                )
-            }
-        </main >
+                </div>
+            )}
+        </main>
     );
 }
