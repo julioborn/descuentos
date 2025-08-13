@@ -281,10 +281,18 @@ export default function CargasPage() {
         return `${partes.join('-').slice(0, 140)}.${ext}`;
     };
 
-    // EXPORTAR EXCEL
+    /* =========================
+       EXPORTAR EXCEL (con SUM)
+       ========================= */
     const exportarExcel = async () => {
         try {
-            const dataFormateada = filtradas.map(c => {
+            // Armamos datos: precios y litros como NÚMEROS (no strings) para que SUM funcione
+            const headers = [
+                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', 'DNI', 'Producto',
+                'Litros', 'Precio surtidor', 'Precio con descuento', 'Moneda'
+            ] as const;
+
+            const data = filtradas.map(c => {
                 const fechaObj = new Date(c.fecha);
                 const dia = String(fechaObj.getDate()).padStart(2, '0');
                 const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
@@ -299,19 +307,52 @@ export default function CargasPage() {
                     Empleado: c.nombreEmpleado,
                     DNI: c.dniEmpleado,
                     Producto: c.producto,
-                    Litros: c.litros,
-                    'Precio sin descuento': c.precioFinalSinDescuento != null
-                        ? Number(c.precioFinalSinDescuento).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '-',
-                    'Precio final': c.precioFinal != null
-                        ? Number(c.precioFinal).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '-',
+                    Litros: c.litros != null ? Number(c.litros) : null, // número
+                    'Precio surtidor': c.precioFinalSinDescuento != null ? Number(c.precioFinalSinDescuento) : null, // número
+                    'Precio con descuento': c.precioFinal != null ? Number(c.precioFinal) : null, // número
                     Moneda: c.moneda
                 };
             });
 
-            const worksheet = XLSX.utils.json_to_sheet(dataFormateada);
+            // Hoja con headers fijos para orden consistente
+            const worksheet = XLSX.utils.json_to_sheet(data, { header: headers as unknown as string[] });
 
+            // Cantidades de filas
+            const dataStartRow = 2; // fila 1 = encabezados
+            const endRow = dataStartRow + data.length - 1;
+
+            // Agrego una fila en blanco y la fila de totales con fórmulas
+            // Columnas: H = Litros, I = Precio surtidor, J = Precio con descuento
+            const blankRowOrigin = `A${endRow + 1 + 1}`; // una después de la última (endRow) +1
+            XLSX.utils.sheet_add_aoa(worksheet, [[]], { origin: blankRowOrigin });
+
+            const totalsRowIdx = endRow + 2; // en números de Excel (1-based)
+            XLSX.utils.sheet_add_aoa(
+                worksheet,
+                [[
+                    'Totales', '', '', '', '', '', '',
+                    { f: `SUM(H${dataStartRow}:H${endRow})` },
+                    { f: `SUM(I${dataStartRow}:I${endRow})` },
+                    { f: `SUM(J${dataStartRow}:J${endRow})` },
+                    ''
+                ]],
+                { origin: `A${totalsRowIdx + 1}` } // +1 por la fila en blanco que agregamos antes
+            );
+
+            // Ajusto formatos numéricos (#,##0.00) para columnas H, I, J en datos y totales
+            const setNumFmt = (addr: string) => {
+                if (worksheet[addr]) worksheet[addr].z = '#,##0.00';
+            };
+            for (let r = dataStartRow; r <= endRow; r++) {
+                setNumFmt(`H${r}`);
+                setNumFmt(`I${r}`);
+                setNumFmt(`J${r}`);
+            }
+            setNumFmt(`H${totalsRowIdx + 1}`);
+            setNumFmt(`I${totalsRowIdx + 1}`);
+            setNumFmt(`J${totalsRowIdx + 1}`);
+
+            // Nombre de hoja acorde a filtros (máx 31 chars)
             const partesHoja: string[] = ['Cargas'];
             if (añoFiltro !== 'TODOS') partesHoja.push(String(añoFiltro));
             if (mesFiltro !== 0) {
@@ -321,7 +362,6 @@ export default function CargasPage() {
             if (empresaFiltro && empresaFiltro !== 'TODAS') partesHoja.push(`Emp ${empresaFiltro}`);
             if (productoFiltro && productoFiltro !== 'TODOS') partesHoja.push(`Prod ${productoFiltro}`);
             if (añoFiltro === 'TODOS' && mesFiltro === 0) partesHoja.push('Todas');
-
             const nombreHoja = partesHoja.join(' - ').slice(0, 31) || 'Cargas';
 
             const workbook = XLSX.utils.book_new();
@@ -337,9 +377,22 @@ export default function CargasPage() {
         }
     };
 
-    // EXPORTAR PDF
+    // ======================
+    // EXPORTAR PDF (totales visibles)
+    // ======================
     const exportarPDF = () => {
         try {
+            // Totales numéricos
+            const sum = (arr: any[], key: string) =>
+                arr.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0);
+
+            const totalLitrosNum = sum(filtradas, 'litros');
+            const totalSurtidorNum = sum(filtradas, 'precioFinalSinDescuento');
+            const totalConDescNum = sum(filtradas, 'precioFinal');
+
+            const fmt = (n: number) =>
+                n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
             const dataFormateada = filtradas.map(c => {
                 const fechaObj = new Date(c.fecha);
                 const dia = String(fechaObj.getDate()).padStart(2, '0');
@@ -355,43 +408,21 @@ export default function CargasPage() {
                     Empleado: c.nombreEmpleado,
                     DNI: c.dniEmpleado,
                     Producto: c.producto,
-                    Litros: c.litros,
-                    'Precio sin descuento': c.precioFinalSinDescuento != null
-                        ? Number(c.precioFinalSinDescuento).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '-',
-                    'Precio final': c.precioFinal != null
-                        ? Number(c.precioFinal).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '-',
+                    Litros: c.litros != null ? fmt(Number(c.litros)) : '-',
+                    'Precio surtidor': c.precioFinalSinDescuento != null ? fmt(Number(c.precioFinalSinDescuento)) : '-',
+                    'Precio con descuento': c.precioFinal != null ? fmt(Number(c.precioFinal)) : '-',
                     Moneda: c.moneda
                 };
             });
 
             const columns = [
-                'Fecha',
-                'Hora',
-                'Localidad',
-                'Empresa',
-                'Empleado',
-                'DNI',
-                'Producto',
-                'Litros',
-                'Precio sin descuento',
-                'Precio final',
-                'Moneda'
+                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', 'DNI', 'Producto',
+                'Litros', 'Precio surtidor', 'Precio con descuento', 'Moneda'
             ] as const;
 
             const rows = dataFormateada.map(r => [
-                r.Fecha,
-                r.Hora,
-                r.Localidad,
-                r.Empresa,
-                r.Empleado,
-                r.DNI,
-                r.Producto,
-                String(r.Litros ?? ''),
-                r['Precio sin descuento'],
-                r['Precio final'],
-                r.Moneda
+                r.Fecha, r.Hora, r.Localidad, r.Empresa, r.Empleado, r.DNI, r.Producto,
+                r.Litros, r['Precio surtidor'], r['Precio con descuento'], r.Moneda
             ]);
 
             const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
@@ -411,8 +442,35 @@ export default function CargasPage() {
                 head: [columns as unknown as string[]],
                 body: rows,
                 startY: 80,
-                styles: { fontSize: 8, cellPadding: 4 },
-                headStyles: { fillColor: [31, 41, 55] },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 4,
+                    textColor: [0, 0, 0],          // 🔒 Asegura texto negro en el cuerpo
+                },
+                headStyles: { fillColor: [31, 41, 55], textColor: [255, 255, 255] },
+                columnStyles: {
+                    7: { halign: 'right' },        // Litros
+                    8: { halign: 'right' },        // Precio surtidor
+                    9: { halign: 'right' },        // Precio con descuento
+                },
+                foot: [[
+                    'Totales', '', '', '', '', '', '',
+                    fmt(totalLitrosNum),
+                    fmt(totalSurtidorNum),
+                    fmt(totalConDescNum),
+                    ''
+                ]],
+                footStyles: {
+                    fillColor: [31, 41, 55],       // 🟦 Fondo oscuro
+                    textColor: [255, 255, 255],    // 📝 Texto blanco
+                    fontStyle: 'bold',
+                },
+                didParseCell: (data) => {
+                    // Alinea la fila de pie por columnas
+                    if (data.section === 'foot' && [7, 8, 9].includes(Number(data.column.dataKey))) {
+                        data.cell.styles.halign = 'right';
+                    }
+                },
                 didDrawPage: () => {
                     const page = doc.getNumberOfPages();
                     doc.setFontSize(9);
