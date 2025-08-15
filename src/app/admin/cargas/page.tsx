@@ -282,7 +282,7 @@ export default function CargasPage() {
     };
 
     /* =========================
-       EXPORTAR EXCEL (con SUM)
+        EXPORTAR EXCEL (con SUM)
        ========================= */
     const exportarExcel = async () => {
         try {
@@ -382,7 +382,6 @@ export default function CargasPage() {
     // ======================
     const exportarPDF = () => {
         try {
-            // Totales numéricos
             const sum = (arr: any[], key: string) =>
                 arr.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0);
 
@@ -426,8 +425,30 @@ export default function CargasPage() {
             ]);
 
             const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+            // ---- Logos en el encabezado (alineados a la derecha) ----
+            const logo1 = '/icons/icon-192.png';   // PNG (último)
+            const logo2 = '/icons/irossini.jpg';   // JPG (primero)
+
+            const pageW = doc.internal.pageSize.getWidth();
+            const topY = 20;         // margen superior
+            const w = 40;            // ancho logo
+            const h = 40;            // alto logo
+            const gap = 10;          // separación entre logos
+            const rightMargin = 40;  // margen derecho
+
+            // logo1 último (más a la derecha)
+            const xLogo1 = pageW - rightMargin - w;
+            // logo2 primero (a la izquierda del logo1)
+            const xLogo2 = xLogo1 - gap - w;
+
+            // Dibujo primero logo2 y luego logo1
+            doc.addImage(logo2, 'JPEG', xLogo2, topY, w, h);
+            doc.addImage(logo1, 'PNG', xLogo1, topY, w, h);
+
+            // ---- Título y filtros alineados a la izquierda ----
             doc.setFontSize(14);
-            doc.text('Cargas', 40, 40);
+            doc.text('Cargas', 40, 40); // más a la izquierda para que no se superponga con logos
 
             doc.setFontSize(10);
             const descFiltros = [
@@ -442,18 +463,13 @@ export default function CargasPage() {
                 head: [columns as unknown as string[]],
                 body: rows,
                 startY: 80,
-                // (Opcional) margen inferior para asegurar espacio del pie en la última página
                 margin: { bottom: 60 },
-                styles: {
-                    fontSize: 8,
-                    cellPadding: 4,
-                    textColor: [0, 0, 0], // cuerpo negro
-                },
+                styles: { fontSize: 8, cellPadding: 4, textColor: [0, 0, 0] },
                 headStyles: { fillColor: [31, 41, 55], textColor: [255, 255, 255] },
                 columnStyles: {
-                    7: { halign: 'right' }, // Litros
-                    8: { halign: 'right' }, // Precio surtidor
-                    9: { halign: 'right' }, // Precio con descuento
+                    7: { halign: 'right' },
+                    8: { halign: 'right' },
+                    9: { halign: 'right' },
                 },
                 foot: [[
                     'Totales', '', '', '', '', '', '',
@@ -462,7 +478,7 @@ export default function CargasPage() {
                     fmt(totalConDescNum),
                     ''
                 ]],
-                showFoot: 'lastPage', // 👈 SOLO en la última página
+                showFoot: 'lastPage',
                 footStyles: {
                     fillColor: [31, 41, 55],
                     textColor: [255, 255, 255],
