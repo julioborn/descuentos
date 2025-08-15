@@ -53,9 +53,13 @@ export default function AdminDocentesPage() {
     const [filas, setFilas] = useState<Fila[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // mapa auxiliar: empleadoId -> docenteId (para editar/eliminar docente)
+    const [docenteIdByEmpleado, setDocenteIdByEmpleado] = useState<Record<string, string>>({});
+
     /* filtros */
     const [busqueda, setBusqueda] = useState('');
     const [localidadFiltro, setLocalidadFiltro] = useState<'TODAS' | string>('TODAS');
+    const [centroFiltro, setCentroFiltro] = useState<'TODOS' | string>('TODOS');
     const [pagina, setPagina] = useState(1);
     const [itemsPorPagina, setItemsPorPagina] = useState<number>(10);
 
@@ -74,11 +78,12 @@ export default function AdminDocentesPage() {
                 const docentes = (await docRes.json()) as DocenteDB[];
 
                 const centrosPorEmpleado = new Map<string, string[]>();
+                const mapDocenteId: Record<string, string> = {};
                 for (const d of docentes) {
-                    const empId =
-                        typeof d.empleadoId === 'string' ? d.empleadoId : (d.empleadoId?._id as string);
+                    const empId = typeof d.empleadoId === 'string' ? d.empleadoId : (d.empleadoId?._id as string);
                     if (!empId) continue;
                     centrosPorEmpleado.set(empId, d.centrosEducativos || []);
+                    mapDocenteId[empId] = d._id;
                 }
 
                 const combinadas: Fila[] = empleadosDoc.map((e) => ({
@@ -89,6 +94,7 @@ export default function AdminDocentesPage() {
                 combinadas.sort((a, b) => a.apellido.localeCompare(b.apellido));
 
                 setFilas(combinadas);
+                setDocenteIdByEmpleado(mapDocenteId);
             } catch (e) {
                 console.error(e);
                 Swal.fire('Error', 'No se pudieron cargar los docentes.', 'error');
@@ -100,21 +106,19 @@ export default function AdminDocentesPage() {
         fetchData();
     }, []);
 
-    /* localidades únicas */
+    /* localidades y centros únicos */
     const localidadesUnicas = useMemo(
         () => Array.from(new Set(filas.map((f) => f.localidad))).sort(),
         [filas]
     );
 
-    /* búsqueda diferida */
-    const deferredBusqueda = useDeferredValue(busqueda);
-
-    const [centroFiltro, setCentroFiltro] = useState<'TODOS' | string>('TODOS');
     const centrosUnicos = useMemo(() => {
-        // aplanar todos los centros y hacer set único
-        const todos = filas.flatMap(f => f.centrosEducativos || []);
+        const todos = filas.flatMap((f) => f.centrosEducativos || []);
         return Array.from(new Set(todos)).sort();
     }, [filas]);
+
+    /* búsqueda diferida */
+    const deferredBusqueda = useDeferredValue(busqueda);
 
     /* lista filtrada */
     const filtradas = useMemo(() => {
@@ -128,7 +132,8 @@ export default function AdminDocentesPage() {
             const coincideLoc = localidadFiltro === 'TODAS' || f.localidad === localidadFiltro;
 
             const coincideCentro =
-                centroFiltro === 'TODOS' || f.centrosEducativos.includes(centroFiltro);
+                centroFiltro === 'TODOS' ||
+                f.centrosEducativos.some((c) => sinAcentos(c) === sinAcentos(centroFiltro));
 
             return coincideTxt && coincideLoc && coincideCentro;
         });
@@ -148,7 +153,6 @@ export default function AdminDocentesPage() {
     /* Abrir detalle + QR on-demand */
     const verDetalle = async (emp: Fila) => {
         try {
-            // import dinámico para no cargar qrcode al entrar a la lista
             const QR = await import('qrcode');
             const origin = typeof window !== 'undefined' ? window.location.origin : '';
             const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`);
@@ -159,8 +163,7 @@ export default function AdminDocentesPage() {
             <div style="font-size:18px;font-weight:700;">${emp.nombre} ${emp.apellido}</div>
             <div style="opacity:.8">DNI: ${emp.dni} • Tel: ${emp.telefono}</div>
             <div style="opacity:.8">Localidad: ${emp.localidad}</div>
-            <div style="opacity:.8">Centros: ${emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : '—'
-                }</div>
+            <div style="opacity:.8">Centros: ${emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : '—'}</div>
           </div>
           <img src="${qrUrl}" alt="QR" style="width:240px;height:240px;border-radius:8px;border:2px solid #ccc" />
         </div>
@@ -180,6 +183,173 @@ export default function AdminDocentesPage() {
         }
     };
 
+    /* EDITAR docente (empleado + centros) */
+    const editarDocente = async (emp: Fila) => {
+        try {
+            // Traer datos frescos por si editaron en otra ventana
+            const [empRes, docId] = await Promise.all([
+                fetch(`/api/empleados/${emp._id}`),
+                Promise.resolve(docenteIdByEmpleado[emp._id]),
+            ]);
+            if (!empRes.ok) throw new Error('empleado fetch');
+            const empleado = await empRes.json();
+
+            // Centros actuales (de state)
+            const centrosActuales = emp.centrosEducativos.join(', ');
+
+            const { value: values } = await Swal.fire({
+                title: 'Editar docente',
+                html: `
+          <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
+          <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
+          <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
+          <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
+          <textarea id="swal-centros" class="swal2-textarea" placeholder="Centros educativos (separados por coma)">${centrosActuales}</textarea>
+        `,
+                focusConfirm: false,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                showCancelButton: true,
+                customClass: {
+                    confirmButton:
+                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    cancelButton: 'swal2-cancel px-6 py-2 rounded',
+                },
+                preConfirm: () => {
+                    const nombre = (document.getElementById('swal-nombre') as HTMLInputElement).value.trim();
+                    const apellido = (document.getElementById('swal-apellido') as HTMLInputElement).value.trim();
+                    const telefono = (document.getElementById('swal-telefono') as HTMLInputElement).value.trim();
+                    const localidad = (document.getElementById('swal-localidad') as HTMLInputElement).value.trim();
+                    const centros = (document.getElementById('swal-centros') as HTMLTextAreaElement).value
+                        .split(',')
+                        .map((c) => c.trim())
+                        .filter(Boolean);
+
+                    if (!nombre || !apellido || !telefono || !localidad) {
+                        Swal.showValidationMessage('Nombre, Apellido, Teléfono y Localidad son obligatorios');
+                        return;
+                    }
+                    return { nombre, apellido, telefono, localidad, centros };
+                },
+            });
+
+            if (!values) return;
+
+            // 1) Actualizar empleado
+            const updateEmp = await fetch(`/api/empleados/${emp._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: values.nombre,
+                    apellido: values.apellido,
+                    telefono: values.telefono,
+                    localidad: values.localidad,
+                }),
+            });
+            if (!updateEmp.ok) throw new Error('empleado patch');
+
+            // 2) Upsert docente (como ya usaste en import: POST /api/docentes con empleadoId + centrosEducativos)
+            const upsertDoc = await fetch('/api/docentes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    empleadoId: emp._id,
+                    centrosEducativos: values.centros,
+                }),
+            });
+            if (!upsertDoc.ok) throw new Error('docente upsert');
+
+            // 3) Refrescar estado local
+            setFilas((prev) =>
+                prev.map((f) =>
+                    f._id === emp._id
+                        ? {
+                            ...f,
+                            nombre: values.nombre,
+                            apellido: values.apellido,
+                            telefono: values.telefono,
+                            localidad: values.localidad,
+                            centrosEducativos: values.centros,
+                        }
+                        : f
+                )
+            );
+
+            Swal.fire('Actualizado', 'El docente fue editado correctamente.', 'success');
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudo editar el docente.', 'error');
+        }
+    };
+
+    /* ELIMINAR docente (solo docente o también empleado) */
+    const eliminarDocente = async (emp: Fila) => {
+        const docenteId = docenteIdByEmpleado[emp._id];
+
+        // si no hay docenteId, ofrecemos eliminar solo empleado (o cancelar)
+        const { value: opcion } = await Swal.fire({
+            title: 'Eliminar',
+            input: 'radio',
+            inputOptions: {
+                docente: 'Eliminar SOLO el Docente (quita centros educativos)',
+                empleado: 'Eliminar Empleado completo (y su vínculo de Docente)',
+            },
+            inputValue: docenteId ? 'docente' : 'empleado',
+            showCancelButton: true,
+            confirmButtonText: 'Continuar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                confirmButton:
+                    'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                cancelButton: 'swal2-cancel px-6 py-2 rounded',
+            },
+        });
+
+        if (!opcion) return;
+
+        try {
+            if (opcion === 'docente') {
+                if (!docenteId) throw new Error('Docente no encontrado');
+                const delDoc = await fetch(`/api/docentes/${docenteId}`, { method: 'DELETE' });
+                if (!delDoc.ok) throw new Error('docente delete');
+
+                // limpiar centros en la fila pero mantener empleado
+                setFilas((prev) =>
+                    prev.map((f) => (f._id === emp._id ? { ...f, centrosEducativos: [] } : f))
+                );
+                setDocenteIdByEmpleado((prev) => {
+                    const next = { ...prev };
+                    delete next[emp._id];
+                    return next;
+                });
+
+                Swal.fire('Eliminado', 'Se eliminó el Docente (centros educativos).', 'success');
+            } else if (opcion === 'empleado') {
+                // borrar empleado
+                const delEmp = await fetch(`/api/empleados/${emp._id}`, { method: 'DELETE' });
+                if (!delEmp.ok) throw new Error('empleado delete');
+
+                // borrar docente si existe (mejor esfuerzo)
+                if (docenteId) {
+                    await fetch(`/api/docentes/${docenteId}`, { method: 'DELETE' }).catch(() => { });
+                }
+
+                // quitar fila
+                setFilas((prev) => prev.filter((f) => f._id !== emp._id));
+                setDocenteIdByEmpleado((prev) => {
+                    const next = { ...prev };
+                    delete next[emp._id];
+                    return next;
+                });
+
+                Swal.fire('Eliminado', 'Se eliminó el Empleado (y su Docente asociado, si existía).', 'success');
+            }
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudo eliminar.', 'error');
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Docentes</h1>
@@ -189,26 +359,18 @@ export default function AdminDocentesPage() {
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
                     <input
                         value={busqueda}
-                        onChange={(e) => {
-                            setBusqueda(e.target.value);
-                            setPagina(1);
-                        }}
+                        onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
                         placeholder="Buscar por nombre, DNI, localidad o centro educativo…"
                         className="flex-1 min-w-[240px] rounded px-4 py-2 bg-gray-800 border border-gray-600"
                     />
 
                     <select
                         value={localidadFiltro}
-                        onChange={(e) => {
-                            setLocalidadFiltro(e.target.value);
-                            setPagina(1);
-                        }}
+                        onChange={(e) => { setLocalidadFiltro(e.target.value); setPagina(1); }}
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
                     >
                         <option value="TODAS">Todas las localidades</option>
-                        {localidadesUnicas.map((loc) => (
-                            <option key={loc}>{loc}</option>
-                        ))}
+                        {localidadesUnicas.map((loc) => <option key={loc}>{loc}</option>)}
                     </select>
 
                     <select
@@ -217,45 +379,23 @@ export default function AdminDocentesPage() {
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[220px]"
                     >
                         <option value="TODOS">Todos los centros</option>
-                        {centrosUnicos.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                        ))}
+                        {centrosUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
 
                     {/* items por página */}
                     <select
                         value={itemsPorPagina}
-                        onChange={(e) => {
-                            setItemsPorPagina(Number(e.target.value));
-                            setPagina(1);
-                        }}
+                        onChange={(e) => { setItemsPorPagina(Number(e.target.value)); setPagina(1); }}
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[150px]"
                     >
-                        {[10, 20, 50, 100].map((n) => (
-                            <option key={n} value={n}>
-                                {n} por página
-                            </option>
-                        ))}
+                        {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n} por página</option>)}
                     </select>
                 </div>
-
-                {/* <div className="w-full sm:w-auto flex justify-center sm:justify-end">
-                    <button
-                        onClick={() => router.push('/admin/registrar-empleado')}
-                        className="bg-red-800 px-4 py-2 rounded font-semibold hover:bg-red-700 flex items-center gap-2"
-                    >
-                        <span>Registrar</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-                        </svg>
-                    </button>
-                </div> */}
             </section>
 
             {/* tabla */}
             <div className="hidden sm:block overflow-x-auto rounded-lg border border-white/10 bg-gray-800 p-6 shadow-xl max-w-6xl mx-auto">
-                <table className="min-w-[1000px] w-full text-sm">
+                <table className="min-w-[1100px] w-full text-sm">
                     <thead className="text-left bg-white/5 text-white">
                         <tr>
                             <th className="p-3">Nombre</th>
@@ -264,6 +404,7 @@ export default function AdminDocentesPage() {
                             <th className="p-3">Teléfono</th>
                             <th className="p-3">Localidad</th>
                             <th className="p-3">Centros Educativos</th>
+                            <th className="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -275,7 +416,7 @@ export default function AdminDocentesPage() {
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
                                 className="hover:bg-white/10 transition cursor-pointer focus:outline-none
-                                focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                           focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                                 title="Ver detalle y QR"
                             >
                                 <td className="p-2">{emp.nombre}</td>
@@ -287,6 +428,22 @@ export default function AdminDocentesPage() {
                                     {emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : (
                                         <span className="text-white/60">—</span>
                                     )}
+                                </td>
+                                <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => editarDocente(emp)}
+                                        className="inline-flex items-center justify-center px-3 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 mr-2 text-sm"
+                                        title="Editar"
+                                    >
+                                        Editar
+                                    </button>
+                                    <button
+                                        onClick={() => eliminarDocente(emp)}
+                                        className="inline-flex items-center justify-center px-3 h-8 rounded-full bg-red-700 hover:bg-red-600 text-sm"
+                                        title="Eliminar"
+                                    >
+                                        Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -304,8 +461,8 @@ export default function AdminDocentesPage() {
                         tabIndex={0}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
                         className="bg-white/5 rounded-lg p-4 border border-white/10 shadow-lg cursor-pointer
-                        hover:bg-white/10 transition focus:outline-none
-                        focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700"
+                       hover:bg-white/10 transition focus:outline-none
+                       focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700"
                         title="Ver detalle y QR"
                     >
                         <p className="font-semibold">{emp.nombre} {emp.apellido}</p>
@@ -313,6 +470,21 @@ export default function AdminDocentesPage() {
                         <p>Tel: {emp.telefono}</p>
                         <p>Localidad: {emp.localidad}</p>
                         <p>Centros: {emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : '—'}</p>
+
+                        <div className="mt-3 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                onClick={() => editarDocente(emp)}
+                                className="px-3 py-1 rounded-full bg-yellow-600 hover:bg-yellow-500 text-sm"
+                            >
+                                Editar
+                            </button>
+                            <button
+                                onClick={() => eliminarDocente(emp)}
+                                className="px-3 py-1 rounded-full bg-red-700 hover:bg-red-600 text-sm"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

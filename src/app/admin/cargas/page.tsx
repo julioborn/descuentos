@@ -491,6 +491,156 @@ export default function CargasPage() {
         }
     };
 
+    // helpers ya existentes
+    const parseNumAR = (val: string) => {
+        const s = (val ?? '').trim().replace(/\./g, '').replace(',', '.');
+        return s === '' ? NaN : Number(s);
+    };
+    // NUEVO: para mostrar con coma opcional (sin miles, simple)
+    const fmtAR = (n: number) => {
+        if (!isFinite(n)) return '';
+        // 2 decimales si no es entero
+        return (Math.round(n * 100) / 100).toString().replace('.', ',');
+    };
+
+    const editarCarga = async (id: string) => {
+        try {
+            const res = await fetch(`/api/cargas/${id}`);
+            if (!res.ok) throw new Error('fetch carga');
+            const carga: Carga = await res.json();
+
+            const { value: values } = await Swal.fire({
+                title: 'Editar carga',
+                width: 700,
+                background: '#1f2937',
+                color: '#e5e7eb',
+                buttonsStyling: false,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton:
+                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
+                    cancelButton:
+                        'swal2-cancel bg-gray-500/60 hover:bg-gray-500/80 text-white font-semibold px-6 py-2 rounded'
+                },
+                html: `
+        <div id="swal-form" style="
+          display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:flex-start;width:100%;box-sizing:border-box;">
+          <div>
+            <label style="font-weight:600;display:block;margin-bottom:6px;">Litros</label>
+            <input id="swal-litros" class="swal2-input" inputmode="decimal"
+                   value="${carga.litros ?? ''}" placeholder="0,00"
+                   style="width:100%;margin:0;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-weight:600;display:block;margin-bottom:6px;">Producto</label>
+            <input id="swal-producto" class="swal2-input"
+                   value="${carga.producto ?? ''}" placeholder="Ej: Súper"
+                   style="width:100%;margin:0;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-weight:600;display:block;margin-bottom:6px;">
+              Precio surtidor (${carga.moneda})
+            </label>
+            <input id="swal-precioSin" class="swal2-input" inputmode="decimal"
+                   value="${carga.precioFinalSinDescuento ?? ''}" placeholder="0,00"
+                   style="width:100%;margin:0;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-weight:600;display:block;margin-bottom:6px;">
+              Precio con descuento (${carga.moneda})
+            </label>
+            <input id="swal-precio" class="swal2-input" inputmode="decimal"
+                   value="${carga.precioFinal ?? ''}" placeholder="0,00"
+                   style="width:100%;margin:0;box-sizing:border-box;">
+          </div>
+          <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:-6px">
+            <input id="swal-auto" type="checkbox" checked />
+            <label for="swal-auto">Autocalcular precios al cambiar litros</label>
+          </div>
+        </div>
+      `,
+                focusConfirm: false,
+                didOpen: () => {
+                    // layout
+                    Swal.getPopup()
+                        ?.querySelectorAll<HTMLInputElement>('.swal2-input')
+                        .forEach((el) => { el.style.width = '100%'; el.style.margin = '0'; });
+                    const form = document.getElementById('swal-form') as HTMLDivElement | null;
+                    if (form && window.innerWidth < 560) form.style.gridTemplateColumns = '1fr';
+                    const t = Swal.getTitle(); if (t) { t.style.fontSize = '28px'; t.style.fontWeight = '700'; }
+
+                    // ---- AUTOCALC ----
+                    const litrosEl = document.getElementById('swal-litros') as HTMLInputElement;
+                    const sinEl = document.getElementById('swal-precioSin') as HTMLInputElement;
+                    const conEl = document.getElementById('swal-precio') as HTMLInputElement;
+                    const autoEl = document.getElementById('swal-auto') as HTMLInputElement;
+
+                    // precios por litro a partir de la carga actual (si existen)
+                    const litros0 = Number(carga.litros) || 0;
+                    const pSin0 = Number(carga.precioFinalSinDescuento ?? 0);
+                    const pCon0 = Number(carga.precioFinal ?? 0);
+
+                    const unitSin = litros0 ? pSin0 / litros0 : NaN;
+                    const unitCon = litros0 ? pCon0 / litros0 : NaN;
+
+                    const recalc = () => {
+                        if (!autoEl.checked) return;
+                        const l = parseNumAR(litrosEl.value);
+                        if (!isFinite(l) || l <= 0) return;
+                        if (isFinite(unitSin)) sinEl.value = fmtAR(l * unitSin);
+                        if (isFinite(unitCon)) conEl.value = fmtAR(l * unitCon);
+                    };
+
+                    litrosEl.addEventListener('input', recalc);
+                },
+                preConfirm: () => {
+                    const litrosStr = (document.getElementById('swal-litros') as HTMLInputElement).value;
+                    const prod = (document.getElementById('swal-producto') as HTMLInputElement).value.trim();
+                    const precioStr = (document.getElementById('swal-precio') as HTMLInputElement).value;
+                    const precioSinStr = (document.getElementById('swal-precioSin') as HTMLInputElement).value;
+
+                    const litros = parseNumAR(litrosStr);
+                    const precioFinal = parseNumAR(precioStr);
+                    const precioFinalSinDescuento =
+                        precioSinStr.trim() === '' ? null : parseNumAR(precioSinStr);
+
+                    if (
+                        Number.isNaN(litros) ||
+                        Number.isNaN(precioFinal) ||
+                        (precioFinalSinDescuento !== null && Number.isNaN(precioFinalSinDescuento))
+                    ) {
+                        Swal.showValidationMessage('Revisá los números (podés usar coma o punto).');
+                        return;
+                    }
+                    if (!prod) {
+                        Swal.showValidationMessage('El producto es obligatorio.');
+                        return;
+                    }
+
+                    return { litros, producto: prod, precioFinal, precioFinalSinDescuento };
+                },
+            });
+
+            if (!values) return;
+
+            const updateRes = await fetch(`/api/cargas/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values),
+            });
+            if (!updateRes.ok) throw new Error('patch carga');
+
+            const actualizado: Partial<Carga> = await updateRes.json();
+            setCargas((prev) => prev.map((c) => (c._id === id ? { ...c, ...actualizado } as Carga : c)));
+            Swal.fire('Actualizado', 'La carga fue editada correctamente.', 'success');
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudo editar la carga.', 'error');
+        }
+    };
+
     return (
         <main className="min-h-screen px-4 py-10 bg-gray-700 text-white">
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
@@ -661,25 +811,38 @@ export default function CargasPage() {
                                 <td className="p-3 text-center font-bold text-green-400">
                                     {c.precioFinal.toLocaleString()} {c.moneda}
                                 </td>
+
                                 <td className="p-3 text-center rounded-r-lg">
-                                    <button
-                                        onClick={() => eliminarCarga(c._id)}
-                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
-                                        title="Eliminar"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            className="size-5"
+                                    <div className='flex gap-1'>
+                                        <button
+                                            onClick={() => editarCarga(c._id)}
+                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 shadow-md"
+                                            title="Editar"
                                         >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </button>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                                <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => eliminarCarga(c._id)}
+                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
+                                            title="Eliminar"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 20 20"
+                                                fill="currentColor"
+                                                className="size-5"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -777,7 +940,7 @@ export default function CargasPage() {
                 ))}
             </div>
 
-            {/* -------- Paginación -------- */}
+            {/* -------- Paginación -------- */}a
             {totalPag > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
                     {/* Botón Anterior */}
