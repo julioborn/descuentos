@@ -23,6 +23,21 @@ type Carga = {
     localidad: string;
 };
 
+/* Ventana de paginación con elipsis (igual a /docentes) */
+function buildPageWindow(total: number, current: number, maxButtons = 7) {
+    if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
+    const windowSize = maxButtons - 2;
+    let start = Math.max(2, current - Math.floor(windowSize / 2));
+    let end = Math.min(total - 1, start + windowSize - 1);
+    start = Math.max(2, Math.min(start, total - 1 - (windowSize - 1)));
+    const pages: (number | '…')[] = [1];
+    if (start > 2) pages.push('…');
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push('…');
+    pages.push(total);
+    return pages;
+}
+
 export default function CargasPage() {
     const [cargas, setCargas] = useState<Carga[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,6 +77,15 @@ export default function CargasPage() {
         }
     }, [loading, cargas]);
 
+    const [soloHoy, setSoloHoy] = useState(false);
+
+    // helper: compara solo AAAA-MM-DD en hora local
+    const esMismoDia = (a: Date, b: Date) => {
+        return a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate();
+    };
+
     const añosDisponibles = useMemo(() => {
         const añosSet = new Set<number>();
         cargas.forEach(c => {
@@ -98,13 +122,57 @@ export default function CargasPage() {
     const norm = (s?: string) =>
         (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+    // Parseo robusto: ISO, timestamp o "dd/mm/yyyy[ hh:mm[:ss]]" -> Date local
+    const parseFecha = (raw: unknown): Date | null => {
+        if (!raw) return null;
+        if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+
+        const s = String(raw).trim();
+
+        // Intento 1: nativo (ISO, con/sin Z, etc.)
+        const d1 = new Date(s);
+        if (!isNaN(d1.getTime())) return d1;
+
+        // Intento 2: dd/mm/yyyy [hh:mm[:ss]]
+        const m = s.match(
+            /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+        );
+        if (m) {
+            const [, dd, mm, yyyy, HH = '0', MM = '0', SS = '0'] = m;
+            const d = new Date(
+                Number(yyyy),
+                Number(mm) - 1,
+                Number(dd),
+                Number(HH),
+                Number(MM),
+                Number(SS)
+            );
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        return null;
+    };
+
+    // Límites de hoy en horario local
+    const hoyStart = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    };
+    const hoyEnd = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    };
+
     /* lista filtrada */
     const filtradas = useMemo(() => {
         const txt = busqueda.trim().toLowerCase();
+        const ini = hoyStart();
+        const fin = hoyEnd();
 
         return cargas
             .filter((c) => {
-                const fecha = new Date(c.fecha);
+                const fecha = parseFecha(c.fecha);
+                if (!fecha) return false; // si la fecha es inválida, no la mostramos
 
                 const coincideTxt =
                     !txt || `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
@@ -112,19 +180,21 @@ export default function CargasPage() {
                 const coincideProd =
                     productoFiltro === 'TODOS' || c.producto === productoFiltro;
 
-                const coincideAño = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
-                const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
-
-                // 👇 NUEVO: filtro por empresa (robusto a espacios/acentos/mayúsculas)
                 const coincideEmpresa =
-                    empresaFiltro === 'TODAS' ||
-                    norm(c.empresa) === norm(empresaFiltro);
+                    empresaFiltro === 'TODAS' || norm(c.empresa) === norm(empresaFiltro);
 
-                return coincideTxt && coincideProd && coincideAño && coincideMes && coincideEmpresa;
+                // Si "Cargas del día" está activo, ignora año/mes y usa rangos de hoy
+                const coincideFecha = soloHoy
+                    ? fecha >= ini && fecha <= fin
+                    : (
+                        (añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro) &&
+                        (mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro)
+                    );
+
+                return coincideTxt && coincideProd && coincideEmpresa && coincideFecha;
             })
-            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro, empresaFiltro]);
-
+            .sort((a, b) => (parseFecha(b.fecha)?.getTime() || 0) - (parseFecha(a.fecha)?.getTime() || 0));
+    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro, empresaFiltro, soloHoy]);
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / itemsPorPagina);
@@ -133,6 +203,10 @@ export default function CargasPage() {
         (págActual - 1) * itemsPorPagina,
         págActual * itemsPorPagina
     );
+
+    useEffect(() => {
+        setPagina((p) => Math.min(p, totalPag || 1));
+    }, [totalPag]);
 
     if (loading) return <Loader />;
 
@@ -751,6 +825,16 @@ export default function CargasPage() {
                     ))}
                 </select>
 
+                <label className="w-full md:w-auto inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        checked={soloHoy}
+                        onChange={(e) => { setSoloHoy(e.target.checked); setPagina(1); }}
+                        className="accent-red-700"
+                    />
+                    <span>Cargas del día</span>
+                </label>
+
                 <button
                     onClick={exportarExcel}
                     className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
@@ -958,39 +1042,71 @@ export default function CargasPage() {
 
             {/* -------- Paginación -------- */}
             {totalPag > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
-                    {/* Botón Anterior */}
-                    <button
-                        onClick={() => setPagina((p) => Math.max(p - 1, 1))}
-                        disabled={págActual === 1}
-                        className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30 bg-gray-800 text-white"
-                    >
-                        <HiChevronLeft size={22} />
-                    </button>
+                <div className="flex flex-col items-center gap-3 mt-8 text-white">
+                    <div className="text-sm text-white/70">
+                        Mostrando{" "}
+                        <span className="font-semibold">
+                            {(págActual - 1) * itemsPorPagina + 1}
+                            {"–"}
+                            {Math.min(págActual * itemsPorPagina, filtradas.length)}
+                        </span>{" "}
+                        de <span className="font-semibold">{filtradas.length}</span>
+                    </div>
 
-                    {/* Números de página */}
-                    {Array.from({ length: totalPag }, (_, i) => i + 1).map((num) => (
+                    <div className="flex flex-wrap justify-center items-center gap-1">
                         <button
-                            key={num}
-                            onClick={() => setPagina(num)}
-                            className={`w-9 h-9 rounded-full font-semibold transition 
-                    ${págActual === num
-                                    ? 'bg-red-700 text-white'
-                                    : 'bg-gray-700 text-white hover:bg-gray-600'
-                                }`}
+                            onClick={() => setPagina(1)}
+                            disabled={págActual === 1}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Primera"
                         >
-                            {num}
+                            «
                         </button>
-                    ))}
 
-                    {/* Botón Siguiente */}
-                    <button
-                        onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
-                        disabled={págActual === totalPag}
-                        className="p-2 rounded-full hover:bg-gray-700 disabled:opacity-30 bg-gray-800 text-white"
-                    >
-                        <HiChevronRight size={22} />
-                    </button>
+                        <button
+                            onClick={() => setPagina((p) => Math.max(p - 1, 1))}
+                            disabled={págActual === 1}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Anterior"
+                        >
+                            <HiChevronLeft size={20} />
+                        </button>
+
+                        {buildPageWindow(totalPag, págActual, 7).map((it, idx) =>
+                            it === "…" ? (
+                                <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-white/70">
+                                    …
+                                </span>
+                            ) : (
+                                <button
+                                    key={it}
+                                    onClick={() => setPagina(it as number)}
+                                    className={`w-9 h-9 rounded-full font-semibold transition ${págActual === it ? "bg-red-700 text-white" : "bg-gray-700 hover:bg-gray-600"
+                                        }`}
+                                >
+                                    {it}
+                                </button>
+                            )
+                        )}
+
+                        <button
+                            onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
+                            disabled={págActual === totalPag}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Siguiente"
+                        >
+                            <HiChevronRight size={20} />
+                        </button>
+
+                        <button
+                            onClick={() => setPagina(totalPag)}
+                            disabled={págActual === totalPag}
+                            className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                            aria-label="Última"
+                        >
+                            »
+                        </button>
+                    </div>
                 </div>
             )}
 
