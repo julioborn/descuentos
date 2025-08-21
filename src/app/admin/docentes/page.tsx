@@ -112,10 +112,35 @@ export default function AdminDocentesPage() {
         [filas]
     );
 
-    const centrosUnicos = useMemo(() => {
+    // Mapa localidad -> set de centros (para filtrar por localidad)
+    const centrosPorLocalidad = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        for (const f of filas) {
+            const set = map.get(f.localidad) ?? new Set<string>();
+            for (const c of (f.centrosEducativos || [])) set.add(c);
+            map.set(f.localidad, set);
+        }
+        return map;
+    }, [filas]);
+
+    // Todos los centros (para cuando la localidad es "TODAS")
+    const centrosTodos = useMemo(() => {
         const todos = filas.flatMap((f) => f.centrosEducativos || []);
         return Array.from(new Set(todos)).sort();
     }, [filas]);
+
+    // Centros a mostrar según localidad seleccionada
+    const centrosOpciones = useMemo(() => {
+        if (localidadFiltro === 'TODAS') return centrosTodos;
+        const set = centrosPorLocalidad.get(localidadFiltro);
+        return Array.from(set ?? new Set<string>()).sort();
+    }, [localidadFiltro, centrosTodos, centrosPorLocalidad]);
+
+    useEffect(() => {
+        if (centroFiltro !== 'TODOS' && !centrosOpciones.includes(centroFiltro)) {
+            setCentroFiltro('TODOS');
+        }
+    }, [centrosOpciones, centroFiltro]);
 
     /* búsqueda diferida */
     const deferredBusqueda = useDeferredValue(busqueda);
@@ -366,7 +391,11 @@ export default function AdminDocentesPage() {
 
                     <select
                         value={localidadFiltro}
-                        onChange={(e) => { setLocalidadFiltro(e.target.value); setPagina(1); }}
+                        onChange={(e) => {
+                            setLocalidadFiltro(e.target.value);
+                            setCentroFiltro('TODOS');   // ← reset
+                            setPagina(1);
+                        }}
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
                     >
                         <option value="TODAS">Todas las localidades</option>
@@ -379,7 +408,9 @@ export default function AdminDocentesPage() {
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[220px]"
                     >
                         <option value="TODOS">Todos los centros</option>
-                        {centrosUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
+                        {centrosOpciones.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
                     </select>
 
                     {/* items por página */}

@@ -46,15 +46,48 @@ export default function CargasPage() {
     /* ---- filtros ---- */
     const [busqueda, setBusqueda] = useState('');
     const [productoFiltro, setProductoFiltro] = useState<'TODOS' | string>('TODOS');
+    const [localidadFiltro, setLocalidadFiltro] = useState<'TODAS' | string>('TODAS');
     const [pagina, setPagina] = useState(1);
     const [añoFiltro, setAñoFiltro] = useState<'TODOS' | number>('TODOS');
     const [mesFiltro, setMesFiltro] = useState<number>(0); // 0 = Todos los meses
     const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
-    const empresasUnicas = useMemo(() => {
-        return Array.from(new Set(cargas.map((c) => c.empresa || '-')))
-            .filter((e) => e !== '-')
-            .sort();
+    // Localidades únicas
+    const localidadesUnicas = useMemo(() => {
+        return Array.from(new Set(cargas.map(c => c.localidad).filter(Boolean))).sort();
     }, [cargas]);
+
+    // Mapa Localidad -> Set(Empresa)
+    const empresasPorLocalidad = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        for (const c of cargas) {
+            const loc = c.localidad;
+            const emp = c.empresa || '-';
+            if (!loc || emp === '-') continue;
+            const set = map.get(loc) ?? new Set<string>();
+            set.add(emp);
+            map.set(loc, set);
+        }
+        return map;
+    }, [cargas]);
+
+    // Todas las empresas (para "TODAS" las localidades)
+    const empresasTodas = useMemo(() => {
+        const todas = cargas.map(c => c.empresa || '-').filter(e => e !== '-');
+        return Array.from(new Set(todas)).sort();
+    }, [cargas]);
+
+    // Empresas a mostrar según localidad seleccionada
+    const empresasOpciones = useMemo(() => {
+        if (localidadFiltro === 'TODAS') return empresasTodas;
+        const set = empresasPorLocalidad.get(localidadFiltro);
+        return Array.from(set ?? new Set<string>()).sort();
+    }, [localidadFiltro, empresasTodas, empresasPorLocalidad]);
+
+    useEffect(() => {
+        if (empresaFiltro !== 'TODAS' && !empresasOpciones.includes(empresaFiltro)) {
+            setEmpresaFiltro('TODAS');
+        }
+    }, [empresasOpciones, empresaFiltro]);
 
     useEffect(() => {
         const fetchCargas = async () => {
@@ -172,10 +205,13 @@ export default function CargasPage() {
         return cargas
             .filter((c) => {
                 const fecha = parseFecha(c.fecha);
-                if (!fecha) return false; // si la fecha es inválida, no la mostramos
+                if (!fecha) return false;
 
                 const coincideTxt =
                     !txt || `${c.nombreEmpleado} ${c.dniEmpleado}`.toLowerCase().includes(txt);
+
+                const coincideLoc =
+                    localidadFiltro === 'TODAS' || c.localidad === localidadFiltro; // NUEVO
 
                 const coincideProd =
                     productoFiltro === 'TODOS' || c.producto === productoFiltro;
@@ -183,7 +219,6 @@ export default function CargasPage() {
                 const coincideEmpresa =
                     empresaFiltro === 'TODAS' || norm(c.empresa) === norm(empresaFiltro);
 
-                // Si "Cargas del día" está activo, ignora año/mes y usa rangos de hoy
                 const coincideFecha = soloHoy
                     ? fecha >= ini && fecha <= fin
                     : (
@@ -191,10 +226,10 @@ export default function CargasPage() {
                         (mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro)
                     );
 
-                return coincideTxt && coincideProd && coincideEmpresa && coincideFecha;
+                return coincideTxt && coincideLoc && coincideProd && coincideEmpresa && coincideFecha;
             })
             .sort((a, b) => (parseFecha(b.fecha)?.getTime() || 0) - (parseFecha(a.fecha)?.getTime() || 0));
-    }, [cargas, busqueda, productoFiltro, añoFiltro, mesFiltro, empresaFiltro, soloHoy]);
+    }, [cargas, busqueda, localidadFiltro, productoFiltro, añoFiltro, mesFiltro, empresaFiltro, soloHoy]);
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / itemsPorPagina);
@@ -341,6 +376,7 @@ export default function CargasPage() {
             const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre;
             if (nombreMes) partes.push(slugify(nombreMes));
         }
+        if (localidadFiltro && localidadFiltro !== 'TODAS') partes.push(`loc-${slugify(localidadFiltro)}`);
         if (empresaFiltro && empresaFiltro !== 'TODAS') partes.push(`empresa-${slugify(empresaFiltro)}`);
         if (productoFiltro && productoFiltro !== 'TODOS') partes.push(`producto-${slugify(productoFiltro)}`);
         if (añoFiltro === 'TODOS' && mesFiltro === 0) partes.push('todas');
@@ -433,6 +469,7 @@ export default function CargasPage() {
                 const nombreMes = mesesDelAño.find(m => m.numero === mesFiltro)?.nombre;
                 if (nombreMes) partesHoja.push(nombreMes);
             }
+            if (localidadFiltro && localidadFiltro !== 'TODAS') partesHoja.push(`Loc ${localidadFiltro}`);
             if (empresaFiltro && empresaFiltro !== 'TODAS') partesHoja.push(`Emp ${empresaFiltro}`);
             if (productoFiltro && productoFiltro !== 'TODOS') partesHoja.push(`Prod ${productoFiltro}`);
             if (añoFiltro === 'TODOS' && mesFiltro === 0) partesHoja.push('Todas');
@@ -528,6 +565,7 @@ export default function CargasPage() {
             const descFiltros = [
                 añoFiltro !== 'TODOS' ? `Año: ${añoFiltro}` : 'Año: Todos',
                 mesFiltro !== 0 ? `Mes: ${mesesDelAño.find(m => m.numero === mesFiltro)?.nombre}` : 'Mes: Todos',
+                localidadFiltro !== 'TODAS' ? `Localidad: ${localidadFiltro}` : 'Localidad: Todas', // NUEVO
                 productoFiltro !== 'TODOS' ? `Producto: ${productoFiltro}` : 'Producto: Todos',
                 empresaFiltro !== 'TODAS' ? `Empresa: ${empresaFiltro}` : 'Empresa: Todas',
             ].join('   |   ');
@@ -736,8 +774,9 @@ export default function CargasPage() {
             <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
 
             {/* -------- filtros -------- */}
-            <section className="flex flex-col md:flex-row md:items-center md:justify-center md:flex-wrap gap-4 max-w-6xl mx-auto mb-6">
+            <section className="flex flex-col gap-4 max-w-6xl mx-auto mb-6">
 
+                {/* Barra de búsqueda sola arriba */}
                 <input
                     value={busqueda}
                     onChange={(e) => {
@@ -745,120 +784,138 @@ export default function CargasPage() {
                         setPagina(1);
                     }}
                     placeholder="Buscar por nombre o DNI…"
-                    className="w-full md:w-auto md:min-w-[200px] flex-1 rounded-lg px-4 py-2 bg-gray-800 border border-gray-600"
+                    className="w-full rounded-lg px-4 py-2 bg-gray-800 border border-gray-600"
                 />
 
-                <select
-                    value={empresaFiltro}
-                    onChange={(e) => {
-                        setEmpresaFiltro(e.target.value);
-                        setPagina(1);
-                    }}
-                    className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
-                >
-                    <option value="TODAS">Todas las empresas</option>
-                    {empresasUnicas.map((empresa) => (
-                        <option key={empresa} value={empresa}>{empresa}</option>
-                    ))}
-                </select>
+                {/* Contenedor de todos los filtros debajo */}
+                <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-center gap-4">
 
-                <select
-                    value={productoFiltro}
-                    onChange={(e) => {
-                        setProductoFiltro(e.target.value);
-                        setPagina(1);
-                    }}
-                    className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
-                >
-                    <option value="TODOS">Todos los productos</option>
-                    {productosUnicos.map((p) => {
-                        const carga = cargas.find(c => c.producto === p);
-                        const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
-                        return (
-                            <option key={p} value={p}>{bandera} {p}</option>
-                        );
-                    })}
-                </select>
+                    <select
+                        value={localidadFiltro}
+                        onChange={(e) => {
+                            setLocalidadFiltro(e.target.value);
+                            setEmpresaFiltro('TODAS');
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        <option value="TODAS">Todas las localidades</option>
+                        {localidadesUnicas.map((loc) => (
+                            <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                    </select>
 
-                <select
-                    value={añoFiltro}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
-                        setMesFiltro(0);
-                        setPagina(1);
-                    }}
-                    className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
-                >
-                    <option value="TODOS">Todos los años</option>
-                    {añosDisponibles.map((año) => (
-                        <option key={año} value={año}>{año}</option>
-                    ))}
-                </select>
+                    <select
+                        value={empresaFiltro}
+                        onChange={(e) => {
+                            setEmpresaFiltro(e.target.value);
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        <option value="TODAS">Todas las empresas</option>
+                        {empresasOpciones.map((empresa) => (
+                            <option key={empresa} value={empresa}>{empresa}</option>
+                        ))}
+                    </select>
 
-                <select
-                    value={mesFiltro}
-                    onChange={(e) => {
-                        setMesFiltro(Number(e.target.value));
-                        setPagina(1);
-                    }}
-                    className="w-full md:w-auto md:min-w-[150px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
-                >
-                    <option value="0">Todos los meses</option>
-                    {mesesDelAño.map((m) => (
-                        <option key={m.numero} value={m.numero}>{m.nombre}</option>
-                    ))}
-                </select>
+                    <select
+                        value={productoFiltro}
+                        onChange={(e) => {
+                            setProductoFiltro(e.target.value);
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[180px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        <option value="TODOS">Todos los productos</option>
+                        {productosUnicos.map((p) => {
+                            const carga = cargas.find(c => c.producto === p);
+                            const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
+                            return (
+                                <option key={p} value={p}>{bandera} {p}</option>
+                            );
+                        })}
+                    </select>
 
-                <select
-                    value={itemsPorPagina}
-                    onChange={(e) => {
-                        setItemsPorPagina(parseInt(e.target.value));
-                        setPagina(1);
-                    }}
-                    className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
-                >
-                    {[5, 10, 20, 50, 100].map((cantidad) => (
-                        <option key={cantidad} value={cantidad}>
-                            Ver {cantidad}
-                        </option>
-                    ))}
-                </select>
+                    <select
+                        value={añoFiltro}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
+                            setMesFiltro(0);
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        <option value="TODOS">Todos los años</option>
+                        {añosDisponibles.map((año) => (
+                            <option key={año} value={año}>{año}</option>
+                        ))}
+                    </select>
 
-                <label className="w-full md:w-auto inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 cursor-pointer select-none">
-                    <input
-                        type="checkbox"
-                        checked={soloHoy}
-                        onChange={(e) => { setSoloHoy(e.target.checked); setPagina(1); }}
-                        className="accent-red-700"
-                    />
-                    <span>Cargas del día</span>
-                </label>
+                    <select
+                        value={mesFiltro}
+                        onChange={(e) => {
+                            setMesFiltro(Number(e.target.value));
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[150px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        <option value="0">Todos los meses</option>
+                        {mesesDelAño.map((m) => (
+                            <option key={m.numero} value={m.numero}>{m.nombre}</option>
+                        ))}
+                    </select>
 
-                <button
-                    onClick={exportarExcel}
-                    className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" strokeWidth={1.5}
-                        className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
-                    </svg>
-                    Descargar Excel
-                </button>
+                    <select
+                        value={itemsPorPagina}
+                        onChange={(e) => {
+                            setItemsPorPagina(parseInt(e.target.value));
+                            setPagina(1);
+                        }}
+                        className="w-full md:w-auto md:min-w-[140px] rounded-lg px-3 py-2 bg-gray-800 border border-gray-600"
+                    >
+                        {[5, 10, 20, 50, 100].map((cantidad) => (
+                            <option key={cantidad} value={cantidad}>
+                                Ver {cantidad}
+                            </option>
+                        ))}
+                    </select>
 
-                <button
-                    onClick={exportarPDF}
-                    className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-red-800 hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-md transition"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" strokeWidth={1.5}
-                        className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
-                    </svg>
-                    Descargar PDF
-                </button>
+                    <label className="w-full md:w-auto inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={soloHoy}
+                            onChange={(e) => { setSoloHoy(e.target.checked); setPagina(1); }}
+                            className="accent-red-700"
+                        />
+                        <span>Cargas del día</span>
+                    </label>
 
+                    <button
+                        onClick={exportarExcel}
+                        className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth={1.5}
+                            className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
+                        </svg>
+                        Descargar Excel
+                    </button>
+
+                    <button
+                        onClick={exportarPDF}
+                        className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-lg bg-red-800 hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-md transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth={1.5}
+                            className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
+                        </svg>
+                        Descargar PDF
+                    </button>
+                </div>
             </section>
 
             {/* -------- Tabla desktop -------- */}

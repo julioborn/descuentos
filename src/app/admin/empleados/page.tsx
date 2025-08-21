@@ -97,10 +97,35 @@ export default function EmpleadosPage() {
     const deferredBusqueda = useDeferredValue(busqueda);
 
     const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
-    const empresasUnicas = useMemo(
-        () => Array.from(new Set(empleados.map((e) => e.empresa))).sort(),
-        [empleados]
-    );
+    // Mapa localidad -> set de empresas
+    const empresasPorLocalidad = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        for (const e of empleados) {
+            const set = map.get(e.localidad) ?? new Set<string>();
+            if (e.empresa) set.add(e.empresa);
+            map.set(e.localidad, set);
+        }
+        return map;
+    }, [empleados]);
+
+    // Todas las empresas (cuando localidad = "TODAS")
+    const empresasTodas = useMemo(() => {
+        const todas = empleados.map((e) => e.empresa).filter(Boolean);
+        return Array.from(new Set(todas)).sort();
+    }, [empleados]);
+
+    // Empresas a mostrar según localidad seleccionada
+    const empresasOpciones = useMemo(() => {
+        if (localidadFiltro === 'TODAS') return empresasTodas;
+        const set = empresasPorLocalidad.get(localidadFiltro);
+        return Array.from(set ?? new Set<string>()).sort();
+    }, [localidadFiltro, empresasTodas, empresasPorLocalidad]);
+
+    useEffect(() => {
+        if (empresaFiltro !== 'TODAS' && !empresasOpciones.includes(empresaFiltro)) {
+            setEmpresaFiltro('TODAS');
+        }
+    }, [empresasOpciones, empresaFiltro]);
 
     /* lista filtrada (sin empresa porque ya excluimos DOCENTES) */
     const empleadosFiltrados = useMemo(() => {
@@ -254,7 +279,11 @@ export default function EmpleadosPage() {
 
                     <select
                         value={localidadFiltro}
-                        onChange={(e) => { setLocalidadFiltro(e.target.value); setPagina(1); }}
+                        onChange={(e) => {
+                            setLocalidadFiltro(e.target.value);
+                            setEmpresaFiltro('TODAS'); // reset empresa al cambiar localidad
+                            setPagina(1);
+                        }}
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
                     >
                         <option value="TODAS">Todas las localidades</option>
@@ -267,7 +296,7 @@ export default function EmpleadosPage() {
                         className="rounded px-3 py-2 bg-gray-800 border border-gray-600 min-w-[200px]"
                     >
                         <option value="TODAS">Todas las empresas</option>
-                        {empresasUnicas.map((empr) => (
+                        {empresasOpciones.map((empr) => (
                             <option key={empr} value={empr}>{empr}</option>
                         ))}
                     </select>
