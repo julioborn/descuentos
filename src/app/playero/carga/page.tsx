@@ -251,13 +251,13 @@ export default function CargaPage() {
                 />
 
                 <div className="text-center font-bold text-xl">
-                    Total: {precioFinal.toLocaleString()} {moneda}
+                    <p> Total: {precioFinal.toLocaleString()} {moneda} </p>
                     {porcentajeDescuento > 0 && (
-                        <p className="text-sm text-green-300">Descuento aplicado: {porcentajeDescuento}%</p>
+                        <p className="text-md text-green-300">Descuento aplicado: {porcentajeDescuento}%</p>
                     )}
                 </div>
 
-                <button className="w-full bg-red-600 py-3 rounded text-white text-xl font-semibold">
+                <button className="w-full bg-red-700 py-3 rounded text-white text-xl font-bold">
                     Cargar
                 </button>
             </form>
