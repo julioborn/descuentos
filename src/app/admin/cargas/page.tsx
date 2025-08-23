@@ -55,6 +55,10 @@ export default function CargasPage() {
     const localidadesUnicas = useMemo(() => {
         return Array.from(new Set(cargas.map(c => c.localidad).filter(Boolean))).sort();
     }, [cargas]);
+    const fmtMoneyAR = (n?: number) =>
+        (typeof n === 'number' && isFinite(n))
+            ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '-';
 
     // Mapa Localidad -> Set(Empresa)
     const empresasPorLocalidad = useMemo(() => {
@@ -966,7 +970,7 @@ export default function CargasPage() {
                                     {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
                                 </td>
                                 <td className="p-3 text-center font-bold text-green-400">
-                                    {c.precioFinal.toLocaleString()} {c.moneda}
+                                    {fmtMoneyAR(c.precioFinal)} {c.moneda}
                                 </td>
 
                                 <td className="p-3 text-center rounded-r-lg">
@@ -1068,7 +1072,7 @@ export default function CargasPage() {
                             <p>
                                 <span className="text-gray-400">Precio con descuento:</span>{' '}
                                 <span className="text-green-400 font-semibold">
-                                    {c.precioFinal.toLocaleString()} {c.moneda}
+                                    {fmtMoneyAR(c.precioFinal)} {c.moneda}
                                 </span>
                             </p>
                         </div>
