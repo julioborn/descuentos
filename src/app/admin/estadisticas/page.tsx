@@ -36,6 +36,8 @@ type Carga = {
     producto: string;
     litros: number;
     precioFinal: number;
+    empresa?: string;    // <—
+    localidad?: string;  // <—
 };
 
 export default function EstadisticasPage() {
@@ -89,6 +91,63 @@ export default function EstadisticasPage() {
             .slice(0, 5);
     }, [cargas]);
 
+    const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+    const cargasPorDiaSemana = useMemo(() => {
+        const counts = Array(7).fill(0);
+        for (const c of cargas) {
+            const d = new Date(c.fecha);      // local time
+            counts[d.getDay()] += 1;          // 0=Dom … 6=Sáb
+        }
+        return counts;
+    }, [cargas]);
+
+    const diaMasCargas = useMemo(() => {
+        let idx = 0, max = -1;
+        for (let i = 0; i < 7; i++) {
+            if (cargasPorDiaSemana[i] > max) {
+                max = cargasPorDiaSemana[i];
+                idx = i;
+            }
+        }
+        return { dia: diasSemana[idx], cantidad: max < 0 ? 0 : max };
+    }, [cargasPorDiaSemana]);
+
+    const topDias = useMemo(() => {
+        return diasSemana
+            .map((dia, i) => ({ dia, cantidad: cargasPorDiaSemana[i] }))
+            .sort((a, b) => b.cantidad - a.cantidad)
+            .slice(0, 3);
+    }, [cargasPorDiaSemana]);
+
+    // Cuenta de cargas por localidad
+    const conteoPorLocalidad = useMemo(() => {
+        const map: Record<string, number> = {};
+        for (const c of cargas) {
+            const loc = c.localidad || 'Sin localidad';
+            map[loc] = (map[loc] || 0) + 1;
+        }
+        return map;
+    }, [cargas]);
+
+    // Tomamos todas y mostramos hasta 4 (si hay más, quedan fuera)
+    const localidadesTop4 = useMemo(() => {
+        return Object.entries(conteoPorLocalidad)
+            .sort((a, b) => b[1] - a[1])  // de mayor a menor
+            .slice(0, 4);                 // máximo 4
+    }, [conteoPorLocalidad]);
+
+    const distribucionEmpresasEmpleados = useMemo(() => {
+        const map: Record<string, number> = {};
+        for (const c of cargas) {
+            const emp = (c.empresa || '').trim();
+            if (emp.toUpperCase() === 'DOCENTES') continue; // excluye docentes
+            const key = emp || 'Sin empresa';
+            map[key] = (map[key] || 0) + 1;
+        }
+        return map;
+    }, [cargas]);
+
     if (loading) return <Loader />;
 
     return (
@@ -97,6 +156,7 @@ export default function EstadisticasPage() {
 
             {/* ✅ Grid 2x2 en desktop */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                 {/* --- Litros cargados por mes --- */}
                 <section className="bg-gray-800 p-6 rounded-xl">
                     <h2 className="text-xl font-semibold mb-4">Litros cargados por mes</h2>
@@ -175,6 +235,91 @@ export default function EstadisticasPage() {
                         }}
                     />
                 </section>
+
+                {/* --- Comparativa de cargas por localidad (hasta 4) --- */}
+                <section className="bg-gray-800 p-6 rounded-xl">
+                    <h2 className="text-xl font-semibold mb-4">Cargas por localidad</h2>
+                    <Bar
+                        data={{
+                            labels: localidadesTop4.map(([loc]) => loc),
+                            datasets: [
+                                {
+                                    label: 'Cargas',
+                                    data: localidadesTop4.map(([_, cnt]) => cnt),
+                                    backgroundColor: 'rgba(99,102,241,0.5)', // indigo
+                                },
+                            ],
+                        }}
+                        options={{
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                        }}
+                    />
+                </section>
+
+                {/* --- Distribución por empresa (solo empleados) --- */}
+                <section className="bg-gray-800 p-6 rounded-xl">
+                    <h2 className="text-xl font-semibold mb-4">Distribución de cargas por empresa (empleados)</h2>
+                    <div className="h-64">
+                        <Doughnut
+                            data={{
+                                labels: Object.keys(distribucionEmpresasEmpleados),
+                                datasets: [
+                                    {
+                                        data: Object.values(distribucionEmpresasEmpleados),
+                                        backgroundColor: [
+                                            'rgba(16,185,129,0.5)',
+                                            'rgba(239,68,68,0.5)',
+                                            'rgba(234,179,8,0.5)',
+                                            'rgba(59,130,246,0.5)',
+                                            'rgba(168,85,247,0.5)',
+                                        ],
+                                    },
+                                ],
+                            }}
+                            options={{ maintainAspectRatio: false }}
+                        />
+                    </div>
+                </section>
+                
+                {/* --- Día con más cargas + Top 3 --- */}
+                <section className="bg-gray-800 p-6 rounded-xl">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        <h2 className="text-xl font-semibold">Día con más cargas</h2>
+                        <span className="px-3 py-1 rounded-full bg-indigo-600/80 font-bold">
+                            {diaMasCargas.dia} ({diaMasCargas.cantidad})
+                        </span>
+                    </div>
+                    <div className="mt-5 mb-5">
+                        <h3 className="text-sm text-gray-300 mb-2 font-semibold">Top 3 días</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {topDias.map((t, i) => (
+                                <span key={t.dia} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-700 text-sm">
+                                    <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-indigo-600 text-white font-bold">
+                                        {i + 1}
+                                    </span>
+                                    <span className="font-semibold">{t.dia}</span>
+                                    <span className="text-white/70">({t.cantidad})</span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Bar
+                        data={{
+                            labels: diasSemana,
+                            datasets: [
+                                { label: 'Cargas', data: cargasPorDiaSemana, backgroundColor: 'rgba(99,102,241,0.5)' }
+                            ]
+                        }}
+                        options={{
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }}
+                    />
+
+                </section>
+
             </div>
         </main>
     );
