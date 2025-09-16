@@ -623,16 +623,18 @@ export default function CargasPage() {
         }
     };
 
-    // helpers ya existentes
+    // 🔹 helper único para parsear (coma o punto, elimina separadores de miles)
     const parseNumAR = (val: string) => {
-        const s = (val ?? '').trim().replace(/\./g, '').replace(',', '.');
+        if (!val) return NaN;
+        // "1.234,56" -> "1234.56"
+        const s = val.trim().replace(/\./g, '').replace(',', '.');
         return s === '' ? NaN : Number(s);
     };
-    // NUEVO: para mostrar con coma opcional (sin miles, simple)
+
+    // 🔹 formatear de vuelta con coma (para mostrar en los inputs)
     const fmtAR = (n: number) => {
         if (!isFinite(n)) return '';
-        // 2 decimales si no es entero
-        return (Math.round(n * 100) / 100).toString().replace('.', ',');
+        return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     const editarCarga = async (id: string) => {
@@ -695,21 +697,12 @@ export default function CargasPage() {
       `,
                 focusConfirm: false,
                 didOpen: () => {
-                    // layout
-                    Swal.getPopup()
-                        ?.querySelectorAll<HTMLInputElement>('.swal2-input')
-                        .forEach((el) => { el.style.width = '100%'; el.style.margin = '0'; });
-                    const form = document.getElementById('swal-form') as HTMLDivElement | null;
-                    if (form && window.innerWidth < 560) form.style.gridTemplateColumns = '1fr';
-                    const t = Swal.getTitle(); if (t) { t.style.fontSize = '28px'; t.style.fontWeight = '700'; }
-
-                    // ---- AUTOCALC ----
                     const litrosEl = document.getElementById('swal-litros') as HTMLInputElement;
                     const sinEl = document.getElementById('swal-precioSin') as HTMLInputElement;
                     const conEl = document.getElementById('swal-precio') as HTMLInputElement;
                     const autoEl = document.getElementById('swal-auto') as HTMLInputElement;
 
-                    // precios por litro a partir de la carga actual (si existen)
+                    // precios unitarios de referencia
                     const litros0 = Number(carga.litros) || 0;
                     const pSin0 = Number(carga.precioFinalSinDescuento ?? 0);
                     const pCon0 = Number(carga.precioFinal ?? 0);
@@ -726,23 +719,19 @@ export default function CargasPage() {
                     };
 
                     litrosEl.addEventListener('input', recalc);
+
+                    // 👇 Inicializo los inputs formateados
+                    litrosEl.value = fmtAR(Number(carga.litros) || 0);
+                    if (carga.precioFinalSinDescuento) sinEl.value = fmtAR(Number(carga.precioFinalSinDescuento));
+                    if (carga.precioFinal) conEl.value = fmtAR(Number(carga.precioFinal));
                 },
                 preConfirm: () => {
-                    const litrosStr = (document.getElementById('swal-litros') as HTMLInputElement).value;
+                    const litros = parseNumAR((document.getElementById('swal-litros') as HTMLInputElement).value);
                     const prod = (document.getElementById('swal-producto') as HTMLInputElement).value.trim();
-                    const precioStr = (document.getElementById('swal-precio') as HTMLInputElement).value;
-                    const precioSinStr = (document.getElementById('swal-precioSin') as HTMLInputElement).value;
+                    const precioFinal = parseNumAR((document.getElementById('swal-precio') as HTMLInputElement).value);
+                    const precioFinalSinDescuento = parseNumAR((document.getElementById('swal-precioSin') as HTMLInputElement).value);
 
-                    const litros = parseNumAR(litrosStr);
-                    const precioFinal = parseNumAR(precioStr);
-                    const precioFinalSinDescuento =
-                        precioSinStr.trim() === '' ? null : parseNumAR(precioSinStr);
-
-                    if (
-                        Number.isNaN(litros) ||
-                        Number.isNaN(precioFinal) ||
-                        (precioFinalSinDescuento !== null && Number.isNaN(precioFinalSinDescuento))
-                    ) {
+                    if (Number.isNaN(litros) || Number.isNaN(precioFinal)) {
                         Swal.showValidationMessage('Revisá los números (podés usar coma o punto).');
                         return;
                     }
@@ -752,7 +741,7 @@ export default function CargasPage() {
                     }
 
                     return { litros, producto: prod, precioFinal, precioFinalSinDescuento };
-                },
+                }
             });
 
             if (!values) return;
