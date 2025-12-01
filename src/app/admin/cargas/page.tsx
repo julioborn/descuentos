@@ -247,6 +247,35 @@ export default function CargasPage() {
         setPagina((p) => Math.min(p, totalPag || 1));
     }, [totalPag]);
 
+
+    // MAPA DE ADVERTENCIAS
+    const advertenciasPorId = useMemo(() => {
+        const map = new Map<string, { muchasCargas: boolean; mas75: boolean }>();
+
+        // Agrupamos por DNI + día
+        const cargasPorPersonaDia = new Map<string, number>();
+
+        filtradas.forEach(c => {
+            const fechaObj = new Date(c.fecha);
+            const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
+
+            const count = cargasPorPersonaDia.get(diaClave) || 0;
+            cargasPorPersonaDia.set(diaClave, count + 1);
+        });
+
+        filtradas.forEach(c => {
+            const fechaObj = new Date(c.fecha);
+            const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
+
+            const muchasCargas = (cargasPorPersonaDia.get(diaClave) || 0) > 1;
+            const mas75 = c.litros > 75;
+
+            map.set(c._id, { muchasCargas, mas75 });
+        });
+
+        return map;
+    }, [filtradas]);
+
     if (loading) return <Loader />;
 
     // const editarCarga = async (id: string) => {
@@ -949,7 +978,30 @@ export default function CargasPage() {
                                         minute: '2-digit',
                                     })}
                                 </td>
-                                <td className="p-3 font-semibold">{c.nombreEmpleado}</td>
+                                <td className="p-3 font-semibold flex items-center gap-2">
+                                    {c.nombreEmpleado}
+
+                                    {/* ADVERTENCIAS */}
+                                    {(() => {
+                                        const adv = advertenciasPorId.get(c._id);
+                                        if (!adv) return null;
+
+                                        return (
+                                            <>
+                                                {adv.muchasCargas && (
+                                                    <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
+                                                        ⚠️
+                                                    </span>
+                                                )}
+                                                {adv.mas75 && (
+                                                    <span title="Más de 75 litros" className="text-red-500 text-xl">
+                                                        🔥
+                                                    </span>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </td>
                                 <td className="p-3">{c.dniEmpleado}</td>
                                 <td className="p-3">{c.empresa || '-'}</td>
                                 <td className="p-3">{c.localidad || '-'}</td>
@@ -1009,7 +1061,29 @@ export default function CargasPage() {
                     >
                         {/* Cabecera: nombre y producto */}
                         <div className="flex justify-between items-center mb-2">
-                            <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
+
+                                {(() => {
+                                    const adv = advertenciasPorId.get(c._id);
+                                    if (!adv) return null;
+
+                                    return (
+                                        <div className="flex gap-1">
+                                            {adv.muchasCargas && (
+                                                <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
+                                                    ⚠️
+                                                </span>
+                                            )}
+                                            {adv.mas75 && (
+                                                <span title="Más de 75 litros" className="text-red-500 text-xl">
+                                                    🔥
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                             <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300">
                                 {/*{banderaPorMoneda(c.moneda)}*/} {c.producto}
                             </span>
