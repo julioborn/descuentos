@@ -100,7 +100,7 @@ export default function AdminPreciosPage() {
     if (status === 'loading' || loading) return <Loader />;
 
     return (
-        <main className="min-h-screen p-6 bg-gray-700 text-white">
+        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
             <h1 className="text-3xl font-bold text-center mb-8">
                 Precios
             </h1>
@@ -112,7 +112,7 @@ export default function AdminPreciosPage() {
             ) : (
                 <div className="max-w-3xl mx-auto space-y-6">
                     {productos.map((p) => (
-                        <div key={p._id} className="bg-gray-800 p-4 rounded shadow">
+                        <div key={p._id} className="bg-gray-800 p-4 rounded-2xl shadow">
                             <div className="mb-2 font-semibold">{p.producto}</div>
 
                             <div className="flex items-center gap-2">

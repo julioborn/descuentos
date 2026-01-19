@@ -104,7 +104,7 @@ export default function AdminDescuentosPage() {
     }
 
     return (
-        <main className="min-h-screen p-6 bg-gray-700 text-white">
+        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
             <h1 className="text-3xl font-bold text-center mb-8">
                 Descuentos
                 {/* &nbsp;
@@ -116,7 +116,7 @@ export default function AdminDescuentosPage() {
             {/* Lista de empresas */}
             <div className="space-y-4 mb-10 max-w-md mx-auto">
                 {descuentos.map((d) => (
-                    <div key={d._id} className="bg-gray-800 p-4 rounded shadow">
+                    <div key={d._id} className="bg-gray-800 p-4 rounded-2xl shadow">
                         <div className="font-semibold mb-3 text-lg">{d.empresa}</div>
 
                         {/* input + botón */}
@@ -148,7 +148,7 @@ export default function AdminDescuentosPage() {
             </div>
 
             {/* Formulario para agregar una nueva empresa */}
-            <div className="bg-gray-800 p-5 rounded shadow max-w-md mx-auto">
+            <div className="bg-gray-800 p-5 rounded-2xl shadow max-w-md mx-auto">
                 <h2 className="text-xl font-semibold mb-3">Agregar empresa</h2>
 
                 <input
