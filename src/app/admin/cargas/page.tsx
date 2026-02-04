@@ -996,29 +996,30 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                                             minute: '2-digit',
                                         })}
                                     </td>
-                                    <td className="p-3 font-semibold flex items-center gap-2">
-                                        {c.nombreEmpleado}
+                                    <td className="p-3 font-semibold">
+                                        <div className="flex items-center gap-2">
+                                            {c.nombreEmpleado}
 
-                                        {/* ADVERTENCIAS */}
-                                        {(() => {
-                                            const adv = advertenciasPorId.get(c._id);
-                                            if (!adv) return null;
+                                            {(() => {
+                                                const adv = advertenciasPorId.get(c._id);
+                                                if (!adv) return null;
 
-                                            return (
-                                                <>
-                                                    {adv.muchasCargas && (
-                                                        <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
-                                                            ⚠️
-                                                        </span>
-                                                    )}
-                                                    {adv.mas75 && (
-                                                        <span title="Más de 75 litros" className="text-red-500 text-xl">
-                                                            🔥
-                                                        </span>
-                                                    )}
-                                                </>
-                                            );
-                                        })()}
+                                                return (
+                                                    <>
+                                                        {adv.muchasCargas && (
+                                                            <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
+                                                                ⚠️
+                                                            </span>
+                                                        )}
+                                                        {adv.mas75 && (
+                                                            <span title="Más de 75 litros" className="text-red-500 text-xl">
+                                                                🔥
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
                                     </td>
                                     <td className="p-3">{c.dniEmpleado}</td>
                                     <td className="p-3">{c.empresa || '-'}</td>
