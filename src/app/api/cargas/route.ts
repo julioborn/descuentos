@@ -4,57 +4,86 @@ import { connectMongoDB } from "@/lib/mongodb";
 import { Carga } from "@/models/Carga";
 import { Descuento } from "@/models/Descuento";
 import { Precio } from "@/models/Precio";
+import { Empleado } from "@/models/Empleado";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
+/* ======================
+   GET
+====================== */
 export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
     await connectMongoDB();
 
     const match: any = {};
-    if (session?.user.role === 'admin_arg') match.moneda = 'ARS';
-    if (session?.user.role === 'admin_py') match.moneda = 'Gs';
+    if (session?.user.role === "admin_arg") match.moneda = "ARS";
+    if (session?.user.role === "admin_py") match.moneda = "Gs";
 
     const cargas = await Carga.find(match);
     return NextResponse.json(cargas);
 }
 
+/* ======================
+   POST
+====================== */
 export async function POST(req: NextRequest) {
     await connectMongoDB();
     const session = await getServerSession(authOptions);
-    const body = await req.json();
 
     if (!session || !session.user) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { nombreEmpleado, dniEmpleado, producto, litros, empresa } = body;
+    const { dniEmpleado, producto, litros } = await req.json();
 
     try {
-        // Buscar el precio del producto según la moneda del playero
+        /* 🔐 1. VALIDAR EMPLEADO / DOCENTE / POLICÍA */
+        const empleado = await Empleado.findOne({ dni: dniEmpleado });
+
+        if (!empleado) {
+            return NextResponse.json(
+                { error: "Empleado no encontrado" },
+                { status: 404 }
+            );
+        }
+
+        if (!empleado.activo) {
+            return NextResponse.json(
+                { error: "Empleado dado de baja" },
+                { status: 403 }
+            );
+        }
+
+        /* 💰 2. PRECIO SEGÚN MONEDA DEL PLAYERO */
         const precio = await Precio.findOne({
             producto,
             moneda: session.user.moneda,
         });
 
         if (!precio) {
-            return NextResponse.json({ error: "Precio no encontrado" }, { status: 404 });
+            return NextResponse.json(
+                { error: "Precio no encontrado" },
+                { status: 404 }
+            );
         }
 
         const precioUnitario = precio.precio;
         const precioFinalSinDescuento = litros * precioUnitario;
 
-        // Buscar descuento por empresa
-        const descuento = await Descuento.findOne({ empresa });
+        /* 🎯 3. DESCUENTO POR EMPRESA */
+        const descuento = await Descuento.findOne({
+            empresa: empleado.empresa,
+        });
+
         const porcentajeDescuento = descuento?.porcentaje || 0;
+        const precioFinal =
+            precioFinalSinDescuento * (1 - porcentajeDescuento / 100);
 
-        // Aplicar descuento si existe
-        const precioFinal = precioFinalSinDescuento * (1 - porcentajeDescuento / 100);
-
+        /* 🧾 4. CREAR CARGA */
         const nuevaCarga = await Carga.create({
-            nombreEmpleado,
-            dniEmpleado,
-            empresa,
+            nombreEmpleado: `${empleado.apellido} ${empleado.nombre}`,
+            dniEmpleado: empleado.dni,
+            empresa: empleado.empresa,
             producto,
             litros,
             precioUnitario,
@@ -63,7 +92,7 @@ export async function POST(req: NextRequest) {
             porcentajeDescuento,
             moneda: session.user.moneda,
             fecha: new Date(),
-            localidad: session.user.localidad, // ✅ agregamos la localidad del playero
+            localidad: session.user.localidad, // del playero
         });
 
         return NextResponse.json(nuevaCarga);

@@ -10,11 +10,34 @@ export async function GET(
 
     try {
         const empleado = await Empleado.findOne({ qrToken: params.token });
+
         if (!empleado) {
-            return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+            return NextResponse.json(
+                { error: "QR inválido" },
+                { status: 404 }
+            );
         }
-        return NextResponse.json(empleado);
+
+        if (!empleado.activo) {
+            return NextResponse.json(
+                { error: "Beneficiario dado de baja" },
+                { status: 403 }
+            );
+        }
+
+        // ⚠️ DEVOLVER SOLO LO NECESARIO
+        return NextResponse.json({
+            nombre: empleado.nombre,
+            apellido: empleado.apellido,
+            dni: empleado.dni,
+            empresa: empleado.empresa,
+            tipo: empleado.tipo,
+        });
     } catch (err) {
-        return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+        console.error(err);
+        return NextResponse.json(
+            { error: "Error del servidor" },
+            { status: 500 }
+        );
     }
-}
+} 
