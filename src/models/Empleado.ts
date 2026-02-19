@@ -13,15 +13,16 @@ const EmpleadoSchema = new mongoose.Schema(
         },
 
         telefono: String,
-        empresa: String,
-        localidad: String,
 
-        tipo: {
+        // 👈 CLAVE PARA TODO EL SISTEMA
+        // EMPLEADO | DOCENTE | POLICIA
+        empresa: {
             type: String,
-            enum: ['EMPLEADO', 'DOCENTE', 'POLICIA'],
-            default: 'EMPLEADO',
             required: true,
+            index: true,
         },
+
+        localidad: String,
 
         qrToken: {
             type: String,
@@ -30,10 +31,11 @@ const EmpleadoSchema = new mongoose.Schema(
             index: true,
         },
 
-        // 👮 control descarga QR
+        // 👮 control descarga QR (policías)
         qrDescargado: { type: Boolean, default: false },
         qrDescargadoAt: { type: Date },
 
+        // 🚫 baja lógica
         activo: { type: Boolean, default: true },
 
         pais: String,

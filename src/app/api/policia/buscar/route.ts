@@ -33,5 +33,6 @@ export async function POST(req: Request) {
         dni: emp.dni,
         localidad: emp.localidad,
         descargado: Boolean(emp.qrDescargado),
+        qrToken: emp.qrToken, // ✅ CLAVE
     });
 }

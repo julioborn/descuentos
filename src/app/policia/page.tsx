@@ -4,6 +4,7 @@ import { useState } from 'react'
 import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
 import { saveAs } from 'file-saver'
+import { FaWhatsapp } from 'react-icons/fa'
 
 type Policia = {
     nombre: string
@@ -20,7 +21,6 @@ export default function PoliciaPage() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
-    /* ───────── Buscar policía ───────── */
     const buscar = async () => {
         setError('')
         setLoading(true)
@@ -44,7 +44,7 @@ export default function PoliciaPage() {
 
             if (!data.descargado) {
                 const qr = await QRCode.toDataURL(
-                    `${window.location.origin}/playero?token=${dni}`
+                    `${window.location.origin}/playero?token=${data.qrToken}`
                 )
                 setQrUrl(qr)
             }
@@ -53,10 +53,8 @@ export default function PoliciaPage() {
         }
     }
 
-    /* ───────── Descargar tarjeta ───────── */
     const descargarTarjeta = async () => {
         if (!policia) return
-
         const nodo = document.getElementById('tarjeta-policial')
         if (!nodo) return
 
@@ -66,7 +64,6 @@ export default function PoliciaPage() {
         )
 
         if (!blob) return
-
         saveAs(blob, `qr-${policia.dni}.png`)
 
         await fetch('/api/policia/descargar', {
@@ -78,23 +75,6 @@ export default function PoliciaPage() {
         setPolicia({ ...policia, descargado: true })
     }
 
-    const formatDni = (value: string) => {
-        const digits = value.replace(/\D/g, '')
-        if (digits.length <= 3) return digits
-        if (digits.length <= 6)
-            return digits.replace(/(\d{1,3})(\d{3})/, '$1.$2')
-        return digits.replace(/(\d{1,2})(\d{3})(\d{3})/, '$1.$2.$3')
-    }
-
-    const whatsappLink =
-        policia &&
-        `https://wa.me/5493483451648?text=${encodeURIComponent(
-            `Hola, tuve un inconveniente con mi QR de descuento de combustible.\n\n` +
-            `DNI: ${policia.dni}\n` +
-            `Nombre: ${policia.nombre} ${policia.apellido}\n\n` +
-            `¿Podrían ayudarme? Gracias.`
-        )}`
-
     const volver = () => {
         setPolicia(null)
         setDni('')
@@ -102,24 +82,41 @@ export default function PoliciaPage() {
         setError('')
     }
 
-
+    const formatDni = (value: string) => {
+        const digits = value.replace(/\D/g, '')
+        if (digits.length <= 3) return digits
+        if (digits.length <= 6) return digits.replace(/(\d{1,3})(\d{3})/, '$1.$2')
+        return digits.replace(/(\d{1,2})(\d{3})(\d{3})/, '$1.$2.$3')
+    }
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-6">
-            <div className="w-full max-w-sm space-y-6">
+        <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
+            <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-xl p-8 space-y-8">
 
-                <h1 className="text-2xl font-bold text-center">
-                    QR Descuento de Combustible
-                </h1>
-
-                <p className="text-center text-sm text-gray-300">
-                    Ingresá tu DNI para descargar tu QR personal.
-                    <br />
-                    ⚠️ El QR se puede descargar una sola vez.
-                </p>
-
+                {/* TÍTULO */}
                 {!policia && (
-                    <>
+                    <header className="space-y-3 flex flex-col">
+                        <h1 className="text-3xl font-bold tracking-tight">
+                            Descuento de Combustible
+                        </h1>
+
+                        <p className="text-base text-gray-300 leading-relaxed">
+                            Ingresá tu DNI para descargar tu QR personal.
+                            <br />
+                            <span className="font-semibold text-yellow-400">
+                                El QR puede descargarse una sola vez.
+                            </span>
+                            <br />
+                            <span className="font-semibold text-yellow-400">
+                                El QR se guardará en las fotos de tu teléfono.
+                            </span>
+                        </p>
+                    </header>
+                )}
+
+                {/* FORM DNI */}
+                {!policia && (
+                    <div className="space-y-5">
                         <input
                             value={formatDni(dni)}
                             onChange={(e) => {
@@ -127,127 +124,119 @@ export default function PoliciaPage() {
                                 if (onlyDigits.length <= 8) setDni(onlyDigits)
                             }}
                             inputMode="numeric"
-                            pattern="[0-9]*"
                             placeholder="DNI"
                             className="
-                w-full text-center text-3xl tracking-widest font-mono
-                py-4 rounded-xl text-black
-                focus:outline-none focus:ring-2 focus:ring-black
-              "
+    w-full text-center text-4xl font-mono tracking-widest
+    py-4 rounded-xl text-black
+    focus:outline-none focus:ring-4 focus:ring-red-700
+  "
                         />
 
                         <button
                             onClick={buscar}
                             disabled={dni.length < 7 || dni.length > 8 || loading}
                             className={`
-                w-full py-4 rounded-xl font-semibold text-lg
+                w-full py-4 rounded-xl text-lg font-semibold transition
                 ${dni.length >= 7 && dni.length <= 8
-                                    ? 'bg-white text-black'
-                                    : 'bg-gray-600 cursor-not-allowed'
-                                }
+                                    ? 'bg-red-700 hover:bg-red-800'
+                                    : 'bg-gray-600 cursor-not-allowed'}
               `}
                         >
-                            {loading ? 'Buscando…' : 'Continuar'}
+                            {loading ? 'Verificando…' : 'Continuar'}
                         </button>
 
                         {error && (
-                            <p className="text-red-400 text-center text-sm">{error}</p>
+                            <p className="text-center text-red-400 text-base font-semibold">
+                                {error}
+                            </p>
                         )}
-                    </>
+                    </div>
                 )}
 
-                {policia && (
-                    <button
-                        onClick={volver}
-                        className="
-      w-full text-sm text-gray-300
-      underline underline-offset-4
-      hover:text-white transition
-    "
-                    >
-                        ← Cambiar DNI
-                    </button>
+                {/* TARJETA QR */}
+                {policia && !policia.descargado && (
+                    <div className="space-y-6">
+                        <div
+                            id="tarjeta-policial"
+                            className="
+                bg-white text-black rounded-2xl p-6
+                flex flex-col items-center gap-6
+              "
+                        >
+                            <img src="/idescuentos.png" className="h-14" />
+                            <img src={qrUrl} className="w-64 h-64" />
+                            <div className="text-lg font-bold text-center">
+                                {policia.nombre} {policia.apellido}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={descargarTarjeta}
+                            className="
+                w-full py-4 rounded-xl text-lg font-semibold
+                bg-green-700 hover:bg-green-800 transition
+              "
+                        >
+                            Descargar QR
+                        </button>
+                    </div>
                 )}
 
+                {/* YA DESCARGADO */}
+                {policia && policia.descargado && (
+                    <div className="space-y-1 text-center">
+                        <div className='mb-4 space-y-1'>
+                            <p className="text-red-500 text-lg font-bold">
+                                Este QR ya fue descargado
+                            </p>
+                            <span className="block text-sm font-bold">
+                                {policia.nombre} {policia.apellido}
+                            </span>
+
+                            <span className="block text-sm">
+                                DNI: {formatDni(policia.dni)}
+                            </span>
+                        </div>
+
+                        <div className="bg-white text-black rounded-xl p-6 space-y-4">
+                            <img src="/idescuentos.png" className="h-10 mx-auto" />
+                            <p className="text-base text-gray-700">
+                                Si perdiste tu QR o fue descargado por error,
+                                podés comunicarte con nosotros para ayudarte.
+                            </p>
+
+                            <a
+                                href="https://wa.me/5493483451648"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="
+    flex items-center justify-center gap-1.5
+    w-full py-3 rounded-xl
+    bg-green-600 hover:bg-green-700
+    text-white font-semibold transition
+  "
+                            >
+                                <span>Contactar</span>
+                                <FaWhatsapp size={20} />
+                            </a>
+                        </div>
+                    </div>
+                )}
+
+                {/* BOTÓN VOLVER – SIEMPRE ABAJO */}
                 {policia && (
-                    <>
-                        {/* TARJETA QR SOLO SI NO FUE DESCARGADO */}
-                        {!policia.descargado && (
-                            <>
-                                <div
-                                    id="tarjeta-policial"
-                                    className="
-                    bg-white text-black px-6 py-10 rounded-xl shadow-lg
-                    flex flex-col items-center justify-between min-h-[420px]
-                  "
-                                >
-                                    <img src="/idescuentos.png" className="h-14 mb-6" />
-
-                                    <img
-                                        src={qrUrl}
-                                        className="w-64 h-64 object-contain"
-                                    />
-
-                                    <div className="text-center text-base font-semibold tracking-wide mt-6">
-                                        {policia.nombre} {policia.apellido}
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={descargarTarjeta}
-                                    className="w-full bg-green-700 hover:bg-green-800 py-3 rounded font-semibold"
-                                >
-                                    Descargar QR
-                                </button>
-                            </>
-                        )}
-
-                        {/* BLOQUE INCONVENIENTE */}
-                        {policia.descargado && (
-                            <>
-                                <p className="text-center text-red-600 font-semibold space-y-1">
-                                    <span className="block text-base">
-                                        QR ya descargado
-                                    </span>
-
-                                    <span className="block text-sm font-bold">
-                                        {policia.nombre} {policia.apellido}
-                                    </span>
-
-                                    <span className="block text-sm">
-                                        DNI: {formatDni(policia.dni)}
-                                    </span>
-                                </p>
-
-                                <div className="
-                  bg-white text-black rounded-xl shadow p-5 space-y-4 text-center
-                ">
-                                    <img src="/idescuentos.png" className="h-10 mx-auto" />
-
-                                    <h2 className="text-lg font-bold">
-                                        ¿Tuviste algún inconveniente?
-                                    </h2>
-
-                                    <p className="text-sm text-gray-600">
-                                        Si perdiste tu QR o fue descargado por error,
-                                        podés comunicarte con nosotros para ayudarte.
-                                    </p>
-
-                                    <a
-                                        href={whatsappLink || '#'}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="
-                      block w-full bg-green-600 hover:bg-green-700
-                      text-white py-3 rounded-xl font-semibold transition
-                    "
-                                    >
-                                        Contactar por WhatsApp
-                                    </a>
-                                </div>
-                            </>
-                        )}
-                    </>
+                    <div>
+                        <button
+                            onClick={volver}
+                            className="
+        w-full py-3 rounded-xl
+        bg-gray-700 hover:bg-gray-600
+        text-base font-semibold transition
+      "
+                        >
+                            ← Volver
+                        </button>
+                    </div>
                 )}
             </div>
         </main>
