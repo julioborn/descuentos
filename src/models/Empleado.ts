@@ -14,11 +14,17 @@ const EmpleadoSchema = new mongoose.Schema(
 
         telefono: String,
 
-        // 👈 CLAVE PARA TODO EL SISTEMA
+        // 👈 macro categoría
         // EMPLEADO | DOCENTE | POLICIA
         empresa: {
             type: String,
             required: true,
+            index: true,
+        },
+
+        // 👈 sub categoría (policías / docentes)
+        subcategoria: {
+            type: String,
             index: true,
         },
 
@@ -31,11 +37,10 @@ const EmpleadoSchema = new mongoose.Schema(
             index: true,
         },
 
-        // 👮 control descarga QR (policías)
+        // 👮 control descarga QR
         qrDescargado: { type: Boolean, default: false },
         qrDescargadoAt: { type: Date },
 
-        // 🚫 baja lógica
         activo: { type: Boolean, default: true },
 
         pais: String,

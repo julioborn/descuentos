@@ -20,6 +20,7 @@ export default function PoliciaPage() {
     const [qrUrl, setQrUrl] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [procesando, setProcesando] = useState(false)
 
     const buscar = async () => {
         setError('')
@@ -87,6 +88,23 @@ export default function PoliciaPage() {
         if (digits.length <= 3) return digits
         if (digits.length <= 6) return digits.replace(/(\d{1,3})(\d{3})/, '$1.$2')
         return digits.replace(/(\d{1,2})(\d{3})(\d{3})/, '$1.$2.$3')
+    }
+
+    const esIOS =
+        typeof window !== 'undefined' &&
+        /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+    const marcarComoDescargadoIOS = async () => {
+        if (!policia || procesando) return
+        setProcesando(true)
+
+        await fetch('/api/policia/descargar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dni: policia.dni }),
+        })
+
+        setPolicia({ ...policia, descargado: true })
     }
 
     return (
@@ -170,14 +188,32 @@ export default function PoliciaPage() {
                             </div>
                         </div>
 
+                        {esIOS && (
+                            <p className="text-center text-yellow-500 font-semibold text-sm">
+                                Tocá “Descargar QR”, luego mantené presionado el código
+                                y elegí <span className="underline">“Guardar en Fotos”</span>.
+                                <br />
+                                <strong>Solo puede hacerse una vez.</strong>
+                            </p>
+                        )}
+
                         <button
-                            onClick={descargarTarjeta}
-                            className="
-                w-full py-4 rounded-xl text-lg font-semibold
-                bg-green-700 hover:bg-green-800 transition
-              "
+                            disabled={procesando}
+                            onClick={() => {
+                                if (esIOS) {
+                                    marcarComoDescargadoIOS()
+                                } else {
+                                    descargarTarjeta()
+                                }
+                            }}
+                            className={`
+    w-full py-4 rounded-xl text-lg font-semibold transition
+    ${esIOS
+                                    ? 'bg-yellow-500 text-black'
+                                    : 'bg-green-700 hover:bg-green-800 text-white'}
+  `}
                         >
-                            Descargar QR
+                            {esIOS ? 'Descargar QR' : 'Descargar QR'}
                         </button>
                     </div>
                 )}

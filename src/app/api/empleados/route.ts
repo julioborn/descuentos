@@ -18,13 +18,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(empleados);
 }
 
-// POST: Crear nuevo empleado
 export async function POST(req: NextRequest) {
     await connectMongoDB();
     const body = await req.json();
 
     try {
-        // 🔍 Verificar si ya existe
         const existente = await Empleado.findOne({
             dni: body.dni,
             empresa: body.empresa,
@@ -34,17 +32,19 @@ export async function POST(req: NextRequest) {
         if (existente) {
             return NextResponse.json(
                 { mensaje: "Empleado ya registrado" },
-                { status: 409 } // Conflict
+                { status: 409 }
             );
         }
 
-        // ✅ Crear solo si no existe
         const nuevoEmpleado = await Empleado.create({
             nombre: body.nombre,
             apellido: body.apellido,
             dni: body.dni,
             telefono: body.telefono,
+
             empresa: body.empresa,
+            subcategoria: body.subcategoria || undefined, // 👈 libre total
+
             localidad: body.localidad,
             qrToken: body.qrToken,
             activo: true,

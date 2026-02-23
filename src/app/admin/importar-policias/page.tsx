@@ -13,6 +13,7 @@ type Policia = {
     dni: string
     telefono: string
     localidad: string
+    subcategoria?: string
     qrUrl: string
 }
 
@@ -55,6 +56,7 @@ export default function ImportarPolicias() {
                 const dni = String(fila.DNI || '').trim()
                 const nombre = String(fila.NOMBRE || '').trim()
                 const apellido = String(fila.APELLIDO || '').trim()
+                const subcategoria = String(fila.SUBCATEGORIA || '').trim()
 
                 if (!dni || procesados.has(dni)) {
                     if (dni) cntDuplicadosExcel++
@@ -81,8 +83,9 @@ export default function ImportarPolicias() {
                             nombre,
                             apellido,
                             dni,
-                            telefono: String(fila.TELEF_PART ?? ''),
+                            telefono: String(fila.TELEFONO ?? ''),
                             localidad: String(fila.LOCALIDAD ?? ''),
+                            subcategoria: subcategoria || undefined,
                             empresa: 'POLICIA',
                             qrToken: token,
                             pais: 'AR',
@@ -105,8 +108,9 @@ export default function ImportarPolicias() {
                         nombre,
                         apellido,
                         dni,
-                        telefono: String(fila.TELEF_PART ?? ''),
+                        telefono: String(fila.TELEFONO ?? ''),
                         localidad: String(fila.LOCALIDAD ?? ''),
+                        subcategoria,
                         qrUrl,
                     })
 

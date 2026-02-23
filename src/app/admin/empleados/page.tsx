@@ -14,6 +14,7 @@ type Empleado = {
     dni: string;
     telefono: string;
     empresa: string;
+    subcategoria?: string; // 👈 NUEVO
     qrToken: string;
     pais: string;
     localidad: string;
@@ -132,7 +133,7 @@ export default function EmpleadosPage() {
         const txt = sinAcentos(deferredBusqueda.trim());
         return empleados.filter((e) => {
             const coincideTxt =
-                !txt || sinAcentos(`${e.nombre} ${e.apellido} ${e.dni} ${e.localidad} ${e.empresa}`).includes(txt);
+                !txt || sinAcentos(`${e.nombre} ${e.apellido} ${e.dni} ${e.localidad} ${e.empresa} ${e.subcategoria ?? ''}`).includes(txt);
             const coincideLoc = localidadFiltro === 'TODAS' || e.localidad === localidadFiltro;
             const coincideEmp = empresaFiltro === 'TODAS' || e.empresa === empresaFiltro;
             return coincideTxt && coincideLoc && coincideEmp;
@@ -151,6 +152,11 @@ export default function EmpleadosPage() {
     useEffect(() => {
         setPagina((p) => Math.min(p, totalPag || 1));
     }, [totalPag]);
+
+    const hayPoliciasEnVista = useMemo(
+        () => listaPagina.some((e) => e.empresa === 'POLICIA'),
+        [listaPagina]
+    );
 
     if (status === 'loading' || loading) return <Loader />;
 
@@ -239,16 +245,20 @@ export default function EmpleadosPage() {
             const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`);
 
             const html = `
-        <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
-          <div style="text-align:center">
-            <div style="font-size:18px;font-weight:700;">${emp.nombre} ${emp.apellido}</div>
-            <div style="opacity:.8">DNI: ${emp.dni} • Tel: ${emp.telefono}</div>
-            <div style="opacity:.8">Localidad: ${emp.localidad}</div>
-            <div style="opacity:.8">Empresa: ${emp.empresa}</div>
-          </div>
-          <img src="${qrUrl}" alt="QR" style="width:240px;height:240px;border-radius:8px;border:2px solid #ccc" />
-        </div>
-      `;
+                <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+                <div style="text-align:center">
+                <div style="font-size:18px;font-weight:700;">${emp.nombre} ${emp.apellido}</div>
+                <div style="opacity:.8">DNI: ${emp.dni} • Tel: ${emp.telefono}</div>
+                <div style="opacity:.8">Localidad: ${emp.localidad}</div>
+                <div style="opacity:.8">Empresa: ${emp.empresa}</div>
+                ${emp.empresa === 'POLICIA' && emp.subcategoria
+                    ? `<div style="opacity:.8">Subcategoría: ${emp.subcategoria}</div>`
+                    : ''
+                }
+                </div>
+                <img src="${qrUrl}" alt="QR" style="width:240px;height:240px;border-radius:8px;border:2px solid #ccc" />
+                </div>
+            `;
             await Swal.fire({
                 html,
                 background: '#1f2937',
@@ -359,6 +369,9 @@ export default function EmpleadosPage() {
                                 <th className="p-3">DNI</th>
                                 <th className="p-3">Teléfono</th>
                                 <th className="p-3">Empresa</th>
+                                {hayPoliciasEnVista && (
+                                    <th className="p-3">Subcategoría</th>
+                                )}
                                 <th className="p-3">Localidad</th>
                                 <th className="p-3 text-center">Acciones</th>
                             </tr>
@@ -380,6 +393,11 @@ export default function EmpleadosPage() {
                                     <td className="p-2">{emp.dni}</td>
                                     <td className="p-2">{emp.telefono}</td>
                                     <td className="p-2">{emp.empresa}</td>
+                                    {hayPoliciasEnVista && (
+                                        <td className="p-2">
+                                            {emp.empresa === 'POLICIA' ? emp.subcategoria || '—' : ''}
+                                        </td>
+                                    )}
                                     <td className="p-2">{emp.localidad}</td>
                                     <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
                                         <button
@@ -427,6 +445,9 @@ export default function EmpleadosPage() {
                             <p>DNI: {emp.dni}</p>
                             <p>Tel: {emp.telefono}</p>
                             <p>Empresa: {emp.empresa}</p>
+                            {emp.empresa === 'POLICIA' && emp.subcategoria && (
+                                <p>Subcategoría: {emp.subcategoria}</p>
+                            )}
                             <p>Localidad: {emp.localidad}</p>
                             <div className="mt-3 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                 <button
