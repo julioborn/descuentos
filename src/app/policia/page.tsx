@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
 import { saveAs } from 'file-saver'
 import { FaWhatsapp } from 'react-icons/fa'
+import Swal from 'sweetalert2'
 
 type Policia = {
     nombre: string
@@ -21,6 +22,7 @@ export default function PoliciaPage() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [procesando, setProcesando] = useState(false)
+    const [tarjetaImg, setTarjetaImg] = useState<string | null>(null)
 
     const buscar = async () => {
         setError('')
@@ -107,6 +109,44 @@ export default function PoliciaPage() {
         setPolicia({ ...policia, descargado: true })
     }
 
+    const generarImagenTarjeta = async () => {
+        const nodo = document.getElementById('tarjeta-policial')
+        if (!nodo) return null
+
+        const canvas = await html2canvas(nodo, { scale: 2 })
+        return canvas.toDataURL('image/png')
+    }
+
+    const descargarIOS = async () => {
+        if (!policia || procesando) return
+        setProcesando(true)
+
+        const img = await generarImagenTarjeta()
+        if (!img) return
+
+        setTarjetaImg(img)
+
+        await Swal.fire({
+            icon: 'info',
+            title: 'Guardar QR',
+            html: `
+      <p>Mantené presionado el QR y elegí</p>
+      <b>"Guardar en Fotos"</b>
+      <br/><br/>
+      <small>Solo puede hacerse una vez</small>
+    `,
+            confirmButtonText: 'Entendido',
+        })
+
+        await fetch('/api/policia/descargar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dni: policia.dni }),
+        })
+
+        setPolicia({ ...policia, descargado: true })
+    }
+
     return (
         <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
             <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-xl p-8 space-y-8">
@@ -174,19 +214,26 @@ export default function PoliciaPage() {
                 {/* TARJETA QR */}
                 {policia && !policia.descargado && (
                     <div className="space-y-6">
-                        <div
-                            id="tarjeta-policial"
-                            className="
-                bg-white text-black rounded-2xl p-6
-                flex flex-col items-center gap-6
-              "
-                        >
-                            <img src="/idescuentos.png" className="h-14" />
-                            <img src={qrUrl} className="w-64 h-64" />
-                            <div className="text-lg font-bold text-center">
-                                {policia.nombre} {policia.apellido}
+                        {tarjetaImg ? (
+                            // 👉 iOS: imagen completa generada con html2canvas
+                            <img
+                                src={tarjetaImg}
+                                className="w-full rounded-xl"
+                                alt="Tarjeta QR"
+                            />
+                        ) : (
+                            // 👉 Vista normal (antes de generar la imagen)
+                            <div
+                                id="tarjeta-policial"
+                                className="bg-white text-black rounded-2xl p-6 flex flex-col items-center gap-6"
+                            >
+                                <img src="/idescuentos.png" className="h-14" />
+                                <img src={qrUrl} className="w-64 h-64" />
+                                <div className="text-lg font-bold text-center">
+                                    {policia.nombre} {policia.apellido}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {esIOS && (
                             <p className="text-center text-yellow-500 font-semibold text-sm">
@@ -201,7 +248,7 @@ export default function PoliciaPage() {
                             disabled={procesando}
                             onClick={() => {
                                 if (esIOS) {
-                                    marcarComoDescargadoIOS()
+                                    descargarIOS()
                                 } else {
                                     descargarTarjeta()
                                 }
