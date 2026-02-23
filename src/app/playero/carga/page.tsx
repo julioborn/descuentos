@@ -54,7 +54,7 @@ export default function CargaPage() {
             .catch(() => {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Token inválido',
+                    title: 'QR no disponible',
                     text: 'No se pudo encontrar al empleado.',
                 }).then(() => router.push('/playero'));
             });
