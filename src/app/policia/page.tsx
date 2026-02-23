@@ -82,6 +82,7 @@ export default function PoliciaPage() {
         setPolicia(null)
         setDni('')
         setQrUrl('')
+        setTarjetaImg(null) // 👈 IMPORTANTE
         setError('')
     }
 
@@ -185,25 +186,6 @@ export default function PoliciaPage() {
   "
                         />
 
-                        <button
-                            disabled={procesando}
-                            onClick={() => {
-                                if (esIOS) {
-                                    descargarIOS()
-                                } else {
-                                    descargarTarjeta()
-                                }
-                            }}
-                            className={`
-    w-full py-4 rounded-xl text-lg font-semibold transition
-    ${esIOS
-                                    ? 'bg-yellow-500 text-black'
-                                    : 'bg-green-700 hover:bg-green-800 text-white'}
-  `}
-                        >
-                            Descargar QR
-                        </button>
-
                         {error && (
                             <p className="text-center text-red-400 text-base font-semibold">
                                 {error}
@@ -254,8 +236,15 @@ export default function PoliciaPage() {
                                     descargarTarjeta()
                                 }
                             }}
+                            className={`
+    w-full py-4 rounded-xl text-lg font-semibold transition
+    ${esIOS
+                                    ? 'bg-yellow-500 text-black'
+                                    : 'bg-green-700 hover:bg-green-800 text-white'}
+    ${procesando ? 'opacity-60 cursor-not-allowed' : ''}
+  `}
                         >
-                            Descargar QR
+                            {procesando ? 'Procesando…' : 'Descargar QR'}
                         </button>
                     </div>
                 )}
