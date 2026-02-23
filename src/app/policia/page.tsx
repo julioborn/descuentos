@@ -180,11 +180,25 @@ export default function PoliciaPage() {
                             inputMode="numeric"
                             placeholder="DNI"
                             className="
-    w-full text-center text-4xl font-mono tracking-widest
-    py-4 rounded-xl text-black
-    focus:outline-none focus:ring-4 focus:ring-red-700
-  "
+        w-full text-center text-4xl font-mono tracking-widest
+        py-4 rounded-xl text-black
+        focus:outline-none focus:ring-4 focus:ring-red-700
+      "
                         />
+
+                        <button
+                            onClick={buscar}
+                            disabled={dni.length < 7 || dni.length > 8 || loading}
+                            className={`
+        w-full py-4 rounded-xl text-lg font-semibold transition
+        ${dni.length >= 7 && dni.length <= 8
+                                    ? 'bg-red-700 hover:bg-red-800 text-white'
+                                    : 'bg-gray-600 cursor-not-allowed text-white'
+                                }
+      `}
+                        >
+                            {loading ? 'Verificando…' : 'Continuar'}
+                        </button>
 
                         {error && (
                             <p className="text-center text-red-400 text-base font-semibold">
