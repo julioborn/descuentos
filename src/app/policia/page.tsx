@@ -96,41 +96,16 @@ export default function PoliciaPage() {
         typeof window !== 'undefined' &&
         /iPad|iPhone|iPod/.test(navigator.userAgent)
 
-    const marcarComoDescargadoIOS = async () => {
-        if (!policia || procesando) return
-        setProcesando(true)
-
-        await fetch('/api/policia/descargar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dni: policia.dni }),
-        })
-
-        setPolicia({ ...policia, descargado: true })
-    }
-
-    const generarImagenTarjeta = async () => {
-        const nodo = document.getElementById('tarjeta-policial')
-        if (!nodo) return null
-
-        const canvas = await html2canvas(nodo, { scale: 2 })
-        return canvas.toDataURL('image/png')
-    }
-
     const descargarIOS = async () => {
         if (!policia || procesando) return
         setProcesando(true)
 
-        const img = await generarImagenTarjeta()
-        if (!img) return
-
-        setTarjetaImg(img)
-
+        // 1️⃣ Alert primero (clave para iOS)
         await Swal.fire({
             icon: 'info',
             title: 'Guardar QR',
             html: `
-      <p>Mantené presionado el QR y elegí</p>
+      <p>Mantené presionada la tarjeta y elegí</p>
       <b>"Guardar en Fotos"</b>
       <br/><br/>
       <small>Solo puede hacerse una vez</small>
@@ -138,13 +113,23 @@ export default function PoliciaPage() {
             confirmButtonText: 'Entendido',
         })
 
-        await fetch('/api/policia/descargar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dni: policia.dni }),
-        })
+        // 2️⃣ Generar imagen completa
+        const nodo = document.getElementById('tarjeta-policial')
+        if (!nodo) {
+            setProcesando(false)
+            return
+        }
 
-        setPolicia({ ...policia, descargado: true })
+        const canvas = await html2canvas(nodo, { scale: 2 })
+        const img = canvas.toDataURL('image/png')
+
+        // 3️⃣ Renderizar imagen
+        setTarjetaImg(img)
+
+        // 4️⃣ Liberar el hilo para Safari (MUY IMPORTANTE)
+        setTimeout(() => {
+            setProcesando(false)
+        }, 0)
     }
 
     return (
@@ -253,14 +238,8 @@ export default function PoliciaPage() {
                                     descargarTarjeta()
                                 }
                             }}
-                            className={`
-    w-full py-4 rounded-xl text-lg font-semibold transition
-    ${esIOS
-                                    ? 'bg-yellow-500 text-black'
-                                    : 'bg-green-700 hover:bg-green-800 text-white'}
-  `}
                         >
-                            {esIOS ? 'Descargar QR' : 'Descargar QR'}
+                            Descargar QR
                         </button>
                     </div>
                 )}
