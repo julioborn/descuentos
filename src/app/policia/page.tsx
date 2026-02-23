@@ -100,18 +100,25 @@ export default function PoliciaPage() {
         if (!policia || procesando) return
         setProcesando(true)
 
-        // 1️⃣ Alert primero (clave para iOS)
-        await Swal.fire({
+        // 1️⃣ Mostrar instrucción
+        const result = await Swal.fire({
             icon: 'info',
             title: 'Guardar QR',
             html: `
       <p>Mantené presionada la tarjeta y elegí</p>
       <b>"Guardar en Fotos"</b>
       <br/><br/>
-      <small>Solo puede hacerse una vez</small>
+      <small>Luego confirmá cuando ya esté guardado</small>
     `,
-            confirmButtonText: 'Entendido',
+            confirmButtonText: 'Ya lo guardé',
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
         })
+
+        if (!result.isConfirmed) {
+            setProcesando(false)
+            return
+        }
 
         // 2️⃣ Generar imagen completa
         const nodo = document.getElementById('tarjeta-policial')
@@ -122,14 +129,17 @@ export default function PoliciaPage() {
 
         const canvas = await html2canvas(nodo, { scale: 2 })
         const img = canvas.toDataURL('image/png')
-
-        // 3️⃣ Renderizar imagen
         setTarjetaImg(img)
 
-        // 4️⃣ Liberar el hilo para Safari (MUY IMPORTANTE)
-        setTimeout(() => {
-            setProcesando(false)
-        }, 0)
+        // 3️⃣ MARCAR COMO DESCARGADO (ACÁ ESTABA EL BUG)
+        await fetch('/api/policia/descargar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dni: policia.dni }),
+        })
+
+        setPolicia({ ...policia, descargado: true })
+        setProcesando(false)
     }
 
     return (
@@ -176,16 +186,22 @@ export default function PoliciaPage() {
                         />
 
                         <button
-                            onClick={buscar}
-                            disabled={dni.length < 7 || dni.length > 8 || loading}
+                            disabled={procesando}
+                            onClick={() => {
+                                if (esIOS) {
+                                    descargarIOS()
+                                } else {
+                                    descargarTarjeta()
+                                }
+                            }}
                             className={`
-                w-full py-4 rounded-xl text-lg font-semibold transition
-                ${dni.length >= 7 && dni.length <= 8
-                                    ? 'bg-red-700 hover:bg-red-800'
-                                    : 'bg-gray-600 cursor-not-allowed'}
-              `}
+    w-full py-4 rounded-xl text-lg font-semibold transition
+    ${esIOS
+                                    ? 'bg-yellow-500 text-black'
+                                    : 'bg-green-700 hover:bg-green-800 text-white'}
+  `}
                         >
-                            {loading ? 'Verificando…' : 'Continuar'}
+                            Descargar QR
                         </button>
 
                         {error && (
