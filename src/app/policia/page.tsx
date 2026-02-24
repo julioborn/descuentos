@@ -139,7 +139,6 @@ export default function PoliciaPage() {
             body: JSON.stringify({ dni: policia.dni }),
         })
 
-        setPolicia({ ...policia, descargado: true })
         setProcesando(false)
     }
 
