@@ -106,7 +106,7 @@ export default function PoliciaPage() {
             icon: 'info',
             title: 'Guardar QR',
             html: `
-      <p>Mantené presionada la tarjeta</p>
+      <p>Mantené presionado el QR</p>
       <b>y elegí "Guardar en Fotos"</b>
     `,
             confirmButtonText: 'Entendido',
