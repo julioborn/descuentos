@@ -106,12 +106,12 @@ export default function PoliciaPage() {
             icon: 'info',
             title: 'Guardar QR',
             html: `
-      <p>Mantené presionada la tarjeta y elegí</p>
+      <p>Mantené presionado el QR elegí</p>
       <b>"Guardar en Fotos"</b>
       <br/><br/>
       <small>Luego confirmá cuando ya esté guardado</small>
     `,
-            confirmButtonText: 'Ya lo guardé',
+            confirmButtonText: 'Entendido',
             showCancelButton: true,
             cancelButtonText: 'Cancelar',
         })
@@ -233,9 +233,7 @@ export default function PoliciaPage() {
 
                         {esIOS && (
                             <p className="text-center text-yellow-500 font-semibold text-sm">
-                                Tocá “Descargar QR”, luego mantené presionado el código
-                                y elegí <span className="underline">“Guardar en Fotos”</span>.
-                                <br />
+                                Después de presionar el botón, mantené apretado el QR y guardalo cpomo una foto
                                 <strong>Solo puede hacerse una vez.</strong>
                             </p>
                         )}
