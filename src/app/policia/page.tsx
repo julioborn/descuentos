@@ -23,6 +23,7 @@ export default function PoliciaPage() {
     const [loading, setLoading] = useState(false)
     const [procesando, setProcesando] = useState(false)
     const [tarjetaImg, setTarjetaImg] = useState<string | null>(null)
+    const [habilitarDescargaIOS, setHabilitarDescargaIOS] = useState(false)
 
     const buscar = async () => {
         setError('')
@@ -101,19 +102,14 @@ export default function PoliciaPage() {
         if (!policia || procesando) return
         setProcesando(true)
 
-        // 1️⃣ Mostrar instrucción
         const result = await Swal.fire({
             icon: 'info',
             title: 'Guardar QR',
             html: `
-      <p>Mantené presionado el QR elegí</p>
-      <b>"Guardar en Fotos"</b>
-      <br/><br/>
-      <small>Luego confirmá cuando ya esté guardado</small>
+      <p>Mantené presionado el QR</p>
+      <b>y elegí "Guardar en Fotos"</b>
     `,
             confirmButtonText: 'Entendido',
-            showCancelButton: true,
-            cancelButtonText: 'Cancelar',
         })
 
         if (!result.isConfirmed) {
@@ -121,18 +117,10 @@ export default function PoliciaPage() {
             return
         }
 
-        // 2️⃣ Generar imagen completa
-        const nodo = document.getElementById('tarjeta-policial')
-        if (!nodo) {
-            setProcesando(false)
-            return
-        }
+        // 🔓 habilitamos recién ahora
+        setHabilitarDescargaIOS(true)
 
-        const canvas = await html2canvas(nodo, { scale: 2 })
-        const img = canvas.toDataURL('image/png')
-        setTarjetaImg(img)
-
-        // 3️⃣ MARCAR COMO DESCARGADO (ACÁ ESTABA EL BUG)
+        // marcar como descargado (aunque todavía no lo guarde)
         await fetch('/api/policia/descargar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -221,7 +209,11 @@ export default function PoliciaPage() {
                             // 👉 Vista normal (antes de generar la imagen)
                             <div
                                 id="tarjeta-policial"
-                                className="bg-white text-black rounded-2xl p-6 flex flex-col items-center gap-6"
+                                className={`
+    bg-white text-black rounded-2xl p-6
+    flex flex-col items-center gap-6
+    ${esIOS && !habilitarDescargaIOS ? 'pointer-events-none select-none opacity-90' : ''}
+  `}
                             >
                                 <img src="/idescuentos.png" className="h-14" />
                                 <img src={qrUrl} className="w-64 h-64" />
@@ -231,11 +223,12 @@ export default function PoliciaPage() {
                             </div>
                         )}
 
-                        {esIOS && (
-                            <p className="text-center text-yellow-500 font-semibold text-sm">
-                                Después de presionar el botón, mantené apretado el QR y guardalo cpomo una foto
-                                <strong>Solo puede hacerse una vez.</strong>
-                            </p>
+                        {esIOS && habilitarDescargaIOS && (
+                            <div className="text-center text-yellow-400 text-sm font-semibold space-y-2">
+                                <div className="text-2xl">⬆️⬆️</div>
+                                <p>Mantené apretado el QR</p>
+                                <p className="text-xs opacity-80">y elegí “Guardar en Fotos”</p>
+                            </div>
                         )}
 
                         <button
