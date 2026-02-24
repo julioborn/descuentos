@@ -106,7 +106,7 @@ export default function PoliciaPage() {
             icon: 'info',
             title: 'Guardar QR',
             html: `
-      <p>Mantené presionado el QR</p>
+      <p>Mantené presionada la tarjeta</p>
       <b>y elegí "Guardar en Fotos"</b>
     `,
             confirmButtonText: 'Entendido',
@@ -117,10 +117,18 @@ export default function PoliciaPage() {
             return
         }
 
-        // 🔓 habilitamos recién ahora
+        // 1️⃣ generar imagen de la CARD COMPLETA
+        const nodo = document.getElementById('tarjeta-policial')
+        if (nodo) {
+            const canvas = await html2canvas(nodo, { scale: 2 })
+            const img = canvas.toDataURL('image/png')
+            setTarjetaImg(img)
+        }
+
+        // 2️⃣ habilitar interacción (mostrar imagen + texto)
         setHabilitarDescargaIOS(true)
 
-        // marcar como descargado (aunque todavía no lo guarde)
+        // 3️⃣ marcar como descargado en backend
         await fetch('/api/policia/descargar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -198,22 +206,38 @@ export default function PoliciaPage() {
                 {/* TARJETA QR */}
                 {policia && !policia.descargado && (
                     <div className="space-y-6">
-                        {tarjetaImg ? (
-                            // 👉 iOS: imagen completa generada con html2canvas
-                            <img
-                                src={tarjetaImg}
-                                className="w-full rounded-xl"
-                                alt="Tarjeta QR"
-                            />
+                        {esIOS ? (
+                            // ✅ iOS
+                            habilitarDescargaIOS ? (
+                                // 🔥 DESPUÉS de apretar "Descargar QR": mostrar SOLO la imagen final
+                                tarjetaImg ? (
+                                    <img
+                                        src={tarjetaImg}
+                                        className="w-full rounded-xl"
+                                        alt="Tarjeta QR"
+                                    />
+                                ) : (
+                                    // mientras se genera, opcional: loader
+                                    <div className="text-center text-sm opacity-80">Generando imagen…</div>
+                                )
+                            ) : (
+                                // ⛔ ANTES de apretar "Descargar QR": mostrar HTML pero bloqueado
+                                <div
+                                    id="tarjeta-policial"
+                                    className="bg-white text-black rounded-2xl p-6 flex flex-col items-center gap-6 pointer-events-none select-none opacity-90"
+                                >
+                                    <img src="/idescuentos.png" className="h-14" />
+                                    <img src={qrUrl} className="w-64 h-64" />
+                                    <div className="text-lg font-bold text-center">
+                                        {policia.nombre} {policia.apellido}
+                                    </div>
+                                </div>
+                            )
                         ) : (
-                            // 👉 Vista normal (antes de generar la imagen)
+                            // ✅ Android / Desktop: normal HTML siempre
                             <div
                                 id="tarjeta-policial"
-                                className={`
-    bg-white text-black rounded-2xl p-6
-    flex flex-col items-center gap-6
-    ${esIOS && !habilitarDescargaIOS ? 'pointer-events-none select-none opacity-90' : ''}
-  `}
+                                className="bg-white text-black rounded-2xl p-6 flex flex-col items-center gap-6"
                             >
                                 <img src="/idescuentos.png" className="h-14" />
                                 <img src={qrUrl} className="w-64 h-64" />
@@ -226,8 +250,7 @@ export default function PoliciaPage() {
                         {esIOS && habilitarDescargaIOS && (
                             <div className="text-center text-yellow-400 text-sm font-semibold space-y-2">
                                 <div className="text-2xl">⬆️⬆️</div>
-                                <p>Mantené apretado el QR</p>
-                                <p className="text-xs opacity-80">y elegí “Guardar en Fotos”</p>
+                                <p>Mantené apretado el QR y elegí “Guardar en Fotos”</p>
                             </div>
                         )}
 
