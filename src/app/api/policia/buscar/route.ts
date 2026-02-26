@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         apellido: emp.apellido,
         dni: emp.dni,
         localidad: emp.localidad,
-        descargado: Boolean(emp.qrDescargado),
+        qrDescargado: Boolean(emp.qrDescargado),
         qrToken: emp.qrToken, // ✅ CLAVE
     });
 }
