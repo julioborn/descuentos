@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
         if (!emp) {
             return NextResponse.json(
-                { error: "Empleado no encontrado o inactivo" },
+                { error: "Empleado no encontrado / inactivo" },
                 { status: 404 }
             );
         }
