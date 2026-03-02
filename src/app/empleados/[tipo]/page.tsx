@@ -59,6 +59,14 @@ const formatDni = (digits: string) => {
     return `${d.slice(0, d.length - 6)}.${d.slice(-6, -3)}.${d.slice(-3)}`
 }
 
+const formatCiParaguay = (digits: string) => {
+    const d = onlyDigits(digits).slice(0, 9)
+    if (d.length <= 3) return d
+    if (d.length <= 6)
+        return `${d.slice(0, d.length - 3)}.${d.slice(-3)}`
+    return `${d.slice(0, d.length - 6)}.${d.slice(-6, -3)}.${d.slice(-3)}`
+}
+
 export default function EmpleadosTipoPage() {
     const { tipo } = useParams<{ tipo: string }>()
     const config = TEXTOS[tipo]
@@ -203,12 +211,14 @@ export default function EmpleadosTipoPage() {
                 {!empleado && (
                     <>
                         <input
-                            value={dni}
+                            value={
+                                esParaguay
+                                    ? formatCiParaguay(dni)
+                                    : formatDni(dni)
+                            }
                             onChange={(e) =>
                                 setDni(
-                                    esParaguay
-                                        ? onlyDigits(e.target.value)
-                                        : formatDni(e.target.value)
+                                    onlyDigits(e.target.value)
                                 )
                             }
                             inputMode="numeric"
