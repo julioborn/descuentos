@@ -12,6 +12,7 @@ const MAPA_TIPO: Record<string, true> = {
     salud: true,
     municipalidad: true,
     global: true,
+    paraguay: true,
 }
 
 const TEXTOS: Record<string, { titulo: string; descripcion: string }> = {
@@ -30,6 +31,10 @@ const TEXTOS: Record<string, { titulo: string; descripcion: string }> = {
     global: {
         titulo: 'Descuento de Combustible',
         descripcion: 'Ingresá tu DNI para activar tu beneficio.',
+    },
+    paraguay: {
+        titulo: 'Empleados Paraguay',
+        descripcion: 'Exclusivo para empleados de Paraguay.',
     },
 }
 
@@ -187,6 +192,8 @@ export default function EmpleadosTipoPage() {
 
     const dniDigits = onlyDigits(dni)
 
+    const esParaguay = tipo === 'paraguay'
+
     return (
         <main className="min-h-screen bg-gray-900 text-white flex justify-center items-center px-4">
             <div className="max-w-md w-full bg-gray-800 p-6 rounded-xl space-y-6">
@@ -196,17 +203,27 @@ export default function EmpleadosTipoPage() {
                 {!empleado && (
                     <>
                         <input
-                            value={formatDni(dni)}
-                            onChange={(e) => setDni(formatDni(e.target.value))}
+                            value={dni}
+                            onChange={(e) =>
+                                setDni(
+                                    esParaguay
+                                        ? onlyDigits(e.target.value)
+                                        : formatDni(e.target.value)
+                                )
+                            }
                             inputMode="numeric"
                             type="tel"
                             autoComplete="off"
-                            placeholder="DNI"
+                            placeholder={esParaguay ? 'CI' : 'DNI'}
                             className="w-full py-3 text-center text-2xl tracking-widest text-black rounded-lg"
                         />
                         <button
                             onClick={buscar}
-                            disabled={dniDigits.length < 7 || dniDigits.length > 8 || loading}
+                            disabled={
+                                esParaguay
+                                    ? dniDigits.length < 6
+                                    : dniDigits.length < 7 || dniDigits.length > 8
+                            }
                             className="w-full py-3 bg-red-700 rounded-lg font-bold disabled:opacity-60"
                         >
                             {loading ? 'Verificando…' : 'Continuar'}

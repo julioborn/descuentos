@@ -27,7 +27,7 @@ const fmtAR = (n: number) =>
         : '0,00';
 
 const symbolFor = (moneda?: string) =>
-    moneda === 'ARS' ? '$' : moneda === 'Gs' ? '₲' : '';
+    moneda === 'ARS' ? '$' : moneda === 'Gs' ? 'Gs' : '';
 
 export default function CargaPage() {
     const router = useRouter();

@@ -19,14 +19,28 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const session = await getServerSession(authOptions);
     await connectMongoDB();
     const body = await req.json();
 
+    // 🔐 Determinar país según rol
+    let pais: string | null = null;
+
+    if (session?.user.role === 'admin_arg') pais = 'AR';
+    if (session?.user.role === 'admin_py') pais = 'PY';
+
+    if (!pais) {
+        return NextResponse.json(
+            { error: "No autorizado para crear empleados" },
+            { status: 403 }
+        );
+    }
+
     try {
+        // 🔎 Buscar existente SOLO por dni + pais (coincide con índice)
         const existente = await Empleado.findOne({
             dni: body.dni,
-            empresa: body.empresa,
-            pais: body.pais
+            pais: pais
         });
 
         if (existente) {
@@ -43,12 +57,11 @@ export async function POST(req: NextRequest) {
             telefono: body.telefono,
 
             empresa: body.empresa,
-            subcategoria: body.subcategoria || undefined, // 👈 libre total
-
+            subcategoria: body.subcategoria || undefined,
             localidad: body.localidad,
             qrToken: body.qrToken,
             activo: true,
-            pais: body.pais,
+            pais: pais, // 👈 usamos el país del rol, no el del body
         });
 
         return NextResponse.json(nuevoEmpleado);

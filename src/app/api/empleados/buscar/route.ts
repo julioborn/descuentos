@@ -31,6 +31,7 @@ const TIPO_EMPRESAS: Record<string, string[]> = {
     seguridad: ["POLICIA", "POLICÍA", "SEGURIDAD"],
     salud: ["SAMCO", "SALUD", "HOSPITAL"],
     municipalidad: ["MUNICIPALIDAD", "MUNI", "MUNICIPIO", "MUNICIPAL"],
+    paraguay: ["COTRECO"],
     global: ["*"],
 };
 
@@ -41,8 +42,20 @@ export async function POST(req: Request) {
         const dni = (body.dni || "").replace(/\D/g, "");
         const tipo = (body.tipo || "").trim().toLowerCase();
 
-        if (!dni || dni.length < 7 || dni.length > 8) {
-            return NextResponse.json({ error: "DNI inválido" }, { status: 400 });
+        const esParaguay = tipo === "paraguay";
+
+        if (!dni) {
+            return NextResponse.json({ error: "Documento inválido" }, { status: 400 });
+        }
+
+        if (esParaguay) {
+            if (dni.length < 6) {
+                return NextResponse.json({ error: "CI inválida" }, { status: 400 });
+            }
+        } else {
+            if (dni.length < 7 || dni.length > 8) {
+                return NextResponse.json({ error: "DNI inválido" }, { status: 400 });
+            }
         }
 
         if (!tipo || !TIPO_EMPRESAS[tipo]) {

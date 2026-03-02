@@ -8,7 +8,11 @@ const EmpleadoSchema = new mongoose.Schema(
         dni: {
             type: String,
             required: true,
-            unique: true,
+            index: true,
+        },
+        pais: {
+            type: String,
+            required: true,
             index: true,
         },
 
@@ -43,10 +47,11 @@ const EmpleadoSchema = new mongoose.Schema(
 
         activo: { type: Boolean, default: true },
 
-        pais: String,
     },
     { timestamps: true }
 );
+
+EmpleadoSchema.index({ dni: 1, pais: 1 }, { unique: true });
 
 export const Empleado =
     mongoose.models.Empleado ||
