@@ -13,15 +13,13 @@ type Producto = {
 };
 
 export default function AdminPreciosPage() {
-    /* ---------------- estado ---------------- */
+
     const [productos, setProductos] = useState<Producto[]>([]);
     const [loading, setLoading] = useState(true);
 
-    /* ---------------- sesión ---------------- */
     const { data: session, status } = useSession();
     const monedaUsuario = session?.user?.moneda as 'ARS' | 'Gs' | undefined;
 
-    /* ---------------- fetch inicial ---------------- */
     useEffect(() => {
         if (status !== 'authenticated') return;
 
@@ -29,9 +27,8 @@ export default function AdminPreciosPage() {
             try {
                 const res = await fetch('/api/precios');
                 if (!res.ok) throw new Error();
-                const data = (await res.json()) as Producto[];
-                console.log("Moneda del usuario:", monedaUsuario);
-                console.log("Productos recibidos:", data);
+
+                const data = await res.json() as Producto[];
 
                 const filtrados = monedaUsuario
                     ? data.filter((p) => p.moneda === monedaUsuario)
@@ -46,6 +43,7 @@ export default function AdminPreciosPage() {
                 });
 
                 setProductos(ordenados);
+
             } catch {
                 Swal.fire({
                     icon: 'error',
@@ -60,10 +58,9 @@ export default function AdminPreciosPage() {
         fetchPrecios();
     }, [status, monedaUsuario]);
 
-    /* ---------------- handlers ---------------- */
     const handlePrecioChange = (id: string, value: string) => {
-        setProductos((prev) =>
-            prev.map((p) =>
+        setProductos(prev =>
+            prev.map(p =>
                 p._id === id ? { ...p, precio: parseFloat(value) } : p
             )
         );
@@ -71,53 +68,68 @@ export default function AdminPreciosPage() {
 
     const guardarCambios = async (producto: Producto) => {
         try {
+
             const res = await fetch(`/api/precios/${producto._id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ precio: producto.precio }),
             });
+
             if (!res.ok) throw new Error();
 
             Swal.fire({
                 icon: 'success',
                 title: 'Precio actualizado',
-                text: `Producto: ${producto.producto}`,
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 2000,
             });
+
         } catch {
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: `No se pudo actualizar el producto: ${producto.producto}`,
+                text: `No se pudo actualizar ${producto.producto}`,
             });
+
         }
     };
 
-    /* ---------------- UI ---------------- */
     if (status === 'loading' || loading) return <Loader />;
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
-            <h1 className="text-3xl font-bold text-center mb-8">
+        <main className="min-h-screen px-6 py-12 bg-gray-50">
+
+            <h1 className="text-3xl font-bold text-center mb-10 text-[#111827]">
                 Precios
             </h1>
 
             {productos.length === 0 ? (
-                <p className="text-center text-gray-300">
-                    Aún no hay productos registrados para esta moneda.
+                <p className="text-center text-gray-500">
+                    No hay productos registrados para esta moneda.
                 </p>
             ) : (
-                <div className="max-w-3xl mx-auto space-y-6">
-                    {productos.map((p) => (
-                        <div key={p._id} className="bg-gray-800 p-4 rounded-2xl shadow">
-                            <div className="mb-2 font-semibold">{p.producto}</div>
 
-                            <div className="flex items-center gap-2">
+                <div className="max-w-3xl mx-auto space-y-6">
+
+                    {productos.map((p) => (
+
+                        <div
+                            key={p._id}
+                            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
+                        >
+
+                            <div className="text-lg font-semibold text-gray-800 mb-3">
+                                {p.producto}
+                            </div>
+
+                            <div className="flex items-center gap-3">
+
                                 <div className="relative w-full">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                                         $
                                     </span>
 
@@ -128,27 +140,33 @@ export default function AdminPreciosPage() {
                                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                                             handlePrecioChange(p._id, e.target.value)
                                         }
-                                        className="w-full border p-2 pl-8 pr-12 rounded text-black"
+                                        className="w-full bg-gray-100 border border-gray-200 rounded-lg py-2 pl-8 pr-12 focus:outline-none focus:ring-2 focus:ring-[#801818]"
                                         placeholder={`Precio en ${p.moneda}`}
                                     />
 
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none">
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                                         {p.moneda}
                                     </span>
+
                                 </div>
 
                                 <button
                                     onClick={() => guardarCambios(p)}
-                                    className="bg-red-800 text-white px-4 py-2.5 rounded hover:bg-red-700 transition"
+                                    className="bg-[#801818] text-white px-4 py-2 rounded-lg hover:bg-red-700 transition shadow-sm"
                                 >
                                     Guardar
                                 </button>
+
                             </div>
+
                         </div>
 
                     ))}
+
                 </div>
+
             )}
+
         </main>
     );
 }

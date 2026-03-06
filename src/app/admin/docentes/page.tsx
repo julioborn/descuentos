@@ -52,6 +52,7 @@ export default function AdminDocentesPage() {
 
     const [filas, setFilas] = useState<Fila[]>([]);
     const [loading, setLoading] = useState(true);
+    const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
     // mapa auxiliar: empleadoId -> docenteId (para editar/eliminar docente)
     const [docenteIdByEmpleado, setDocenteIdByEmpleado] = useState<Record<string, string>>({});
@@ -180,27 +181,68 @@ export default function AdminDocentesPage() {
         try {
             const QR = await import('qrcode');
             const origin = typeof window !== 'undefined' ? window.location.origin : '';
-            const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`);
+            const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`, {
+                width: 220,
+                margin: 2,
+            });
 
             const html = `
-        <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
-          <div style="text-align:center">
-            <div style="font-size:18px;font-weight:700;">${emp.nombre} ${emp.apellido}</div>
-            <div style="opacity:.8">DNI: ${emp.dni} • Tel: ${emp.telefono}</div>
-            <div style="opacity:.8">Localidad: ${emp.localidad}</div>
-            <div style="opacity:.8">Centros: ${emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : '—'}</div>
-          </div>
-          <img src="${qrUrl}" alt="QR" style="width:240px;height:240px;border-radius:8px;border:2px solid #ccc" />
+<div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+
+    <div style="text-align:center">
+
+        <div style="font-size:22px;font-weight:800;color:#111827;letter-spacing:.3px">
+            ${emp.nombre} ${emp.apellido}
         </div>
-      `;
+
+        <div style="margin-top:10px;font-size:16px;color:#374151;font-weight:500">
+            DNI: ${emp.dni}
+        </div>
+
+        <div style="margin-top:4px;font-size:16px;color:#374151;font-weight:500">
+            TEL: ${emp.telefono}
+        </div>
+
+        <div style="margin-top:14px;font-size:18px;font-weight:700;color:#1f2937">
+            DOCENTES
+        </div>
+
+        <div style="margin-top:14px;font-size:15px;color:#4b5563">
+            ${emp.localidad}
+        </div>
+
+        <div style="margin-top:10px;font-size:14px;color:#4b5563;max-width:360px;line-height:1.5">
+            ${emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : 'Sin centros educativos'}
+        </div>
+
+    </div>
+
+    <div style="
+        padding:14px;
+        background:#f3f4f6;
+        border-radius:16px;
+        box-shadow:0 6px 16px rgba(0,0,0,0.08);
+        display:flex;
+        justify-content:center;
+    ">
+        <img src="${qrUrl}" alt="QR" style="width:220px;height:auto;display:block" />
+    </div>
+
+</div>
+`;
 
             await Swal.fire({
                 html,
-                background: '#1f2937',
-                color: '#fff',
+                width: 520,
                 showConfirmButton: true,
                 confirmButtonText: 'Cerrar',
-                customClass: { popup: 'rounded-lg shadow-lg' },
+                background: '#ffffff',
+                color: '#111827',
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl p-6',
+                    confirmButton:
+                        'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl',
+                },
             });
         } catch (e) {
             console.error(e);
@@ -376,95 +418,125 @@ export default function AdminDocentesPage() {
     };
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
+        <main className="min-h-screen px-6 py-10 bg-gray-50 text-gray-900">
             <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
-                <h1 className="text-3xl font-bold text-center mb-6">Docentes</h1>
+                <h1 className="text-3xl font-bold text-center mb-6 text-[#111827]">
+                    Docentes
+                </h1>
 
                 {/* controles */}
-                <section className="bg-gray-800/80 border border-gray-700 rounded-2xl p-5 shadow-lg space-y-4">
+                <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+
+                    {/* HEADER FILTROS (solo mobile) */}
+                    <div className="sm:hidden flex items-center justify-between">
+
+                        <h2 className="font-semibold text-gray-800">
+                            Filtros
+                        </h2>
+
+                        <button
+                            onClick={() => setFiltrosAbiertos(!filtrosAbiertos)}
+                            className="flex items-center gap-1 text-sm text-gray-600"
+                        >
+                            <span>{filtrosAbiertos ? "Ocultar" : "Mostrar"}</span>
+
+                            <svg
+                                className={`w-4 h-4 transition-transform ${filtrosAbiertos ? "rotate-180" : ""}`}
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+
+                        </button>
+
+                    </div>
 
                     {/* 🔍 BUSCADOR ARRIBA */}
-                    <div className="relative">
-                        <input
-                            value={busqueda}
-                            onChange={(e) => {
-                                setBusqueda(e.target.value);
-                                setPagina(1);
-                            }}
-                            placeholder="Buscar…"
-                            className="w-full rounded-xl px-4 py-3 pr-11
-                   bg-gray-900 border border-gray-700
-                   focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        />
-
-                        {/* ícono lupa */}
-                        <HiSearch
-                            size={20}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"
-                        />
+                    <div className="space-y-4">
+                        <div className="relative">
+                            <input
+                                value={busqueda}
+                                onChange={(e) => {
+                                    setBusqueda(e.target.value)
+                                    setPagina(1)
+                                }}
+                                placeholder="Buscar…"
+                                className="w-full rounded-xl px-4 py-3 pr-11
+bg-gray-100 border border-gray-200
+focus:ring-2 focus:ring-[#801818] focus:outline-none"
+                            />
+                            <HiSearch
+                                size={20}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                            />
+                        </div>
                     </div>
 
                     {/* 🎛️ FILTROS DEBAJO */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className={`${filtrosAbiertos ? "block" : "hidden"} sm:block`}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
-                        <select
-                            value={localidadFiltro}
-                            onChange={(e) => {
-                                setLocalidadFiltro(e.target.value);
-                                setCentroFiltro('TODOS'); // reset
-                                setPagina(1);
-                            }}
-                            className="rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-                       focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODAS">Todas las localidades</option>
-                            {localidadesUnicas.map((loc) => (
-                                <option key={loc} value={loc}>{loc}</option>
-                            ))}
-                        </select>
+                            <select
+                                value={localidadFiltro}
+                                onChange={(e) => {
+                                    setLocalidadFiltro(e.target.value);
+                                    setCentroFiltro('TODOS');
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2
+bg-white border border-gray-200
+focus:ring-2 focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODAS">Todas las localidades</option>
+                                {localidadesUnicas.map((loc) => (
+                                    <option key={loc} value={loc}>{loc}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={centroFiltro}
-                            onChange={(e) => {
-                                setCentroFiltro(e.target.value);
-                                setPagina(1);
-                            }}
-                            className="rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-                       focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODOS">Todos los centros</option>
-                            {centrosOpciones.map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                        </select>
+                            <select
+                                value={centroFiltro}
+                                onChange={(e) => {
+                                    setCentroFiltro(e.target.value);
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2
+bg-white border border-gray-200
+focus:ring-2 focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODOS">Todos los centros</option>
+                                {centrosOpciones.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={itemsPorPagina}
-                            onChange={(e) => {
-                                setItemsPorPagina(Number(e.target.value));
-                                setPagina(1);
-                            }}
-                            className="rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-                       focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            {[10, 20, 50, 100].map((n) => (
-                                <option key={n} value={n}>{n} por página</option>
-                            ))}
-                        </select>
+                            <select
+                                value={itemsPorPagina}
+                                onChange={(e) => {
+                                    setItemsPorPagina(Number(e.target.value));
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2
+bg-white border border-gray-200
+focus:ring-2 focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                {[10, 20, 50, 100].map((n) => (
+                                    <option key={n} value={n}>{n} por página</option>
+                                ))}
+                            </select>
 
+                        </div>
                     </div>
                 </section>
 
                 {/* tabla */}
-                <div className="hidden sm:block bg-gray-800/80 border border-gray-700 rounded-2xl p-5 shadow-lg space-y-4">
+                <div className="hidden sm:block bg-gray-50 border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
                     <table className="min-w-[1100px] w-full text-sm border-separate border-spacing-y-2">
-                        <thead className="text-left bg-white/5 text-white">
-                            <tr
-                                className="bg-gray-900 transition shadow-sm hover:shadow-md cursor-pointer
-                                focus:outline-none focus:ring-2 focus:ring-blue-500
-                                focus:ring-offset-2 focus:ring-offset-gray-900"
-                            >
+                        <thead className="text-left text-gray-800">
+                            <tr className="bg-gray-900 text-white">
                                 <th className="p-3">Nombre</th>
                                 <th className="p-3">Apellido</th>
                                 <th className="p-3">DNI</th>
@@ -482,8 +554,8 @@ export default function AdminDocentesPage() {
                                     role="button"
                                     tabIndex={0}
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
-                                    className="bg-gray-800 hover:bg-gray-700/80 transition shadow-sm hover:shadow-md cursor-pointer focus:outline-none
-                           focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                    className="bg-gray-100 hover:bg-gray-100 transition cursor-pointer focus:outline-none
+focus:ring-2 focus:ring-[#801818] focus:ring-offset-2 focus:ring-offset-white"
                                     title="Ver detalle y QR"
                                 >
                                     <td className="p-2">{emp.nombre}</td>
@@ -493,29 +565,31 @@ export default function AdminDocentesPage() {
                                     <td className="p-2">{emp.localidad}</td>
                                     <td className="p-2">
                                         {emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : (
-                                            <span className="text-white/60">—</span>
+                                            <span className="text-gray-500">—</span>
                                         )}
                                     </td>
                                     <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
-                                        <button
-                                            onClick={() => editarDocente(emp)}
-                                            className="inline-flex items-center justify-center px-2 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 mr-2 text-sm"
-                                            title="Editar"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                                <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                                                <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => eliminarDocente(emp)}
-                                            className="inline-flex items-center justify-center px-2 h-8 rounded-full bg-red-700 hover:bg-red-600 text-sm"
-                                            title="Eliminar"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                                <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
+                                        <div className="flex justify-center gap-2">
+                                            <button
+                                                onClick={() => editarDocente(emp)}
+                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 hover:bg-yellow-400 text-white"
+                                                title="Editar"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => eliminarDocente(emp)}
+                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 text-white"
+                                                title="Eliminar"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                    <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -524,45 +598,73 @@ export default function AdminDocentesPage() {
                 </div>
 
                 {/* cards mobile */}
-                <div className="sm:hidden flex flex-col gap-4 max-w-xl mx-auto">
+                <div className="sm:hidden flex flex-col gap-3">
                     {pageList.map((emp) => (
                         <div
                             key={emp._id}
                             onClick={() => verDetalle(emp)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') verDetalle(emp); }}
-                            className="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-lg cursor-pointer
-                       hover:bg-white/10 transition focus:outline-none
-                       focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700"
-                            title="Ver detalle y QR"
+                            className="
+bg-white
+border border-gray-200
+rounded-xl
+p-4
+shadow-sm
+active:scale-[0.99]
+transition
+cursor-pointer
+"
                         >
-                            <p className="font-semibold">{emp.nombre} {emp.apellido}</p>
-                            <p>DNI: {emp.dni}</p>
-                            <p>Tel: {emp.telefono}</p>
-                            <p>Localidad: {emp.localidad}</p>
-                            <p>Centros: {emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : '—'}</p>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold text-gray-900">
+                                        {emp.apellido} {emp.nombre}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        DNI {emp.dni}
+                                    </p>
+                                </div>
 
-                            <div className="mt-3 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                    onClick={() => editarDocente(emp)}
-                                    className="inline-flex items-center justify-center px-2 h-8 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-sm"
-                                    title="Editar"
+                                <div
+                                    className="flex gap-2"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                        <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={() => eliminarDocente(emp)}
-                                    className="inline-flex items-center justify-center px-2 h-8 rounded-xl bg-red-700 hover:bg-red-600 text-sm"
-                                    title="Eliminar"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                                    <button
+                                        onClick={() => editarDocente(emp)}
+                                        className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 hover:bg-yellow-400 text-white"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                            <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        onClick={() => eliminarDocente(emp)}
+                                        className="flex items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 text-white"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center mt-3">
+                                <div className="text-sm font-medium text-red-800">
+                                    DOCENTES
+                                </div>
+
+                                <div className="text-xs text-gray-500">
+                                    {emp.localidad}
+                                </div>
+                            </div>
+
+                            <div className="mt-2 text-xs text-gray-500">
+                                📞 {emp.telefono}
+                            </div>
+
+                            <div className="mt-2 text-xs text-gray-500">
+                                {emp.centrosEducativos.length ? emp.centrosEducativos.join(', ') : 'Sin centros educativos'}
                             </div>
                         </div>
                     ))}
@@ -570,21 +672,22 @@ export default function AdminDocentesPage() {
 
                 {/* paginación */}
                 {totalPag > 1 && (
-                    <div className="flex flex-col items-center gap-3 mt-10 pt-6 border-t border-gray-700">                    <div className="text-sm text-white/70">
-                        Mostrando{' '}
-                        <span className="font-semibold">
-                            {(págActual - 1) * itemsPorPagina + 1}
-                            {'–'}
-                            {Math.min(págActual * itemsPorPagina, filtradas.length)}
-                        </span>{' '}
-                        de <span className="font-semibold">{filtradas.length}</span>
-                    </div>
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="text-sm text-gray-600">
+                            Mostrando{' '}
+                            <span className="font-semibold">
+                                {(págActual - 1) * itemsPorPagina + 1}
+                                {'–'}
+                                {Math.min(págActual * itemsPorPagina, filtradas.length)}
+                            </span>{' '}
+                            de <span className="font-semibold">{filtradas.length}</span>
+                        </div>
 
                         <div className="flex flex-wrap justify-center items-center gap-1">
                             <button
                                 onClick={() => setPagina(1)}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Primera"
                             >
                                 «
@@ -592,7 +695,7 @@ export default function AdminDocentesPage() {
                             <button
                                 onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Anterior"
                             >
                                 <HiChevronLeft size={20} />
@@ -600,13 +703,15 @@ export default function AdminDocentesPage() {
 
                             {buildPageWindow(totalPag, págActual, 7).map((it, idx) =>
                                 it === '…' ? (
-                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-white/70">…</span>
+                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-gray-600">…</span>
                                 ) : (
                                     <button
                                         key={it}
                                         onClick={() => setPagina(it as number)}
                                         className={`w-9 h-9 rounded-full font-semibold transition
-                    ${págActual === it ? 'bg-red-700 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    ${págActual === it
+                                                ? 'bg-red-700 text-white'
+                                                : 'bg-white border border-gray-200 hover:bg-gray-100'}`}
                                     >
                                         {it}
                                     </button>
@@ -616,7 +721,7 @@ export default function AdminDocentesPage() {
                             <button
                                 onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Siguiente"
                             >
                                 <HiChevronRight size={20} />
@@ -624,7 +729,7 @@ export default function AdminDocentesPage() {
                             <button
                                 onClick={() => setPagina(totalPag)}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Última"
                             >
                                 »

@@ -51,11 +51,16 @@ export default function Header() {
                 </button>
 
                 {/* Logo centrado */}
-                <img
-                    src="/icons/icon-512.png"
-                    alt="Logo"
-                    className="w-14 h-14 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
+                <Link
+                    href="/"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                >
+                    <img
+                        src="/icons/icon-512.png"
+                        alt="Logo"
+                        className="w-14 h-14"
+                    />
+                </Link>
 
                 {/* Botón recargar (solo móviles) */}
                 <button
@@ -70,7 +75,7 @@ export default function Header() {
             {/* ---------- Menú lateral ---------- */}
             <aside
                 className={clsx(
-                    'fixed top-0 left-0 h-full w-64 bg-gray-800 text-white z-50 shadow-lg transform transition-transform duration-300',
+                    'fixed top-0 left-0 h-full w-64 bg-gray-900 text-white z-50 shadow-lg transform transition-transform duration-300',
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >

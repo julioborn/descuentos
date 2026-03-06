@@ -42,6 +42,7 @@ export default function CargasPage() {
     const [cargas, setCargas] = useState<Carga[]>([]);
     const [loading, setLoading] = useState(true);
     const [itemsPorPagina, setItemsPorPagina] = useState(10); // valor inicial configurable
+    const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
     /* ---- filtros ---- */
     const [busqueda, setBusqueda] = useState('');
@@ -792,177 +793,213 @@ export default function CargasPage() {
     };
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
+        <main className="min-h-screen px-6 py-10 bg-gray-50 text-gray-900">
             <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
-                <h1 className="text-3xl font-bold text-center mb-6">Cargas</h1>
+                <h1 className="text-3xl font-bold text-center mb-6 text-[#111827]">
+                    Cargas
+                </h1>
 
                 {/* -------- filtros -------- */}
-                <section className="bg-gray-800/80 border border-gray-700 rounded-2xl p-5 shadow-lg space-y-4">
-                    {/* Barra de búsqueda sola arriba */}
-                    <div className='relative'>
+                <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    {/* HEADER FILTROS (solo mobile) */}
+                    <div className="sm:hidden flex items-center justify-between">
+
+                        <h2 className="font-semibold text-gray-800">
+                            Filtros
+                        </h2>
+
+                        <button
+                            onClick={() => setFiltrosAbiertos(!filtrosAbiertos)}
+                            className="flex items-center gap-1 text-sm text-gray-600"
+                        >
+                            <span>{filtrosAbiertos ? "Ocultar" : "Mostrar"}</span>
+
+                            <svg
+                                className={`w-4 h-4 transition-transform ${filtrosAbiertos ? "rotate-180" : ""}`}
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+
+                        </button>
+
+                    </div>
+                    {/* 🔍 BUSCADOR (siempre visible) */}
+                    <div className="relative">
                         <input
                             value={busqueda}
                             onChange={(e) => {
-                                setBusqueda(e.target.value);
-                                setPagina(1);
+                                setBusqueda(e.target.value)
+                                setPagina(1)
                             }}
                             placeholder="Buscar…"
-                            className="w-full rounded-xl pr-11 px-4 py-3 bg-gray-900 border border-gray-700
-           focus:ring-2 focus:ring-red-700 focus:outline-none"
+                            className="w-full rounded-xl px-4 py-3 pr-11
+        bg-gray-100 border border-gray-200
+        focus:ring-2 focus:ring-[#801818] focus:outline-none"
                         />
-                        {/* ícono lupa */}
                         <HiSearch
                             size={20}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
                         />
                     </div>
 
+                    {/* FILTROS */}
+                    <div className={`${filtrosAbiertos ? "block" : "hidden"} sm:block`}>
 
-                    {/* Contenedor de todos los filtros debajo */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
 
-                        <select
-                            value={localidadFiltro}
-                            onChange={(e) => {
-                                setLocalidadFiltro(e.target.value);
-                                setEmpresaFiltro('TODAS');
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[180px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODAS">Todas las localidades</option>
-                            {localidadesUnicas.map((loc) => (
-                                <option key={loc} value={loc}>{loc}</option>
-                            ))}
-                        </select>
+                            {/* LOCALIDAD */}
+                            <select
+                                value={localidadFiltro}
+                                onChange={(e) => {
+                                    setLocalidadFiltro(e.target.value);
+                                    setEmpresaFiltro('TODAS');
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODAS">Todas las localidades</option>
+                                {localidadesUnicas.map((loc) => (
+                                    <option key={loc} value={loc}>{loc}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={empresaFiltro}
-                            onChange={(e) => {
-                                setEmpresaFiltro(e.target.value);
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[180px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODAS">Todas las empresas</option>
-                            {empresasOpciones.map((empresa) => (
-                                <option key={empresa} value={empresa}>{empresa}</option>
-                            ))}
-                        </select>
+                            {/* EMPRESA */}
+                            <select
+                                value={empresaFiltro}
+                                onChange={(e) => {
+                                    setEmpresaFiltro(e.target.value);
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODAS">Todas las empresas</option>
+                                {empresasOpciones.map((empresa) => (
+                                    <option key={empresa} value={empresa}>{empresa}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={productoFiltro}
-                            onChange={(e) => {
-                                setProductoFiltro(e.target.value);
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[180px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODOS">Todos los productos</option>
-                            {productosUnicos.map((p) => {
-                                const carga = cargas.find(c => c.producto === p);
-                                const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
-                                return (
-                                    <option key={p} value={p}>{bandera} {p}</option>
-                                );
-                            })}
-                        </select>
+                            {/* PRODUCTO */}
+                            <select
+                                value={productoFiltro}
+                                onChange={(e) => {
+                                    setProductoFiltro(e.target.value);
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODOS">Todos los productos</option>
+                                {productosUnicos.map((p) => {
+                                    const carga = cargas.find(c => c.producto === p);
+                                    const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
+                                    return (
+                                        <option key={p} value={p}>{bandera} {p}</option>
+                                    );
+                                })}
+                            </select>
 
-                        <select
-                            value={añoFiltro}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
-                                setMesFiltro(0);
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[140px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="TODOS">Todos los años</option>
-                            {añosDisponibles.map((año) => (
-                                <option key={año} value={año}>{año}</option>
-                            ))}
-                        </select>
+                            {/* AÑO */}
+                            <select
+                                value={añoFiltro}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
+                                    setMesFiltro(0);
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="TODOS">Todos los años</option>
+                                {añosDisponibles.map((año) => (
+                                    <option key={año} value={año}>{año}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={mesFiltro}
-                            onChange={(e) => {
-                                setMesFiltro(Number(e.target.value));
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[150px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            <option value="0">Todos los meses</option>
-                            {mesesDelAño.map((m) => (
-                                <option key={m.numero} value={m.numero}>{m.nombre}</option>
-                            ))}
-                        </select>
+                            {/* MES */}
+                            <select
+                                value={mesFiltro}
+                                onChange={(e) => {
+                                    setMesFiltro(Number(e.target.value));
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                <option value="0">Todos los meses</option>
+                                {mesesDelAño.map((m) => (
+                                    <option key={m.numero} value={m.numero}>{m.nombre}</option>
+                                ))}
+                            </select>
 
-                        <select
-                            value={itemsPorPagina}
-                            onChange={(e) => {
-                                setItemsPorPagina(parseInt(e.target.value));
-                                setPagina(1);
-                            }}
-                            className="w-full md:w-auto md:min-w-[140px] rounded-xl px-3 py-2 bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-red-700 focus:outline-none"
-                        >
-                            {[5, 10, 20, 50, 100].map((cantidad) => (
-                                <option key={cantidad} value={cantidad}>
-                                    Ver {cantidad}
-                                </option>
-                            ))}
-                        </select>
+                            {/* ITEMS */}
+                            <select
+                                value={itemsPorPagina}
+                                onChange={(e) => {
+                                    setItemsPorPagina(parseInt(e.target.value));
+                                    setPagina(1);
+                                }}
+                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
+            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                            >
+                                {[5, 10, 20, 50, 100].map((cantidad) => (
+                                    <option key={cantidad} value={cantidad}>
+                                        Ver {cantidad}
+                                    </option>
+                                ))}
+                            </select>
 
-                        <label className="w-full md:w-auto inline-flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={soloHoy}
-                                onChange={(e) => { setSoloHoy(e.target.checked); setPagina(1); }}
-                                className="accent-red-700"
-                            />
-                            <span>Cargas del día</span>
-                        </label>
+                        </div>
 
-                        <button
-                            onClick={exportarExcel}
-                            className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900
- bg-green-800 hover:bg-green-700 px-4 py-2 text-white font-semibold shadow-md transition"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth={1.5}
-                                className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
-                            </svg>
-                            Descargar Excel
-                        </button>
+                        {/* EXPORTAR */}
+                        <div className="flex flex-wrap gap-3 pt-2">
 
-                        <button
-                            onClick={exportarPDF}
-                            className="w-full md:w-auto md:min-w-[180px] flex items-center justify-center gap-2 rounded-xl focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900
- bg-red-800 hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-md transition"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth={1.5}
-                                className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
-                            </svg>
-                            Descargar PDF
-                        </button>
+                            <label className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={soloHoy}
+                                    onChange={(e) => {
+                                        setSoloHoy(e.target.checked);
+                                        setPagina(1);
+                                    }}
+                                    className="accent-red-700"
+                                />
+                                <span>Cargas del día</span>
+                            </label>
+
+                            <button
+                                onClick={exportarExcel}
+                                className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white font-semibold shadow-sm transition"
+                            >
+                                Descargar Excel
+                            </button>
+
+                            <button
+                                onClick={exportarPDF}
+                                className="flex items-center gap-2 rounded-xl bg-[#801818] hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-sm transition"
+                            >
+                                Descargar PDF
+                            </button>
+
+                        </div>
+
                     </div>
+
+
                 </section>
 
                 {/* -------- Tabla desktop -------- */}
-                <div className="hidden sm:block bg-gray-800/80 border border-gray-700 rounded-2xl p-5 shadow-lg space-y-4 overflow-x-auto">
+                <div className="hidden sm:block bg-gray-50 border border-gray-200 shadow-sm rounded-2xl p-5space-y-4 overflow-x-auto">
                     <table className="min-w-[1100px] w-full text-sm border-separate border-spacing-y-2">
-                        <thead className="text-left bg-white/5 text-white">
-                            <tr className="bg-gray-900">
+                        <thead className="text-left text-gray-800">
+                            <tr className="bg-gray-900 text-white">
                                 <th className="p-3 text-left rounded-tl-lg">Fecha</th>
                                 <th className="p-3 text-left">Hora</th>
                                 <th className="p-3 text-left">Empleado</th>
@@ -977,216 +1014,261 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                             </tr>
                         </thead>
                         <tbody>
-                            {pageList.map((c) => (
-                                <tr
-                                    key={c._id}
-                                    className="bg-gray-800 hover:bg-gray-700/80 transition shadow-sm hover:shadow-md cursor"
-                                >
-                                    <td className="p-3 rounded-l-lg">
-                                        {new Date(c.fecha).toLocaleDateString('es-AR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                        })}
-                                    </td>
-                                    <td className="p-3">
-                                        {new Date(c.fecha).toLocaleTimeString('es-AR', {
-                                            hour12: false,
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </td>
-                                    <td className="p-3 font-semibold">
-                                        <div className="flex items-center gap-2">
+                            {pageList.map((c) => {
+
+                                const adv = advertenciasPorId.get(c._id);
+
+                                return (
+                                    <tr
+                                        key={c._id}
+                                        className={`
+transition shadow-sm hover:shadow-md
+${adv?.mas75
+                                                ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500"
+                                                : adv?.muchasCargas
+                                                    ? "bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400"
+                                                    : "bg-gray-100 hover:bg-gray-200"
+                                            }
+`}
+                                    >
+                                        <td className="p-3 rounded-l-lg">
+                                            {new Date(c.fecha).toLocaleDateString('es-AR', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                            })}
+                                        </td>
+                                        <td className="p-3">
+                                            {new Date(c.fecha).toLocaleTimeString('es-AR', {
+                                                hour12: false,
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                            })}
+                                        </td>
+                                        <td className="p-3 font-semibold">
+                                            <div className="flex items-center gap-2">
+                                                {c.nombreEmpleado}
+
+                                                {(() => {
+                                                    const adv = advertenciasPorId.get(c._id);
+                                                    if (!adv) return null;
+
+                                                    return (
+                                                        <div className="flex gap-1 ml-1">
+                                                            {adv.muchasCargas && (
+                                                                <span
+                                                                    title="Más de una carga en el día"
+                                                                    className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 text-[11px] font-bold"
+                                                                >
+                                                                    !
+                                                                </span>
+                                                            )}
+
+                                                            {adv.mas75 && (
+                                                                <span
+                                                                    title="Más de 75 litros"
+                                                                    className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-[11px]"
+                                                                >
+                                                                    ⛽
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </td>
+                                        <td className="p-3">{c.dniEmpleado}</td>
+                                        <td className="p-3 text-red-800 font-semibold">
+    {c.empresa || '-'}
+</td>
+                                        <td className="p-3">{c.localidad || '-'}</td>
+                                        <td className="p-3">{/*{banderaPorMoneda(c.moneda)}*/} {c.producto}</td>
+                                        <td className="p-3 text-center font-semibold">{c.litros}</td>
+                                        <td className="p-3 text-center text-gray-600">
+                                            {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
+                                        </td>
+                                        <td className="p-3 text-center font-bold text-green-700">
+                                            {fmtMoneyAR(c.precioFinal)} {c.moneda}
+                                        </td>
+
+                                        <td className="p-3 text-center rounded-r-lg">
+                                            <div className='flex gap-1'>
+                                                <button
+                                                    onClick={() => editarCarga(c._id)}
+                                                    className="inline-flex items-center text-white justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 shadow-md"
+                                                    title="Editar"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                        <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => eliminarCarga(c._id)}
+                                                    className="inline-flex text-white items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
+                                                    title="Eliminar"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                        className="size-5"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* -------- Cards mobile -------- */}
+                <div className="sm:hidden flex flex-col gap-3">
+
+                    {pageList.map((c) => {
+
+                        const adv = advertenciasPorId.get(c._id)
+
+                        return (
+                            <div
+                                key={c._id}
+                                className="
+bg-white
+relative
+border border-gray-200
+rounded-xl
+p-4
+shadow-sm
+active:scale-[0.99]
+transition
+"
+                            >
+
+                                {/* HEADER */}
+                                <div className="flex justify-between items-start">
+                                    <div className="min-w-0 flex-1 pr-3">
+                                        <p className="font-semibold text-gray-900 break-words">
                                             {c.nombreEmpleado}
+                                        </p>
 
-                                            {(() => {
-                                                const adv = advertenciasPorId.get(c._id);
-                                                if (!adv) return null;
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            DNI {c.dniEmpleado}
+                                        </p>
+                                    </div>
 
-                                                return (
-                                                    <>
-                                                        {adv.muchasCargas && (
-                                                            <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
-                                                                ⚠️
-                                                            </span>
-                                                        )}
-                                                        {adv.mas75 && (
-                                                            <span title="Más de 75 litros" className="text-red-500 text-xl">
-                                                                🔥
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    </td>
-                                    <td className="p-3">{c.dniEmpleado}</td>
-                                    <td className="p-3">{c.empresa || '-'}</td>
-                                    <td className="p-3">{c.localidad || '-'}</td>
-                                    <td className="p-3">{/*{banderaPorMoneda(c.moneda)}*/} {c.producto}</td>
-                                    <td className="p-3 text-center font-semibold">{c.litros}</td>
-                                    <td className="p-3 text-center text-gray-300">
-                                        {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
-                                    </td>
-                                    <td className="p-3 text-center font-bold text-green-400">
-                                        {fmtMoneyAR(c.precioFinal)} {c.moneda}
-                                    </td>
-
-                                    <td className="p-3 text-center rounded-r-lg">
-                                        <div className='flex gap-1'>
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        <div className="flex gap-2">
                                             <button
                                                 onClick={() => editarCarga(c._id)}
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 shadow-md"
-                                                title="Editar"
+                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 hover:bg-yellow-400 text-white"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                                                     <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
                                                     <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
                                                 </svg>
                                             </button>
+
                                             <button
                                                 onClick={() => eliminarCarga(c._id)}
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
-                                                title="Eliminar"
+                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 text-white"
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                    className="size-5"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                                                        clipRule="evenodd"
-                                                    />
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                    <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
                                                 </svg>
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* -------- Cards mobile -------- */}
-                <div className="sm:hidden flex flex-col gap-4 max-w-xl mx-auto">
-                    {pageList.map((c) => (
-                        <div
-                            key={c._id}
-                            className="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-lg"
-                        >
-                            {/* Cabecera: nombre y producto */}
-                            <div className="flex justify-between items-center mb-2">
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-lg font-semibold">{c.nombreEmpleado}</h2>
-
-                                    {(() => {
-                                        const adv = advertenciasPorId.get(c._id);
-                                        if (!adv) return null;
-
-                                        return (
-                                            <div className="flex gap-1">
-                                                {adv.muchasCargas && (
-                                                    <span title="Más de una carga en el día" className="text-yellow-400 text-xl">
-                                                        ⚠️
-                                                    </span>
-                                                )}
-                                                {adv.mas75 && (
-                                                    <span title="Más de 75 litros" className="text-red-500 text-xl">
-                                                        🔥
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    })()}
+                                    </div>
                                 </div>
-                                <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300">
-                                    {/*{banderaPorMoneda(c.moneda)}*/} {c.producto}
-                                </span>
-                            </div>
 
-                            {/* Info principal */}
-                            <div className="space-y-1 text-sm">
-                                <p>
-                                    <span className="font-semibold text-gray-300">DNI:</span> {c.dniEmpleado}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-gray-300">Empresa:</span> {c.empresa || '-'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-gray-300">Localidad:</span> {c.localidad}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-gray-300">Fecha:</span>{' '}
-                                    {new Date(c.fecha).toLocaleDateString('es-AR', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric'
-                                    })}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-gray-300">Hora:</span>{' '}
-                                    {new Date(c.fecha).toLocaleTimeString('es-AR', {
-                                        hour12: false,
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit'
-                                    })}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-gray-300">Litros:</span> {c.litros}
-                                </p>
-                            </div>
 
-                            <hr className="my-3 border-white/10" />
+                                {/* EMPRESA + LOCALIDAD */}
+                                <div className="flex-col items-center mt-3">
 
-                            {/* Precios */}
-                            <div className="text-sm space-y-1 mb-4">
-                                <p>
-                                    <span className="text-gray-400">Precio surtidor:</span>{' '}
-                                    <span className="text-red-400 font-semibold">
-                                        {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
-                                    </span>
-                                </p>
-                                <p>
-                                    <span className="text-gray-400">Precio con descuento:</span>{' '}
-                                    <span className="text-green-400 font-semibold">
-                                        {fmtMoneyAR(c.precioFinal)} {c.moneda}
-                                    </span>
-                                </p>
-                            </div>
+                                    <div className="text-sm font-medium text-red-800">
+                                        {c.empresa || '-'}
+                                    </div>
 
-                            {/* Botones editar/eliminar */}
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => editarCarga(c._id)}
-                                    className="px-4 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 rounded-xl"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                        <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                                        <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={() => eliminarCarga(c._id)}
-                                    className="px-4 py-1 text-sm bg-red-700 hover:bg-red-600 rounded-xl"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                                    <div className="text-xs text-gray-500">
+                                        {c.localidad}
+                                    </div>
+
+                                </div>
+
+
+                                {/* FECHA */}
+                                <div className="mt-2 text-xs text-gray-500">
+                                    {new Date(c.fecha).toLocaleDateString('es-AR')} — {new Date(c.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+
+
+                                {/* PRODUCTO */}
+                                <div className="mt-2 text-xs text-gray-500">
+                                    {c.producto} • {c.litros} L
+                                </div>
+
+
+                                {/* PRECIOS */}
+                                <div className="mt-3 flex items-center justify-between">
+
+                                    <div className="flex items-center gap-2 text-sm">
+
+                                        <span className="line-through text-gray-400">
+                                            {c.precioFinalSinDescuento?.toLocaleString()} {c.moneda}
+                                        </span>
+
+                                        <span className="text-gray-400">
+                                            →
+                                        </span>
+
+                                        <span className="font-bold text-green-600">
+                                            {fmtMoneyAR(c.precioFinal)} {c.moneda}
+                                        </span>
+
+                                    </div>
+
+                                </div>
+                                {(adv?.muchasCargas || adv?.mas75) && (
+                                    <div className="absolute bottom-3 right-3 flex gap-2">
+
+                                        {adv?.muchasCargas && (
+                                            <span
+                                                title="Más de una carga en el día"
+                                                className="flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-600 text-sm font-bold"
+                                            >
+                                                !
+                                            </span>
+                                        )}
+
+                                        {adv?.mas75 && (
+                                            <span
+                                                title="Más de 75 litros"
+                                                className="flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-600 text-sm font-bold"
+                                            >
+                                                ⛽
+                                            </span>
+                                        )}
+
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        )
+
+                    })}
+
                 </div>
 
                 {/* -------- Paginación -------- */}
                 {totalPag > 1 && (
-                    <div className="flex flex-col items-center gap-3 mt-10 pt-6 border-t border-gray-700">
-                        <div className="text-sm text-white/70">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="text-sm text-gray-600">
                             Mostrando{" "}
                             <span className="font-semibold">
                                 {(págActual - 1) * itemsPorPagina + 1}
@@ -1200,7 +1282,7 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                             <button
                                 onClick={() => setPagina(1)}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Primera"
                             >
                                 «
@@ -1209,7 +1291,7 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                             <button
                                 onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Anterior"
                             >
                                 <HiChevronLeft size={20} />
@@ -1217,14 +1299,14 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
 
                             {buildPageWindow(totalPag, págActual, 7).map((it, idx) =>
                                 it === "…" ? (
-                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-white/70">
+                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-gray-600">
                                         …
                                     </span>
                                 ) : (
                                     <button
                                         key={it}
                                         onClick={() => setPagina(it as number)}
-                                        className={`w-9 h-9 rounded-full font-semibold transition ${págActual === it ? "bg-red-700 text-white" : "bg-gray-700 hover:bg-gray-600"
+                                        className={`w-9 h-9 rounded-full font-semibold transition ${págActual === it ? "bg-red-700 text-white" : "bg-white border border-gray-200 hover:bg-gray-100"
                                             }`}
                                     >
                                         {it}
@@ -1235,7 +1317,7 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                             <button
                                 onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Siguiente"
                             >
                                 <HiChevronRight size={20} />
@@ -1244,7 +1326,7 @@ focus:ring-2 focus:ring-red-700 focus:outline-none"
                             <button
                                 onClick={() => setPagina(totalPag)}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
                                 aria-label="Última"
                             >
                                 »

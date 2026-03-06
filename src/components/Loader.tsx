@@ -1,8 +1,13 @@
 // components/Loader.tsx
+
 export default function Loader() {
     return (
-        <div className="flex justify-center items-center py-10">
-            <div className="w-12 h-12 border-4 border-[#991b1b] border-t-transparent rounded-full animate-spin" />
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-900 z-50">
+            <img
+                src="/icons/icon-192.png"
+                alt="Logo"
+                className="w-20 h-20 animate-pulse"
+            />
         </div>
     );
 }

@@ -24,13 +24,11 @@ export default function AdminPage() {
                 const ultimaVisitaStr = localStorage.getItem('ultimaVisitaCargas');
                 const ultimaVisita = ultimaVisitaStr ? new Date(ultimaVisitaStr) : null;
 
-                // Si nunca se abrió la sección, mostramos todas como nuevas
                 if (!ultimaVisita) {
                     setCargasNuevas(data.length);
                     return;
                 }
 
-                // Filtramos las que tienen fecha posterior a la última visita
                 const nuevas = data.filter((c: any) => new Date(c.fecha) > ultimaVisita);
                 setCargasNuevas(nuevas.length);
             } catch (err) {
@@ -45,66 +43,66 @@ export default function AdminPage() {
         {
             label: 'Empleados',
             path: '/admin/empleados',
-            icon: <UsersIcon className="w-8 h-8 text-white" />,
-            bg: 'bg-red-600',
+            icon: <UsersIcon className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Docentes',
             path: '/admin/docentes',
-            icon: <GraduationCap className="w-8 h-8 text-white" />,
-            bg: 'bg-blue-600',
+            icon: <GraduationCap className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Cargas',
             path: '/admin/cargas',
-            icon: <FuelIcon className="w-8 h-8 text-white" />,
-            bg: 'bg-yellow-500',
+            icon: <FuelIcon className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Precios',
             path: '/admin/precios',
-            icon: <DollarSign className="w-8 h-8 text-white" />,
-            bg: 'bg-green-600',
+            icon: <DollarSign className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Descuentos',
             path: '/admin/descuentos',
-            icon: <Percent className="w-8 h-8 text-white" />,
-            bg: 'bg-purple-600',
+            icon: <Percent className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Estadísticas',
             path: '/admin/estadisticas',
-            icon: <BarChart3 className="w-8 h-8 text-white" />,
-            bg: 'bg-cyan-600',
+            icon: <BarChart3 className="w-6 h-6 text-[#801818]" />,
         },
     ];
 
-
     return (
-        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
-            <h1 className="text-4xl font-bold text-center mb-12">Administración</h1>
+        <main className="min-h-screen px-6 py-12 bg-gray-100">
+            <h1 className="text-4xl font-bold text-center mb-12 text-[#111827]">
+                Administración
+            </h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
                 {secciones.map((item) => (
                     <button
                         key={item.label}
                         onClick={() => router.push(item.path)}
-                        className={`${item.bg} relative rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl`}
+                        className="relative bg-white border border-gray-200 rounded-2xl p-6 flex items-center gap-4 text-left hover:shadow-md hover:-translate-y-0.5 transition-all"
                     >
-                        <div className="bg-black/20 p-3 rounded-full">
+                        <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-gray-100">
                             {item.icon}
                         </div>
-                        <span className="text-xl font-semibold tracking-wide">{item.label}</span>
 
-                        {/* 🔴 Burbuja si hay cargas nuevas */}
+                        <span className="text-lg font-semibold text-gray-800">
+                            {item.label}
+                        </span>
+
                         {item.label === 'Cargas' && cargasNuevas > 0 && (
-                            <div className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-3 py-1.5 rounded-full shadow-md">
+                            <div className="absolute top-3 right-3 bg-[#801818] text-white text-xs px-2 py-1 rounded-full">
                                 {cargasNuevas}
                             </div>
                         )}
+
                     </button>
                 ))}
+
             </div>
         </main>
     );

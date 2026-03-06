@@ -176,15 +176,19 @@ export default function EstadisticasPage() {
     if (loading) return <Loader />;
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
+        <main className="min-h-screen px-6 py-12 bg-gray-50">
+
             <div className="max-w-7xl mx-auto space-y-10">
-                <h1 className="text-4xl font-bold text-center tracking-tight">
+
+                <h1 className="text-4xl font-bold text-center text-[#111827]">
                     Estadísticas
                 </h1>
 
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6 mb-10">
-                    <span className="text-white/80 font-semibold">Año:</span>
+                    <span className="text-gray-600 font-semibold">
+                        Año:
+                    </span>
 
                     <select
                         value={anioSeleccionado}
@@ -193,186 +197,192 @@ export default function EstadisticasPage() {
                                 e.target.value === 'TODOS' ? 'TODOS' : Number(e.target.value)
                             )
                         }
-                        className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white min-w-[160px]"
+                        className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 min-w-[160px]"
                     >
+
                         <option value="TODOS">Todos</option>
+
                         {aniosDisponibles.map((a) => (
                             <option key={a} value={a}>
                                 {a}
                             </option>
                         ))}
+
                     </select>
 
                 </div>
 
-                {/* ✅ Grid 2x2 en desktop */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                    {/* --- Litros cargados por mes --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Litros cargados por mes</h2>
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            Litros cargados por mes
+                        </h2>
                         <Bar
                             data={{
                                 labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                                datasets: [
-                                    {
-                                        label: 'Litros',
-                                        data: datosMensuales.meses,
-                                        backgroundColor: 'rgba(255,99,132,0.5)'
-                                    }
-                                ]
+                                datasets: [{
+                                    label: 'Litros',
+                                    data: datosMensuales.meses,
+                                    backgroundColor: 'rgba(128,24,24,0.7)'
+                                }]
                             }}
                         />
                     </section>
 
-                    {/* --- Ingresos por mes --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Ingresos por mes</h2>
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            Ingresos por mes
+                        </h2>
                         <Line
                             data={{
                                 labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                                datasets: [
-                                    {
-                                        label: 'Ingresos ($)',
-                                        data: datosMensuales.ingresos,
-                                        borderColor: 'rgba(75,192,192,1)',
-                                        fill: false
-                                    }
-                                ]
+                                datasets: [{
+                                    label: 'Ingresos',
+                                    data: datosMensuales.ingresos,
+                                    borderColor: '#111827',
+                                    backgroundColor: 'rgba(17,24,39,0.2)',
+                                    fill: true
+                                }]
                             }}
                         />
                     </section>
 
-                    {/* --- Distribución por producto --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Distribución de cargas por producto</h2>
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            Distribución por producto
+                        </h2>
+
                         <div className="h-64">
+
                             <Doughnut
                                 data={{
                                     labels: Object.keys(productosData),
-                                    datasets: [
-                                        {
-                                            data: Object.values(productosData),
-                                            backgroundColor: [
-                                                'rgba(255,99,132,0.5)',
-                                                'rgba(54,162,235,0.5)',
-                                                'rgba(255,206,86,0.5)',
-                                                'rgba(75,192,192,0.5)',
-                                                'rgba(153,102,255,0.5)'
-                                            ]
-                                        }
-                                    ]
-                                }}
-                                options={{
-                                    maintainAspectRatio: false
-                                }}
-                            />
-                        </div>
-                    </section>
-
-                    {/* --- Top empleados --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Top 5 empleados con más cargas</h2>
-                        <Bar
-                            data={{
-                                labels: topEmpleados.map(([nombre]) => nombre),
-                                datasets: [
-                                    {
-                                        label: 'Cargas',
-                                        data: topEmpleados.map(([_, cantidad]) => cantidad),
-                                        backgroundColor: 'rgba(255,159,64,0.5)'
-                                    }
-                                ]
-                            }}
-                        />
-                    </section>
-
-                    {/* --- Comparativa de cargas por localidad (hasta 4) --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Cargas por localidad</h2>
-                        <Bar
-                            data={{
-                                labels: localidadesTop4.map(([loc]) => loc),
-                                datasets: [
-                                    {
-                                        label: 'Cargas',
-                                        data: localidadesTop4.map(([_, cnt]) => cnt),
-                                        backgroundColor: 'rgba(99,102,241,0.5)', // indigo
-                                    },
-                                ],
-                            }}
-                            options={{
-                                plugins: { legend: { display: false } },
-                                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-                            }}
-                        />
-                    </section>
-
-                    {/* --- Distribución por empresa (solo empleados) --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <h2 className="text-lg font-semibold mb-6 text-white/90">Distribución de cargas por empresa (empleados)</h2>
-                        <div className="h-64">
-                            <Doughnut
-                                data={{
-                                    labels: Object.keys(distribucionEmpresasEmpleados),
-                                    datasets: [
-                                        {
-                                            data: Object.values(distribucionEmpresasEmpleados),
-                                            backgroundColor: [
-                                                'rgba(16,185,129,0.5)',
-                                                'rgba(239,68,68,0.5)',
-                                                'rgba(234,179,8,0.5)',
-                                                'rgba(59,130,246,0.5)',
-                                                'rgba(168,85,247,0.5)',
-                                            ],
-                                        },
-                                    ],
+                                    datasets: [{
+                                        data: Object.values(productosData),
+                                        backgroundColor: [
+                                            '#801818',
+                                            '#111827',
+                                            '#EAB308',
+                                            '#22C55E',
+                                            '#6366F1'
+                                        ]
+                                    }]
                                 }}
                                 options={{ maintainAspectRatio: false }}
                             />
+
                         </div>
                     </section>
 
-                    {/* --- Día con más cargas + Top 3 --- */}
-                    <section className="bg-gray-800/80 p-8 rounded-2xl shadow-lg">
-                        <div className="flex items-center justify-between gap-4 mb-4">
-                            <h2 className="text-xl font-semibold">Día con más cargas</h2>
-                            <span className="px-3 py-1 rounded-full bg-indigo-600/80 font-bold">
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            Top empleados
+                        </h2>
+
+                        <Bar
+                            data={{
+                                labels: topEmpleados.map(([nombre]) => nombre),
+                                datasets: [{
+                                    label: 'Cargas',
+                                    data: topEmpleados.map(([_, c]) => c),
+                                    backgroundColor: '#801818'
+                                }]
+                            }}
+                        />
+
+                    </section>
+
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            Cargas por localidad
+                        </h2>
+
+                        <Bar
+                            data={{
+                                labels: localidadesTop4.map(([l]) => l),
+                                datasets: [{
+                                    label: 'Cargas',
+                                    data: localidadesTop4.map(([_, c]) => c),
+                                    backgroundColor: '#111827'
+                                }]
+                            }}
+                            options={{
+                                plugins: { legend: { display: false } },
+                                scales: { y: { beginAtZero: true } }
+                            }}
+                        />
+
+                    </section>
+
+                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+
+                        <div className="flex items-center justify-between mb-4">
+
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                Día con más cargas
+                            </h2>
+
+                            <span className="px-3 py-1 rounded-full bg-[#801818] text-white font-bold">
                                 {diaMasCargas.dia} ({diaMasCargas.cantidad})
                             </span>
+
                         </div>
-                        <div className="mt-5 mb-5">
-                            <h3 className="text-sm text-gray-300 mb-2 font-semibold">Top 3 días</h3>
+
+                        <div className="mb-6">
+
+                            <h3 className="text-sm text-gray-500 mb-2 font-semibold">
+                                Top 3 días
+                            </h3>
+
                             <div className="flex flex-wrap gap-2">
+
                                 {topDias.map((t, i) => (
-                                    <span key={t.dia} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-700 text-sm">
-                                        <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-indigo-600 text-white font-bold">
+                                    <span
+                                        key={t.dia}
+                                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-sm"
+                                    >
+
+                                        <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-[#111827] text-white font-bold">
                                             {i + 1}
                                         </span>
-                                        <span className="font-semibold">{t.dia}</span>
-                                        <span className="text-white/70">({t.cantidad})</span>
+
+                                        <span className="font-semibold">
+                                            {t.dia}
+                                        </span>
+
+                                        <span className="text-gray-500">
+                                            ({t.cantidad})
+                                        </span>
+
                                     </span>
                                 ))}
+
                             </div>
+
                         </div>
 
                         <Bar
                             data={{
                                 labels: diasSemana,
-                                datasets: [
-                                    { label: 'Cargas', data: cargasPorDiaSemana, backgroundColor: 'rgba(99,102,241,0.5)' }
-                                ]
+                                datasets: [{
+                                    label: 'Cargas',
+                                    data: cargasPorDiaSemana,
+                                    backgroundColor: '#111827'
+                                }]
                             }}
                             options={{
                                 plugins: { legend: { display: false } },
-                                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                                scales: { y: { beginAtZero: true } }
                             }}
                         />
 
                     </section>
 
                 </div>
+
             </div>
+
         </main>
-    );
+    )
 }

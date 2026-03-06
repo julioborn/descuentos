@@ -122,18 +122,7 @@ export default function EmpleadosTipoPage() {
 
             setEmpleado(data)
 
-            // ✅ Si ya descargó, NO generamos QR (no hay token)
             if (data.descargado) return
-
-            if (!data.qrToken) {
-                await Swal.fire('Error', 'No se pudo generar el QR', 'error')
-                return
-            }
-
-            const qr = await QRCode.toDataURL(
-                `${window.location.origin}/playero?token=${data.qrToken}`
-            )
-            setQrUrl(qr)
         } finally {
             setLoading(false)
         }
@@ -144,6 +133,16 @@ export default function EmpleadosTipoPage() {
         setProcesando(true)
 
         try {
+            // generar QR recién al descargar
+            if (!qrUrl) {
+                if (!empleado.qrToken) {
+                    await Swal.fire('Error', 'No se pudo generar el QR', 'error')
+                    return
+                }
+
+                // esperar un frame para que React renderice el QR
+                await new Promise(r => setTimeout(r, 50))
+            }
             if (esIOS) {
                 const result = await Swal.fire({
                     icon: 'info',
@@ -255,26 +254,76 @@ export default function EmpleadosTipoPage() {
                                 // ⛔ antes de tocar "Descargar", mostramos HTML PERO BLOQUEADO
                                 <div
                                     id="tarjeta"
-                                    className="bg-white text-black rounded-xl p-4 flex flex-col items-center gap-4 pointer-events-none select-none opacity-90"
+                                    className="bg-white text-black rounded-xl p-6 flex flex-col items-center gap-4"
                                 >
-                                    <img src="/idescuentos.png" className="h-12" />
-                                    <img src={qrUrl} className="w-56 h-56" />
-                                    <div className="font-bold">
-                                        {empleado.nombre} {empleado.apellido}
+
+                                    <img src="/idescuentos.png" className="h-12 mb-2" />
+
+                                    <div className="text-center space-y-1">
+
+                                        <div className="text-xl font-bold">
+                                            {empleado.nombre} {empleado.apellido}
+                                        </div>
+
+                                        <div className="text-gray-700 text-sm">
+                                            DNI {empleado.dni}
+                                        </div>
+
+                                        <div className="text-gray-600 text-sm">
+                                            {empleado.empresa}
+                                        </div>
+
+                                        {empleado.localidad && (
+                                            <div className="text-gray-500 text-xs">
+                                                {empleado.localidad}
+                                            </div>
+                                        )}
+
                                     </div>
+
+                                    {/* QR SOLO aparece después de descargar */}
+                                    {qrUrl && (
+                                        <img src={qrUrl} className="w-56 h-56 mt-4" />
+                                    )}
+
                                 </div>
                             )
                         ) : (
                             // ✅ Android/desktop normal
                             <div
                                 id="tarjeta"
-                                className="bg-white text-black rounded-xl p-4 flex flex-col items-center gap-4"
+                                className="bg-white text-black rounded-xl p-6 flex flex-col items-center gap-4"
                             >
-                                <img src="/idescuentos.png" className="h-12" />
-                                <img src={qrUrl} className="w-56 h-56" />
-                                <div className="font-bold">
-                                    {empleado.nombre} {empleado.apellido}
+
+                                <img src="/idescuentos.png" className="h-12 mb-2" />
+
+                                <div className="text-center space-y-1">
+
+                                    <div className="text-xl font-bold">
+                                        {empleado.nombre} {empleado.apellido}
+                                    </div>
+
+                                    <div className="text-gray-700 text-sm">
+                                        DNI {empleado.dni}
+                                    </div>
+
+                                    <div className="text-gray-600 text-sm">
+                                        {empleado.empresa}
+                                    </div>
+
+                                    {empleado.localidad && (
+                                        <div className="text-gray-500 text-xs">
+                                            {empleado.localidad}
+                                        </div>
+                                    )}
+
                                 </div>
+
+                                {/* QR SOLO aparece después de descargar */}
+                                {qrUrl && (
+                                    <img src={qrUrl} className="w-56 h-56 mt-4" />
+                                )}
+
                             </div>
                         )}
 
