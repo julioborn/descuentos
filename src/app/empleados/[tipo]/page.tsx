@@ -118,8 +118,6 @@ export default function EmpleadosTipoPage() {
 
             setEmpleado(data)
 
-            setEmpleado(data)
-
             if (!data.descargado && data.qrToken) {
                 const url = await QRCode.toDataURL(
                     `${window.location.origin}/activar?token=${data.qrToken}`,
