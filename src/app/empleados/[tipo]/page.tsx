@@ -158,7 +158,7 @@ export default function EmpleadosTipoPage() {
                 const result = await Swal.fire({
                     icon: 'info',
                     title: 'Guardar QR',
-                    html: 'Mantené presionada la tarjeta y elegí <b>Guardar en Fotos</b>',
+                    html: 'Ya que tenes un iPhone, mantené presionado el QR y elegí <b>Guardar en Fotos</b>',
                     confirmButtonText: 'Entendido',
                 })
 
@@ -309,18 +309,20 @@ export default function EmpleadosTipoPage() {
                         )}
 
                         {esIOS && habilitarDescargaIOS && (
-                            <div className="text-center text-amber-600 text-sm font-semibold space-y-1">
-                                <p>Mantené apretado y elegí “Guardar en Fotos”</p>
+                            <div className="text-center text-amber-600 text-md font-semibold space-y-1">
+                                <p>Mantené apretado el QR y elegí “Guardar en Fotos”</p>
                             </div>
                         )}
 
-                        <button
-                            onClick={descargar}
-                            disabled={procesando}
-                            className="w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-semibold shadow-sm transition disabled:opacity-60"
-                        >
-                            {procesando ? 'Procesando…' : 'Descargar QR'}
-                        </button>
+                        {(!esIOS || !tarjetaImg) && (
+                            <button
+                                onClick={descargar}
+                                disabled={procesando}
+                                className="w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-semibold shadow-sm transition disabled:opacity-60"
+                            >
+                                {procesando ? 'Procesando…' : 'Descargar QR'}
+                            </button>
+                        )}
                     </>
                 )}
 
