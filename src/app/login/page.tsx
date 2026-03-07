@@ -38,8 +38,8 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-700 px-4">
-            <div className="bg-white/90 backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
+        <main className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+            <div className="bg-white backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
                 <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Iniciar Sesión</h1>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <input

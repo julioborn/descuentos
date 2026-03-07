@@ -3,15 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --background: #374151;
+  --background: #111827
+;
   /* gris que usas en bg-gray-700 */
-  --foreground: #374151;
+  --foreground: #111827
+;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #374151;
-    --foreground: #374151;
+    --background: #111827;
+    --foreground: #111827;
   }
 }
 
