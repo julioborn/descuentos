@@ -118,23 +118,8 @@ export default function EmpleadosTipoPage() {
 
             setEmpleado(data)
 
-            if (!data.descargado && data.qrToken) {
-                const url = await QRCode.toDataURL(
-                    `${window.location.origin}/activar?token=${data.qrToken}`,
-                    {
-                        width: 400,
-                        margin: 2,
-                        color: {
-                            dark: '#000000',
-                            light: '#ffffff',
-                        },
-                    }
-                )
-
-                setQrUrl(url)
-            }
-
             if (data.descargado) return
+
         } finally {
             setLoading(false)
         }
@@ -150,7 +135,23 @@ export default function EmpleadosTipoPage() {
                     await Swal.fire('Error', 'No se pudo generar el QR', 'error')
                     return
                 }
-                await new Promise(r => setTimeout(r, 50))
+
+                const url = await QRCode.toDataURL(
+                    `${window.location.origin}/activar?token=${empleado.qrToken}`,
+                    {
+                        width: 400,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }
+                )
+
+                setQrUrl(url)
+
+                // esperar a que React renderice el QR en la tarjeta
+                await new Promise(r => setTimeout(r, 150))
             }
 
             if (esIOS) {
@@ -253,7 +254,6 @@ export default function EmpleadosTipoPage() {
                                 />
                             ) : (
                                 <div
-                                    id="tarjeta"
                                     className="bg-white text-gray-900 rounded-2xl p-6 flex flex-col items-center gap-4 border border-gray-200 shadow-sm w-full"
                                 >
                                     <img src="/idescuentos.png" className="h-12 mb-2" />
@@ -278,14 +278,10 @@ export default function EmpleadosTipoPage() {
                                         )}
                                     </div>
 
-                                    {qrUrl && (
-                                        <img src={qrUrl} className="w-56 h-56 mt-3 rounded-lg" />
-                                    )}
                                 </div>
                             )
                         ) : (
                             <div
-                                id="tarjeta"
                                 className="bg-white text-gray-900 rounded-2xl p-6 flex flex-col items-center gap-4 border border-gray-200 shadow-sm w-full"
                             >
                                 <img src="/idescuentos.png" className="h-12 mb-2" />
@@ -309,10 +305,6 @@ export default function EmpleadosTipoPage() {
                                         </div>
                                     )}
                                 </div>
-
-                                {qrUrl && (
-                                    <img src={qrUrl} className="w-56 h-56 mt-3 rounded-lg" />
-                                )}
                             </div>
                         )}
 
@@ -337,6 +329,23 @@ export default function EmpleadosTipoPage() {
                         <p className="text-red-700 font-semibold">
                             Este QR ya fue descargado
                         </p>
+                    </div>
+                )}
+
+                {empleado && (
+                    <div
+                        id="tarjeta"
+                        className="fixed left-[-9999px] top-0 bg-white rounded-2xl p-10 flex flex-col items-center gap-6"
+                    >
+                        <img src="/idescuentos.png" className="h-16" />
+
+                        <div className="text-2xl font-bold text-center">
+                            {empleado.nombre} {empleado.apellido}
+                        </div>
+
+                        {qrUrl && (
+                            <img src={qrUrl} className="w-56 h-56" />
+                        )}
                     </div>
                 )}
 
