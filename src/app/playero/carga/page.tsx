@@ -134,89 +134,134 @@ export default function CargaPage() {
         // ✅ Paso de confirmación
         const { isConfirmed } = await Swal.fire({
             width: 440,
-            background: '#0f172a',
-            color: '#e5e7eb',
-            backdrop: 'rgba(0,0,0,0.85)',
+            background: '#ffffff',
+            color: '#111827',
+            backdrop: 'rgba(0,0,0,0.4)',
 
-            // usa título simple y lo estilamos por clase
             title: 'Confirmar carga',
 
             html: `
     <div class="sw-body">
-      <div><b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}</div>
-      <div><b>DNI:</b> ${empleado.dni}</div>
-      <div><b>Empresa:</b> ${empleado.empresa}</div>
-      <div><b>Producto:</b> ${form.producto}</div>
-      <div><b>Litros:</b> ${fmtAR(litros)}</div>
+        <div><b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}</div>
+        <div><b>DNI:</b> ${empleado.dni}</div>
+        <div><b>Empresa:</b> ${empleado.empresa}</div>
+        <div><b>Producto:</b> ${form.producto}</div>
+        <div><b>Litros:</b> ${fmtAR(litros)}</div>
 
-      <div class="sw-divider"></div>
+        <div class="sw-divider"></div>
 
-      <div class="sw-total">
-        <span style="font-weight:700;">Total final</span>
-        <span style="color:#22c55e;font-weight:800;font-size:18px;">
-          ${fmtAR(precioFinal)} ${symbol}
-        </span>
-      </div>
+        <div class="sw-total">
+            <span>Total final</span>
+            <span class="sw-total-price">
+                ${symbol} ${fmtAR(precioFinal)}
+            </span>
+        </div>
     </div>
-  `,
+    `,
 
             showCancelButton: true,
             buttonsStyling: false,
-            confirmButtonText: `
-    <span style="display:inline-flex;align-items:center;gap:8px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 7L9 18l-5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Confirmar
-    </span>
-  `,
+
+            confirmButtonText: 'Confirmar',
             cancelButtonText: 'Cancelar',
 
-            // 🔧 damos clases a cada parte para apretar los espacios
             customClass: {
                 popup: 'sw-popup-tight',
                 title: 'sw-title-tight',
                 htmlContainer: 'sw-html-tight',
                 actions: 'sw-actions-tight',
                 confirmButton: 'sw-ok',
-                cancelButton: 'sw-cancel',
+                cancelButton: 'sw-cancel'
             },
 
             didOpen: () => {
-                // Inyectamos CSS una sola vez (si no existiera)
                 if (!document.getElementById('swal-tight-css')) {
+
                     const style = document.createElement('style');
                     style.id = 'swal-tight-css';
+
                     style.textContent = `
-        .sw-popup-tight{ padding:14px 16px 16px !important; border-radius:16px; }
-        .sw-title-tight{ margin:0 !important; font-size:22px !important; font-weight:800; }
-        .sw-html-tight{ margin:8px 0 0 !important; }           /* menos gap bajo el título */
-        .sw-actions-tight{ margin:14px 0 0 !important; }       /* menos gap sobre los botones */
+            .sw-popup-tight{
+                padding:16px 18px !important;
+                border-radius:16px;
+            }
 
-        .sw-body{ text-align:left; font-size:16px; line-height:1.5; display:grid; gap:6px; }
-        .sw-divider{ height:1px; background:#334155; margin:8px 0 10px; }
-        .sw-total{
-          display:flex; justify-content:space-between; align-items:center;
-          background:#0b1220; border:1px solid #1f2937; border-radius:12px;
-          padding:10px 12px;
-        }
+            .sw-title-tight{
+                margin:0 !important;
+                font-size:22px !important;
+                font-weight:800;
+            }
 
-        /* Botones */
-        .sw-ok{
-          background:linear-gradient(135deg,#16a34a,#22c55e) !important;
-          color:#fff !important; font-weight:800 !important; border-radius:9999px !important;
-          padding:10px 18px !important; font-size:16px !important;
-          box-shadow:0 8px 20px rgba(34,197,94,.25) !important;
-        }
-        .sw-cancel{
-          background:#374151 !important; color:#fff !important; font-weight:700 !important;
-          border-radius:9999px !important; padding:10px 18px !important; font-size:16px !important;
-          margin-left:10px !important;
-        }
-      `;
+            .sw-html-tight{
+                margin:10px 0 0 !important;
+            }
+
+            .sw-actions-tight{
+                margin:18px 0 0 !important;
+            }
+
+            .sw-body{
+                text-align:left;
+                font-size:15px;
+                line-height:1.5;
+                display:grid;
+                gap:6px;
+                color:#374151;
+            }
+
+            .sw-divider{
+                height:1px;
+                background:#e5e7eb;
+                margin:10px 0;
+            }
+
+            .sw-total{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  font-weight:600;
+  color:#111827;
+}
+
+            .sw-total-price{
+                color:#16a34a;
+                font-weight:800;
+                font-size:18px;
+            }
+
+            .sw-ok{
+                background:#16a34a !important;
+                color:#fff !important;
+                font-weight:700 !important;
+                border-radius:9999px !important;
+                padding:10px 20px !important;
+                font-size:15px !important;
+                box-shadow:0 6px 16px rgba(34,197,94,.25) !important;
+            }
+
+            .sw-ok:hover{
+                background:#15803d !important;
+            }
+
+            .sw-cancel{
+                background:#e5e7eb !important;
+                color:#111827 !important;
+                font-weight:600 !important;
+                border-radius:9999px !important;
+                padding:10px 20px !important;
+                font-size:15px !important;
+                margin-left:10px !important;
+            }
+            `;
+
                     document.head.appendChild(style);
                 }
             }
         });
-
         if (!isConfirmed) return;
 
         setIsSubmitting(true);
@@ -282,32 +327,32 @@ export default function CargaPage() {
     if (!empleado) return <Loader />;
 
     return (
-        <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
+        <main className="min-h-screen px-6 py-10 bg-gray-100">
 
-            <div className="mb-6 bg-white/10 p-6 rounded-lg flex flex-col justify-center items-center gap-3">
-                {/* Nombre */}
-                <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-wide text-white text-center">
+            <div className="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+                <h2 className="text-2xl font-bold text-[#111827]">
                     {empleado.nombre} {empleado.apellido}
                 </h2>
 
-                {/* DNI */}
-                <p className="flex items-center gap-2 text-xl text-slate-200">
-                    <span className="font-semibold text-white">DNI:</span> {empleado.dni}
+                <p className="text-gray-600">
+                    <span className="font-semibold">DNI:</span> {empleado.dni}
                 </p>
 
-                {/* Empresa */}
-                <p className="flex items-center gap-2 text-xl text-slate-200">
+                <p className="text-gray-500">
                     {empleado.empresa}
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white/10 p-6 rounded-lg max-w-md mx-auto">
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 max-w-md mx-auto"
+            >
                 <div className="relative">
                     <select
                         name="producto"
                         value={form.producto}
                         onChange={handleChange}
-                        className="appearance-none w-full p-5 font-semibold text-lg sm:text-xl rounded bg-gray-800 text-white pr-12"
+                        className="appearance-none w-full p-4 text-lg font-semibold rounded-xl border border-gray-300 bg-white text-gray-900 pr-10 focus:ring-2 focus:ring-[#801818] outline-none"
                     >
                         <option value="">Elegir producto</option>
                         {precios.map(p => (
@@ -319,7 +364,7 @@ export default function CargaPage() {
                     </select>
 
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
@@ -332,7 +377,12 @@ export default function CargaPage() {
                     name="litros"
                     value={form.litros}
                     onChange={handleChange}
-                    className="w-full p-5 text-2xl text-center bg-gray-800 text-white rounded"
+                    disabled={!form.producto}
+                    className={`w-full p-4 text-2xl text-center border rounded-xl outline-none
+    ${!form.producto
+                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#801818]'
+                        }`}
                     placeholder="Litros"
                 />
 
@@ -341,8 +391,7 @@ export default function CargaPage() {
                     <div className="
       mx-auto max-w-md rounded-2xl
       bg-gradient-to-b from-slate-900 to-slate-800
-      border border-slate-600/50
-      shadow-[inset_0_-60px_120px_rgba(0,0,0,.35),0_10px_30px_rgba(0,0,0,.4)]
+      border border-gray-300
       p-4
     ">
                         <div className="flex items-center justify-between text-slate-300 text-[11px] uppercase tracking-widest">
@@ -356,13 +405,16 @@ export default function CargaPage() {
                     </div>
 
                     {porcentajeDescuento > 0 && (
-                        <p className="mt-2 text-center text-xl font-semibold text-emerald-300">
+                        <p className="mt-4 text-center text-xl font-semibold text-gray-900">
                             Descuento {porcentajeDescuento}%
                         </p>
                     )}
                 </div>
 
-                <button className="w-full bg-red-700 py-3 rounded text-white text-xl font-bold">
+                <button
+                    type="submit"
+                    className="w-full py-4 rounded-xl bg-[#801818] hover:bg-red-700 text-white text-xl font-bold transition"
+                >
                     Cargar
                 </button>
             </form>

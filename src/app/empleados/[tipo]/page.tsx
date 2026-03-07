@@ -46,13 +46,12 @@ type EmpleadoPublico = {
     localidad?: string
     subcategoria?: string
     descargado: boolean
-    qrToken?: string // 👈 solo viene si descargado=false
+    qrToken?: string
 }
 
 const onlyDigits = (s: string) => s.replace(/\D/g, '')
 
 const formatDni = (digits: string) => {
-    // 7 u 8 dígitos (Argentina). Formatea: 12345678 -> 12.345.678
     const d = onlyDigits(digits).slice(0, 8)
     if (d.length <= 2) return d
     if (d.length <= 5) return `${d.slice(0, d.length - 3)}.${d.slice(-3)}`
@@ -62,8 +61,7 @@ const formatDni = (digits: string) => {
 const formatCiParaguay = (digits: string) => {
     const d = onlyDigits(digits).slice(0, 9)
     if (d.length <= 3) return d
-    if (d.length <= 6)
-        return `${d.slice(0, d.length - 3)}.${d.slice(-3)}`
+    if (d.length <= 6) return `${d.slice(0, d.length - 3)}.${d.slice(-3)}`
     return `${d.slice(0, d.length - 6)}.${d.slice(-6, -3)}.${d.slice(-3)}`
 }
 
@@ -77,6 +75,7 @@ export default function EmpleadosTipoPage() {
     const [tarjetaImg, setTarjetaImg] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [procesando, setProcesando] = useState(false)
+    const [habilitarDescargaIOS, setHabilitarDescargaIOS] = useState(false)
 
     const volver = () => {
         setEmpleado(null)
@@ -88,13 +87,10 @@ export default function EmpleadosTipoPage() {
         setProcesando(false)
     }
 
-    // iOS: bloquear long-press hasta tocar el botón
-    const [habilitarDescargaIOS, setHabilitarDescargaIOS] = useState(false)
-
     if (!MAPA_TIPO[tipo] || !config) {
         return (
-            <main className="min-h-screen flex items-center justify-center text-white bg-gray-900">
-                <p className="text-red-500 font-bold">QR inválido</p>
+            <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+                <p className="text-red-600 font-bold">QR inválido</p>
             </main>
         )
     }
@@ -133,16 +129,14 @@ export default function EmpleadosTipoPage() {
         setProcesando(true)
 
         try {
-            // generar QR recién al descargar
             if (!qrUrl) {
                 if (!empleado.qrToken) {
                     await Swal.fire('Error', 'No se pudo generar el QR', 'error')
                     return
                 }
-
-                // esperar un frame para que React renderice el QR
                 await new Promise(r => setTimeout(r, 50))
             }
+
             if (esIOS) {
                 const result = await Swal.fire({
                     icon: 'info',
@@ -153,14 +147,12 @@ export default function EmpleadosTipoPage() {
 
                 if (!result.isConfirmed) return
 
-                // ✅ Marcamos en backend apenas tocaron "Descargar QR"
                 await fetch('/api/empleados/descargar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ dni: empleado.dni }),
                 })
 
-                // ✅ Generamos imagen de la TARJETA COMPLETA (no solo el QR)
                 const nodo = document.getElementById('tarjeta')
                 if (!nodo) {
                     await Swal.fire('Error', 'No se encontró la tarjeta para generar imagen', 'error')
@@ -170,14 +162,10 @@ export default function EmpleadosTipoPage() {
                 const canvas = await html2canvas(nodo, { scale: 2 })
                 const img = canvas.toDataURL('image/png')
                 setTarjetaImg(img)
-
-                // ✅ recién ahora permitimos long-press
                 setHabilitarDescargaIOS(true)
-
                 return
             }
 
-            // ✅ No iOS: descargamos archivo PNG
             const nodo = document.getElementById('tarjeta')
             if (!nodo) {
                 await Swal.fire('Error', 'No se encontró la tarjeta', 'error')
@@ -198,34 +186,32 @@ export default function EmpleadosTipoPage() {
     }
 
     const dniDigits = onlyDigits(dni)
-
     const esParaguay = tipo === 'paraguay'
 
     return (
-        <main className="min-h-screen bg-gray-900 text-white flex justify-center items-center px-4">
-            <div className="max-w-md w-full bg-gray-800 p-6 rounded-xl space-y-6">
-                <h1 className="text-2xl font-bold">{config.titulo}</h1>
-                <p className="text-gray-300">{config.descripcion}</p>
+        <main className="min-h-screen bg-gray-100 px-4 py-10 flex items-center justify-center">
+            <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="text-center space-y-2">
+                    <h1 className="text-3xl font-bold text-[#111827]">
+                        {config.titulo}
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        {config.descripcion}
+                    </p>
+                </div>
 
                 {!empleado && (
                     <>
                         <input
-                            value={
-                                esParaguay
-                                    ? formatCiParaguay(dni)
-                                    : formatDni(dni)
-                            }
-                            onChange={(e) =>
-                                setDni(
-                                    onlyDigits(e.target.value)
-                                )
-                            }
+                            value={esParaguay ? formatCiParaguay(dni) : formatDni(dni)}
+                            onChange={(e) => setDni(onlyDigits(e.target.value))}
                             inputMode="numeric"
                             type="tel"
                             autoComplete="off"
                             placeholder={esParaguay ? 'CI' : 'DNI'}
-                            className="w-full py-3 text-center text-2xl tracking-widest text-black rounded-lg"
+                            className="w-full rounded-xl px-4 py-3 text-center text-2xl tracking-widest bg-gray-100 border border-gray-200 text-gray-900 focus:ring-2 focus:ring-[#801818] focus:outline-none"
                         />
+
                         <button
                             onClick={buscar}
                             disabled={
@@ -233,7 +219,7 @@ export default function EmpleadosTipoPage() {
                                     ? dniDigits.length < 6
                                     : dniDigits.length < 7 || dniDigits.length > 8
                             }
-                            className="w-full py-3 bg-red-700 rounded-lg font-bold disabled:opacity-60"
+                            className="w-full py-3 rounded-xl bg-[#801818] hover:bg-red-700 text-white font-semibold shadow-sm transition disabled:opacity-60"
                         >
                             {loading ? 'Verificando…' : 'Continuar'}
                         </button>
@@ -244,93 +230,78 @@ export default function EmpleadosTipoPage() {
                     <>
                         {esIOS ? (
                             tarjetaImg ? (
-                                // ✅ en iOS mostramos la imagen de la tarjeta cuando ya tocaron Descargar
                                 <img
                                     src={tarjetaImg}
-                                    className={`rounded-xl ${habilitarDescargaIOS ? '' : 'pointer-events-none select-none'}`}
+                                    className={`rounded-2xl border border-gray-200 shadow-sm ${habilitarDescargaIOS ? '' : 'pointer-events-none select-none'}`}
                                     alt="Tarjeta QR"
                                 />
                             ) : (
-                                // ⛔ antes de tocar "Descargar", mostramos HTML PERO BLOQUEADO
                                 <div
                                     id="tarjeta"
-                                    className="bg-white text-black rounded-xl p-6 flex flex-col items-center gap-4"
+                                    className="bg-white text-gray-900 rounded-2xl p-6 flex flex-col items-center gap-4 border border-gray-200 shadow-sm w-full"
                                 >
-
                                     <img src="/idescuentos.png" className="h-12 mb-2" />
 
                                     <div className="text-center space-y-1">
-
-                                        <div className="text-xl font-bold">
+                                        <div className="text-xl font-bold text-[#111827]">
                                             {empleado.nombre} {empleado.apellido}
                                         </div>
 
-                                        <div className="text-gray-700 text-sm">
+                                        <div className="text-sm text-gray-600 font-medium">
                                             DNI {empleado.dni}
                                         </div>
 
-                                        <div className="text-gray-600 text-sm">
+                                        <div className="text-sm font-semibold text-[#801818]">
                                             {empleado.empresa}
                                         </div>
 
                                         {empleado.localidad && (
-                                            <div className="text-gray-500 text-xs">
+                                            <div className="text-xs text-gray-500">
                                                 {empleado.localidad}
                                             </div>
                                         )}
-
                                     </div>
 
-                                    {/* QR SOLO aparece después de descargar */}
                                     {qrUrl && (
-                                        <img src={qrUrl} className="w-56 h-56 mt-4" />
+                                        <img src={qrUrl} className="w-56 h-56 mt-3 rounded-lg" />
                                     )}
-
                                 </div>
                             )
                         ) : (
-                            // ✅ Android/desktop normal
                             <div
                                 id="tarjeta"
-                                className="bg-white text-black rounded-xl p-6 flex flex-col items-center gap-4"
+                                className="bg-white text-gray-900 rounded-2xl p-6 flex flex-col items-center gap-4 border border-gray-200 shadow-sm w-full"
                             >
-
                                 <img src="/idescuentos.png" className="h-12 mb-2" />
 
                                 <div className="text-center space-y-1">
-
-                                    <div className="text-xl font-bold">
+                                    <div className="text-xl font-bold text-[#111827]">
                                         {empleado.nombre} {empleado.apellido}
                                     </div>
 
-                                    <div className="text-gray-700 text-sm">
+                                    <div className="text-sm text-gray-600 font-medium">
                                         DNI {empleado.dni}
                                     </div>
 
-                                    <div className="text-gray-600 text-sm">
+                                    <div className="text-sm font-semibold text-[#801818]">
                                         {empleado.empresa}
                                     </div>
 
                                     {empleado.localidad && (
-                                        <div className="text-gray-500 text-xs">
+                                        <div className="text-xs text-gray-500">
                                             {empleado.localidad}
                                         </div>
                                     )}
-
                                 </div>
 
-                                {/* QR SOLO aparece después de descargar */}
                                 {qrUrl && (
-                                    <img src={qrUrl} className="w-56 h-56 mt-4" />
+                                    <img src={qrUrl} className="w-56 h-56 mt-3 rounded-lg" />
                                 )}
-
                             </div>
                         )}
 
-                        {/* ✅ Texto SOLO después de Descargar en iOS */}
                         {esIOS && habilitarDescargaIOS && (
-                            <div className="text-center text-yellow-400 text-sm font-semibold space-y-2">
-                                <div className="text-2xl">⬆️⬆️</div>
+                            <div className="text-center text-amber-600 text-sm font-semibold space-y-1">
                                 <p>Mantené apretado y elegí “Guardar en Fotos”</p>
                             </div>
                         )}
@@ -338,7 +309,7 @@ export default function EmpleadosTipoPage() {
                         <button
                             onClick={descargar}
                             disabled={procesando}
-                            className="w-full py-3 bg-green-700 rounded-lg font-bold disabled:opacity-60"
+                            className="w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-semibold shadow-sm transition disabled:opacity-60"
                         >
                             {procesando ? 'Procesando…' : 'Descargar QR'}
                         </button>
@@ -346,15 +317,17 @@ export default function EmpleadosTipoPage() {
                 )}
 
                 {empleado?.descargado && (
-                    <p className="text-red-500 font-bold text-center">
-                        Este QR ya fue descargado
-                    </p>
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+                        <p className="text-red-700 font-semibold">
+                            Este QR ya fue descargado
+                        </p>
+                    </div>
                 )}
 
                 {empleado && (
                     <button
                         onClick={volver}
-                        className="w-full py-3 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold transition"
+                        className="w-full py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold transition"
                     >
                         ← Volver
                     </button>

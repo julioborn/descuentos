@@ -22,8 +22,9 @@ export default function QRScannerPage() {
                     if (result && active) {
                         active = false;
                         const token = new URL(result.getText()).searchParams.get('token');
+
                         if (token) {
-                            stopCamera(); // 👈 liberar la cámara
+                            stopCamera();
                             router.push(`/playero/carga?token=${token}`);
                         }
                     }
@@ -32,17 +33,18 @@ export default function QRScannerPage() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error al iniciar la cámara',
-                    text: 'Por favor, asegurate de que la cámara esté habilitada en tu dispositivo y navegador.',
-                    confirmButtonColor: '#991b1b',
+                    text: 'Asegurate de que la cámara esté habilitada.',
+                    confirmButtonColor: '#801818',
                 }).then(() => router.push('/playero'));
             }
         };
 
         const stopCamera = () => {
             const stream = videoRef.current?.srcObject as MediaStream | null;
+
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
-                videoRef.current!.srcObject = null; // 👈 limpiar referencia también
+                videoRef.current!.srcObject = null;
             }
         };
 
@@ -50,29 +52,38 @@ export default function QRScannerPage() {
 
         return () => {
             active = false;
-            stopCamera(); // 👈 liberar recursos al desmontar
+            stopCamera();
         };
     }, [router]);
 
     return (
-        <main className="min-h-screen px-4 py-6 bg-gray-700 text-white">
-            <video
-                ref={videoRef}
-                className="w-72 h-72 object-cover rounded shadow border border-white/10 bg-black mx-auto"
-                autoPlay
-                muted
-                playsInline
-            />
-            <button
-                onClick={() => {
-                    const stream = videoRef.current?.srcObject as MediaStream | null;
-                    stream?.getTracks().forEach((track) => track.stop()); // 🔴 También en botón
-                    router.push('/playero');
-                }}
-                className="mt-6 w-full bg-red-800 hover:bg-red-700 text-white text-lg py-3 rounded-lg font-semibold transition"
-            >
-                Inicio
-            </button>
+        <main className="min-h-screen bg-gray-100 px-6 py-10 flex items-start pt-10 justify-center">
+
+            <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-center space-y-6">
+
+                <div className="flex justify-center">
+                    <video
+                        ref={videoRef}
+                        className="w-72 h-72 object-cover rounded-xl border border-gray-200 shadow-sm bg-black"
+                        autoPlay
+                        muted
+                        playsInline
+                    />
+                </div>
+
+                <button
+                    onClick={() => {
+                        const stream = videoRef.current?.srcObject as MediaStream | null;
+                        stream?.getTracks().forEach((track) => track.stop());
+                        router.push('/playero');
+                    }}
+                    className="w-full bg-[#801818] hover:bg-red-700 text-white py-3 rounded-xl font-semibold transition"
+                >
+                    Volver al inicio
+                </button>
+
+            </div>
+
         </main>
     );
 }
