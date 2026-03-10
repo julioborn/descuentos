@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import * as XLSX from 'xlsx';
@@ -8,6 +8,10 @@ import { saveAs } from 'file-saver';
 import { HiChevronLeft, HiChevronRight, HiSearch } from 'react-icons/hi';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import "react-day-picker/dist/style.css"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { DayPicker, DateRange } from "react-day-picker"
 
 type Carga = {
     _id: string;
@@ -43,6 +47,13 @@ export default function CargasPage() {
     const [loading, setLoading] = useState(true);
     const [itemsPorPagina, setItemsPorPagina] = useState(10); // valor inicial configurable
     const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
+    const [fechaDesde, setFechaDesde] = useState('')
+    const [fechaHasta, setFechaHasta] = useState('')
+    const [range, setRange] = useState<DateRange | undefined>()
+    const [mostrarCalendario, setMostrarCalendario] = useState(false)
+    const calendarioRef = useRef<HTMLDivElement | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
 
     /* ---- filtros ---- */
     const [busqueda, setBusqueda] = useState('');
@@ -114,6 +125,31 @@ export default function CargasPage() {
             localStorage.setItem('ultimaVisitaCargas', new Date().toISOString());
         }
     }, [loading, cargas]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (!mostrarCalendario) return;
+
+            const target = event.target as Node;
+
+            if (calendarioRef.current && !calendarioRef.current.contains(target)) {
+                setMostrarCalendario(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [mostrarCalendario]);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
 
     const [soloHoy, setSoloHoy] = useState(false);
 
@@ -224,17 +260,40 @@ export default function CargasPage() {
                 const coincideEmpresa =
                     empresaFiltro === 'TODAS' || norm(c.empresa) === norm(empresaFiltro);
 
-                const coincideFecha = soloHoy
-                    ? fecha >= ini && fecha <= fin
-                    : (
+                let coincideFecha = true;
+
+                if (soloHoy) {
+                    coincideFecha = fecha >= ini && fecha <= fin;
+                } else if (fechaDesde || fechaHasta) {
+
+                    const desde = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
+                    const hasta = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : null;
+
+                    coincideFecha =
+                        (!desde || fecha >= desde) &&
+                        (!hasta || fecha <= hasta);
+
+                } else {
+                    coincideFecha =
                         (añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro) &&
-                        (mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro)
-                    );
+                        (mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro);
+                }
 
                 return coincideTxt && coincideLoc && coincideProd && coincideEmpresa && coincideFecha;
             })
             .sort((a, b) => (parseFecha(b.fecha)?.getTime() || 0) - (parseFecha(a.fecha)?.getTime() || 0));
-    }, [cargas, busqueda, localidadFiltro, productoFiltro, añoFiltro, mesFiltro, empresaFiltro, soloHoy]);
+    }, [
+        cargas,
+        busqueda,
+        localidadFiltro,
+        productoFiltro,
+        añoFiltro,
+        mesFiltro,
+        empresaFiltro,
+        soloHoy,
+        fechaDesde,
+        fechaHasta
+    ]);
 
     /* paginación */
     const totalPag = Math.ceil(filtradas.length / itemsPorPagina);
@@ -803,7 +862,7 @@ export default function CargasPage() {
                 {/* -------- filtros -------- */}
                 <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
                     {/* HEADER FILTROS (solo mobile) */}
-                    <div className="sm:hidden flex items-center justify-between">
+                    <div className="flex items-center justify-between">
 
                         <h2 className="font-semibold text-gray-800">
                             Filtros
@@ -828,6 +887,7 @@ export default function CargasPage() {
                         </button>
 
                     </div>
+
                     {/* 🔍 BUSCADOR (siempre visible) */}
                     <div className="relative">
                         <input
@@ -848,10 +908,10 @@ export default function CargasPage() {
                     </div>
 
                     {/* FILTROS */}
-                    <div className={`${filtrosAbiertos ? "block" : "hidden"} sm:block`}>
+                    <div className={`${filtrosAbiertos ? "block" : "hidden"} space-y-3`}>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-
+                        {/* FILA 1 */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             {/* LOCALIDAD */}
                             <select
                                 value={localidadFiltro}
@@ -905,6 +965,10 @@ export default function CargasPage() {
                                 })}
                             </select>
 
+                        </div>
+
+                        {/* FILA 2 */}
+                        <div className="grid grid-cols-1 md:grid-cols-[160px_160px_minmax(220px,320px)_120px_auto] gap-3 items-center">
                             {/* AÑO */}
                             <select
                                 value={añoFiltro}
@@ -914,8 +978,7 @@ export default function CargasPage() {
                                     setMesFiltro(0);
                                     setPagina(1);
                                 }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
                             >
                                 <option value="TODOS">Todos los años</option>
                                 {añosDisponibles.map((año) => (
@@ -930,8 +993,7 @@ export default function CargasPage() {
                                     setMesFiltro(Number(e.target.value));
                                     setPagina(1);
                                 }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
                             >
                                 <option value="0">Todos los meses</option>
                                 {mesesDelAño.map((m) => (
@@ -939,15 +1001,73 @@ export default function CargasPage() {
                                 ))}
                             </select>
 
-                            {/* ITEMS */}
+                            {/* RANGO */}
+                            <div className="relative w-full" ref={calendarioRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setMostrarCalendario((prev) => !prev)}
+                                    className="w-full rounded-xl px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-left"
+                                >
+                                    {range?.from ? (
+                                        range?.to
+                                            ? `${format(range.from, "d MMM", { locale: es })} — ${format(range.to, "d MMM yyyy", { locale: es })}`
+                                            : `Desde ${format(range.from, "d MMM yyyy", { locale: es })}`
+                                    ) : (
+                                        "Fecha"
+                                    )}
+                                </button>
+
+                                {mostrarCalendario && (
+                                    <div className="absolute z-50 top-12 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4">
+                                        <DayPicker
+                                            mode="range"
+                                            locale={es}
+                                            selected={range}
+                                            numberOfMonths={isMobile ? 1 : 2}
+                                            showOutsideDays
+                                            style={{
+                                                '--rdp-accent-color': '#801818',
+                                                '--rdp-accent-background-color': '#80181820'
+                                            } as React.CSSProperties}
+                                            classNames={{
+                                                months: isMobile
+                                                    ? "flex flex-col gap-4"
+                                                    : "flex flex-row gap-6",
+                                            }}
+                                            onSelect={(r) => {
+                                                setRange(r);
+
+                                                if (r?.from) {
+                                                    setFechaDesde(format(r.from, "yyyy-MM-dd"));
+                                                } else {
+                                                    setFechaDesde("");
+                                                }
+
+                                                if (r?.to) {
+                                                    setFechaHasta(format(r.to, "yyyy-MM-dd"));
+                                                } else {
+                                                    setFechaHasta("");
+                                                }
+
+                                                if (r?.from && r?.to && r.from.getTime() !== r.to.getTime()) {
+                                                    setMostrarCalendario(false);
+                                                }
+
+                                                setPagina(1);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ITEMS POR PÁGINA */}
                             <select
                                 value={itemsPorPagina}
                                 onChange={(e) => {
                                     setItemsPorPagina(parseInt(e.target.value));
                                     setPagina(1);
                                 }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
+                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
                             >
                                 {[5, 10, 20, 50, 100].map((cantidad) => (
                                     <option key={cantidad} value={cantidad}>
@@ -956,23 +1076,25 @@ export default function CargasPage() {
                                 ))}
                             </select>
 
+                            {/* SEGUNDA FILA */}
+                            <div className="flex items-center">
+                                <label className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={soloHoy}
+                                        onChange={(e) => {
+                                            setSoloHoy(e.target.checked);
+                                            setPagina(1);
+                                        }}
+                                        className="accent-red-700"
+                                    />
+                                    <span>Cargas del día</span>
+                                </label>
+                            </div>
                         </div>
 
-                        {/* EXPORTAR */}
-                        <div className="flex flex-wrap gap-3 pt-2">
-
-                            <label className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={soloHoy}
-                                    onChange={(e) => {
-                                        setSoloHoy(e.target.checked);
-                                        setPagina(1);
-                                    }}
-                                    className="accent-red-700"
-                                />
-                                <span>Cargas del día</span>
-                            </label>
+                        {/* FILA 3 */}
+                        <div className="flex flex-wrap items-center gap-3 pt-1">
 
                             <button
                                 onClick={exportarExcel}
@@ -992,11 +1114,10 @@ export default function CargasPage() {
 
                     </div>
 
-
                 </section>
 
                 {/* -------- Tabla desktop -------- */}
-                <div className="hidden sm:block bg-gray-50 border border-gray-200 shadow-sm rounded-2xl p-5space-y-4 overflow-x-auto">
+                <div className="hidden sm:block bg-gray-50 border border-gray-200 shadow-sm rounded-2xl p-5 space-y-4 overflow-x-auto">
                     <table className="min-w-[1100px] w-full text-sm border-separate border-spacing-y-2">
                         <thead className="text-left text-gray-800">
                             <tr className="bg-gray-900 text-white">
@@ -1079,8 +1200,8 @@ ${adv?.mas75
                                         </td>
                                         <td className="p-3">{c.dniEmpleado}</td>
                                         <td className="p-3 text-red-800 font-semibold">
-    {c.empresa || '-'}
-</td>
+                                            {c.empresa || '-'}
+                                        </td>
                                         <td className="p-3">{c.localidad || '-'}</td>
                                         <td className="p-3">{/*{banderaPorMoneda(c.moneda)}*/} {c.producto}</td>
                                         <td className="p-3 text-center font-semibold">{c.litros}</td>

@@ -3,11 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --background: #111827
-;
+  --background: #111827;
   /* gris que usas en bg-gray-700 */
-  --foreground: #111827
-;
+  --foreground: #111827;
 }
 
 @media (prefers-color-scheme: dark) {
