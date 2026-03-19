@@ -21,6 +21,15 @@ type Docente = {
 export default function ImportarDocentes() {
     const [docentes, setDocentes] = useState<Docente[]>([])
     const [loading, setLoading] = useState(false)
+    const [form, setForm] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        telefono: '',
+        localidad: '',
+        centroEducativo: '',
+    })
+    const onlyDigits = (value: string) => value.replace(/\D/g, '')
 
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -347,9 +356,124 @@ export default function ImportarDocentes() {
         setLoading(false)
     }
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value,
+        })
+    }
+
+    const crearDocente = async () => {
+        const dni = onlyDigits(form.dni)
+
+        if (!dni || !form.nombre || !form.apellido) {
+            alert('Completar datos')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const token = crypto.randomUUID()
+            let empleado: any
+            let esNuevo = false
+
+            // 🔎 Buscar empleados existentes
+            const all = await fetch('/api/empleados').then(r => r.json())
+            const existente = all.find((e: any) => e.dni === dni)
+
+            if (existente) {
+                empleado = existente
+            } else {
+                esNuevo = true
+
+                const empRes = await fetch('/api/empleados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: form.nombre,
+                        apellido: form.apellido,
+                        dni,
+                        telefono: form.telefono,
+                        empresa: 'DOCENTES',
+                        localidad: form.localidad,
+                        qrToken: token,
+                        pais: 'AR',
+                    }),
+                })
+
+                if (!empRes.ok) throw new Error('Error creando empleado')
+
+                empleado = await empRes.json()
+            }
+
+            // 👉 SIEMPRE actualizamos docente (centros)
+            await fetch('/api/docentes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    empleadoId: empleado._id,
+                    centrosEducativos: [form.centroEducativo],
+                }),
+            })
+
+            // 🚫 SI YA EXISTÍA → NO CREAR TARJETA
+            if (!esNuevo) {
+                alert('Docente actualizado correctamente (ya existía)')
+                return
+            }
+
+            // ✅ SOLO si es nuevo → generar tarjeta
+            // mostrar el QR existente
+            const qrUrl = await QRCode.toDataURL(
+                `${window.location.origin}/playero?token=${empleado.qrToken}`
+            )
+
+            setDocentes([
+                {
+                    nombre: empleado.nombre,
+                    apellido: empleado.apellido,
+                    dni,
+                    telefono: empleado.telefono,
+                    empresa: 'DOCENTES',
+                    localidad: empleado.localidad,
+                    centrosEducativos: [],
+                    qrUrl,
+                },
+            ])
+
+        } catch (err) {
+            console.error(err)
+            alert('Error creando docente')
+        }
+
+        setLoading(false)
+    }
+
     return (
         <main className="min-h-screen p-6 bg-gray-900 text-white">
             <h1 className="text-3xl font-bold mb-6 text-center">Carga Masiva de Docentes</h1>
+
+            {/* 🔥 FORMULARIO MANUAL */}
+            <div className="max-w-md mx-auto bg-gray-800 p-6 rounded-xl space-y-4 mb-10">
+
+                <h2 className="text-lg font-bold text-center">Carga Manual</h2>
+
+                <input name="apellido" placeholder="Apellido" onChange={handleChange} className="w-full p-2 rounded text-black" />
+                <input name="nombre" placeholder="Nombre" onChange={handleChange} className="w-full p-2 rounded text-black" />
+                <input name="dni" placeholder="DNI" onChange={handleChange} className="w-full p-2 rounded text-black" />
+                <input name="telefono" placeholder="Teléfono" onChange={handleChange} className="w-full p-2 rounded text-black" />
+                <input name="localidad" placeholder="Localidad" onChange={handleChange} className="w-full p-2 rounded text-black" />
+                <input name="centroEducativo" placeholder="Centro Educativo" onChange={handleChange} className="w-full p-2 rounded text-black" />
+
+                <button
+                    onClick={crearDocente}
+                    className="w-full bg-green-700 hover:bg-green-800 py-3 rounded font-semibold"
+                >
+                    Generar QR Manual
+                </button>
+
+            </div>
 
             <input
                 type="file"
@@ -401,6 +525,8 @@ export default function ImportarDocentes() {
                     </div>
                 ))}
             </div>
+
+
         </main>
     )
 }
