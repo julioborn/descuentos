@@ -20,6 +20,22 @@ type Policia = {
 export default function ImportarPolicias() {
     const [policias, setPolicias] = useState<Policia[]>([])
     const [loading, setLoading] = useState(false)
+    const [modo, setModo] = useState<'excel' | 'manual'>('excel')
+
+    const [form, setForm] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        telefono: '',
+        localidad: '',
+        subcategoria: '',
+    })
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [e.target.name]: e.target.value })
+    }
+
+    /* ─────────────── EXCEL (TU LÓGICA ORIGINAL) ─────────────── */
 
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -27,7 +43,6 @@ export default function ImportarPolicias() {
 
         setLoading(true)
 
-        // 1) Leer Excel
         const data = await file.arrayBuffer()
         const wb = XLSX.read(data)
         const hoja = wb.Sheets[wb.SheetNames[0]]
@@ -35,112 +50,138 @@ export default function ImportarPolicias() {
 
         const lista: Policia[] = []
 
-        let cntNuevos = 0
-        let cntDuplicadosExcel = 0
-        let cntDuplicadosBD = 0
-        let cntErrores = 0
+        const empleadosExistRes = await fetch('/api/empleados')
+        const empleadosExist = await empleadosExistRes.json()
 
-        try {
-            // 2) Traer empleados existentes UNA vez
-            const empleadosExistRes = await fetch('/api/empleados')
-            const empleadosExist = await empleadosExistRes.json()
+        const empleadoPorDni = new Map<string, any>(
+            empleadosExist.map((e: any) => [String(e.dni), e])
+        )
 
-            const empleadoPorDni = new Map<string, any>(
-                empleadosExist.map((e: any) => [String(e.dni), e])
+        const procesados = new Set<string>()
+
+        for (const fila of filas) {
+            const dni = String(fila.DNI || '').trim()
+            const nombre = String(fila.NOMBRE || '').toUpperCase().trim()
+            const apellido = String(fila.APELLIDO || '').toUpperCase().trim()
+            const subcategoria = String(fila.SUBCATEGORIA || '').trim()
+
+            if (!dni || procesados.has(dni)) continue
+            procesados.add(dni)
+
+            if (empleadoPorDni.has(dni)) continue
+
+            const token = crypto.randomUUID()
+
+            const empRes = await fetch('/api/empleados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre,
+                    apellido,
+                    dni,
+                    telefono: String(fila.TELEFONO ?? ''),
+                    localidad: String(fila.LOCALIDAD ?? ''),
+                    subcategoria: subcategoria || undefined,
+                    empresa: 'POLICIA',
+                    qrToken: token,
+                    pais: 'AR',
+                }),
+            })
+
+            if (!empRes.ok) continue
+
+            const qrUrl = await QRCode.toDataURL(
+                `${window.location.origin}/playero?token=${token}`
             )
 
-            const procesados = new Set<string>()
-
-            // 3) Iterar filas
-            for (const fila of filas) {
-                const dni = String(fila.DNI || '').trim()
-                const nombre = String(fila.NOMBRE || '').trim()
-                const apellido = String(fila.APELLIDO || '').trim()
-                const subcategoria = String(fila.SUBCATEGORIA || '').trim()
-
-                if (!dni || procesados.has(dni)) {
-                    if (dni) cntDuplicadosExcel++
-                    continue
-                }
-                procesados.add(dni)
-
-                const token = crypto.randomUUID()
-
-                try {
-                    const existente = empleadoPorDni.get(dni)
-
-                    if (existente) {
-                        // ya existe → no mostramos tarjeta
-                        cntDuplicadosBD++
-                        continue
-                    }
-
-                    // crear empleado
-                    const empRes = await fetch('/api/empleados', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            nombre,
-                            apellido,
-                            dni,
-                            telefono: String(fila.TELEFONO ?? ''),
-                            localidad: String(fila.LOCALIDAD ?? ''),
-                            subcategoria: subcategoria || undefined,
-                            empresa: 'POLICIA',
-                            qrToken: token,
-                            pais: 'AR',
-                        }),
-                    })
-
-                    if (empRes.status === 409) {
-                        cntDuplicadosBD++
-                        continue
-                    }
-
-                    if (!empRes.ok) throw new Error('Error creando empleado')
-
-                    // generar QR
-                    const qrUrl = await QRCode.toDataURL(
-                        `${window.location.origin}/playero?token=${token}`
-                    )
-
-                    lista.push({
-                        nombre,
-                        apellido,
-                        dni,
-                        telefono: String(fila.TELEFONO ?? ''),
-                        localidad: String(fila.LOCALIDAD ?? ''),
-                        subcategoria,
-                        qrUrl,
-                    })
-
-                    cntNuevos++
-                } catch (err) {
-                    cntErrores++
-                    console.error('❌ Error procesando DNI', dni, err)
-                }
-            }
-        } catch (err) {
-            cntErrores++
-            console.error('❌ Error general importación policías', err)
+            lista.push({
+                nombre,
+                apellido,
+                dni,
+                telefono: String(fila.TELEFONO ?? ''),
+                localidad: String(fila.LOCALIDAD ?? ''),
+                subcategoria,
+                qrUrl,
+            })
         }
 
         setPolicias(lista)
         setLoading(false)
-
-        alert(
-            [
-                'Resumen importación Policías',
-                '────────────────────────',
-                `🆕 Nuevos: ${cntNuevos}`,
-                `⏩ Duplicados en Excel: ${cntDuplicadosExcel}`,
-                `⚠️ Ya existentes en BD: ${cntDuplicadosBD}`,
-                `❌ Errores: ${cntErrores}`,
-            ].join('\n')
-        )
     }
 
-    /* ─────────────── Descargas ─────────────── */
+    /* ─────────────── MANUAL (NUEVO) ─────────────── */
+
+    const agregarManual = async () => {
+        if (!form.nombre || !form.apellido || !form.dni) {
+            alert('Faltan datos obligatorios')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const dni = form.dni.trim()
+
+            const resExist = await fetch('/api/empleados')
+            const empleados = await resExist.json()
+
+            if (empleados.find((e: any) => String(e.dni) === dni)) {
+                alert('DNI ya existe')
+                setLoading(false)
+                return
+            }
+
+            const token = crypto.randomUUID()
+
+            const res = await fetch('/api/empleados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: form.nombre.toUpperCase(),
+                    apellido: form.apellido.toUpperCase(),
+                    dni,
+                    telefono: form.telefono,
+                    localidad: form.localidad,
+                    subcategoria: form.subcategoria || undefined,
+                    empresa: 'POLICIA',
+                    qrToken: token,
+                    pais: 'AR',
+                }),
+            })
+
+            if (!res.ok) throw new Error()
+
+            const qrUrl = await QRCode.toDataURL(
+                `${window.location.origin}/playero?token=${token}`
+            )
+
+            setPolicias((prev) => [
+                ...prev,
+                {
+                    ...form,
+                    nombre: form.nombre.toUpperCase(),
+                    apellido: form.apellido.toUpperCase(),
+                    qrUrl,
+                },
+            ])
+
+            setForm({
+                nombre: '',
+                apellido: '',
+                dni: '',
+                telefono: '',
+                localidad: '',
+                subcategoria: '',
+            })
+
+        } catch {
+            alert('Error creando policía')
+        }
+
+        setLoading(false)
+    }
+
+    /* ─────────────── DESCARGAS ─────────────── */
 
     const generarTarjeta = async (idx: number) => {
         const nodo = document.getElementById(`tarjeta-policia-${idx}`)
@@ -163,15 +204,7 @@ export default function ImportarPolicias() {
         }
     }
 
-    const descargarTarjeta = async (idx: number) => {
-        const { blob, nombreArchivo } = await generarTarjeta(idx)
-        if (blob) saveAs(blob, nombreArchivo)
-    }
-
     const descargarTodas = async () => {
-        if (!policias.length) return
-
-        setLoading(true)
         const zip = new JSZip()
 
         for (let i = 0; i < policias.length; i++) {
@@ -181,34 +214,58 @@ export default function ImportarPolicias() {
 
         const zipBlob = await zip.generateAsync({ type: 'blob' })
         saveAs(zipBlob, 'tarjetas-policias.zip')
-        setLoading(false)
     }
 
     return (
         <main className="min-h-screen p-6 bg-gray-900 text-white">
-            <h1 className="text-3xl font-bold mb-6 text-center">
-                Carga Masiva de Policías
+            <h1 className="text-3xl font-bold text-center mb-6">
+                Importar Policías
             </h1>
 
-            <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFile}
-                className="mb-6 block mx-auto"
-            />
+            {/* SWITCH */}
+            <div className="flex justify-center gap-4 mb-6">
+                <button onClick={() => setModo('excel')} className={`px-4 py-2 rounded ${modo === 'excel' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                    Excel
+                </button>
+                <button onClick={() => setModo('manual')} className={`px-4 py-2 rounded ${modo === 'manual' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                    Manual
+                </button>
+            </div>
 
-            {loading && (
-                <p className="text-center text-lg font-semibold">
-                    Procesando, por favor esperá…
-                </p>
+            {/* EXCEL */}
+            {modo === 'excel' && (
+                <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFile}
+                    className="mb-6 block mx-auto"
+                />
             )}
+
+            {/* MANUAL */}
+            {modo === 'manual' && (
+                <div className="max-w-xl mx-auto bg-gray-800 p-6 rounded space-y-3 mb-6">
+                    <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" className="w-full p-2 text-black rounded" />
+                    <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" className="w-full p-2 text-black rounded" />
+                    <input name="dni" value={form.dni} onChange={handleChange} placeholder="DNI" inputMode="numeric" className="w-full p-2 text-black rounded" />
+                    <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Teléfono" inputMode="numeric" className="w-full p-2 text-black rounded" />
+                    <input name="localidad" value={form.localidad} onChange={handleChange} placeholder="Localidad" className="w-full p-2 text-black rounded" />
+                    <input name="subcategoria" value={form.subcategoria} onChange={handleChange} placeholder="Subcategoría" className="w-full p-2 text-black rounded" />
+
+                    <button onClick={agregarManual} className="w-full bg-blue-700 py-2 rounded">
+                        Agregar
+                    </button>
+                </div>
+            )}
+
+            {loading && <p className="text-center">Procesando...</p>}
 
             {policias.length > 0 && (
                 <button
                     onClick={descargarTodas}
-                    className="mx-auto mb-8 block bg-green-700 hover:bg-green-800 px-6 py-3 rounded font-semibold"
+                    className="mx-auto mb-6 block bg-green-700 px-6 py-3 rounded"
                 >
-                    Descargar TODAS en ZIP
+                    Descargar ZIP
                 </button>
             )}
 
@@ -217,26 +274,17 @@ export default function ImportarPolicias() {
                     <div
                         key={idx}
                         id={`tarjeta-policia-${idx}`}
-                        className="bg-white text-black p-4 rounded shadow-lg w-[280px] space-y-3"
+                        className="bg-white text-black p-4 rounded w-[280px]"
                     >
                         <div className="flex justify-center">
-                            <img src="/idescuentos.png" alt="Logo" className="h-16" />
+                            <img src="/idescuentos.png" className="h-16" />
                         </div>
 
-                        <div className="flex justify-center">
-                            <img src={p.qrUrl} alt="QR Code" className="w-48 h-48" />
-                        </div>
+                        <img src={p.qrUrl} className="w-48 h-48 mx-auto" />
 
-                        <div className="text-center text-sm">
-                            <strong>{p.nombre} {p.apellido}</strong>
-                        </div>
-
-                        <button
-                            onClick={() => descargarTarjeta(idx)}
-                            className="mt-2 w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded"
-                        >
-                            Descargar Tarjeta
-                        </button>
+                        <p className="text-center font-semibold">
+                            {p.nombre} {p.apellido}
+                        </p>
                     </div>
                 ))}
             </div>

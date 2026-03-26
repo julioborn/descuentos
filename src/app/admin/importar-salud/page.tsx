@@ -19,6 +19,21 @@ type Salud = {
 export default function ImportarSaludSAMCO() {
     const [salud, setSalud] = useState<Salud[]>([])
     const [loading, setLoading] = useState(false)
+    const [modo, setModo] = useState<'excel' | 'manual'>('excel')
+
+    const [form, setForm] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        telefono: '',
+        localidad: '',
+    })
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [e.target.name]: e.target.value })
+    }
+
+    /* ─────────────── EXCEL (TU LÓGICA) ─────────────── */
 
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -26,7 +41,6 @@ export default function ImportarSaludSAMCO() {
 
         setLoading(true)
 
-        // ─────────────────── 1) Leer Excel ───────────────────
         const data = await file.arrayBuffer()
         const wb = XLSX.read(data)
         const hoja = wb.Sheets[wb.SheetNames[0]]
@@ -39,13 +53,11 @@ export default function ImportarSaludSAMCO() {
         let cntDuplicadosBD = 0
         let cntErrores = 0
 
-        // 🔎 Auditoría
         const agregados: any[] = []
         const existentesBD: any[] = []
         const duplicadosExcel: any[] = []
 
         try {
-            // ───────────── 2) Traer empleados existentes UNA vez ─────────────
             const empleadosExistRes = await fetch('/api/empleados')
             const empleadosExist = await empleadosExistRes.json()
 
@@ -55,25 +67,17 @@ export default function ImportarSaludSAMCO() {
 
             const procesados = new Set<string>()
 
-            // ───────────── 3) Iterar filas ─────────────
             for (const fila of filas) {
                 const dni = String(fila.DNI || '').trim()
-                const nombre = String(fila.NOMBRE || '').trim()
-                const apellido = String(fila.APELLIDO || '').trim()
+                const nombre = String(fila.NOMBRE || '').toUpperCase().trim()
+                const apellido = String(fila.APELLIDO || '').toUpperCase().trim()
                 const localidad = String(fila.LOCALIDAD || '').trim()
                 const telefono = String(fila.TELEFONO || '').trim()
 
-                // duplicados dentro del Excel
                 if (!dni || procesados.has(dni)) {
                     if (dni) {
                         cntDuplicadosExcel++
-                        duplicadosExcel.push({
-                            dni,
-                            nombre,
-                            apellido,
-                            localidad,
-                            telefono,
-                        })
+                        duplicadosExcel.push({ dni, nombre, apellido })
                     }
                     continue
                 }
@@ -84,7 +88,6 @@ export default function ImportarSaludSAMCO() {
                 try {
                     const existente = empleadoPorDni.get(dni)
 
-                    // ya existe en BD (docente / municipal / otro)
                     if (existente) {
                         cntDuplicadosBD++
                         existentesBD.push({
@@ -96,7 +99,6 @@ export default function ImportarSaludSAMCO() {
                         continue
                     }
 
-                    // crear empleado SALUD (SAMCO)
                     const empRes = await fetch('/api/empleados', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -112,39 +114,20 @@ export default function ImportarSaludSAMCO() {
                         }),
                     })
 
-                    if (empRes.status === 409) {
-                        cntDuplicadosBD++
-                        continue
-                    }
+                    if (!empRes.ok) throw new Error()
 
-                    if (!empRes.ok) throw new Error('Error creando empleado SAMCO')
-
-                    // generar QR
                     const qrUrl = await QRCode.toDataURL(
                         `${window.location.origin}/playero?token=${token}`
                     )
 
-                    lista.push({
-                        nombre,
-                        apellido,
-                        dni,
-                        telefono,
-                        localidad,
-                        qrUrl,
-                    })
+                    lista.push({ nombre, apellido, dni, telefono, localidad, qrUrl })
 
-                    agregados.push({
-                        dni,
-                        nombre,
-                        apellido,
-                        localidad,
-                        telefono,
-                    })
-
+                    agregados.push({ dni, nombre, apellido })
                     cntNuevos++
+
                 } catch (err) {
                     cntErrores++
-                    console.error('❌ Error procesando DNI', dni, err)
+                    console.error('❌ Error', dni, err)
                 }
             }
         } catch (err) {
@@ -155,50 +138,92 @@ export default function ImportarSaludSAMCO() {
         setSalud(lista)
         setLoading(false)
 
-        // ─────────────── Console tables ───────────────
-        console.group('📊 IMPORT SALUD – SAMCO')
-
-        if (agregados.length) {
-            console.log('🟢 AGREGADOS')
-            console.table(agregados)
-        }
-
-        if (existentesBD.length) {
-            console.log('🟡 YA EXISTÍAN EN BD')
-            console.table(existentesBD)
-        }
-
-        if (duplicadosExcel.length) {
-            console.log('🔵 DUPLICADOS EN EXCEL')
-            console.table(duplicadosExcel)
-        }
-
+        console.group('📊 SALUD SAMCO')
+        console.table(agregados)
+        console.table(existentesBD)
+        console.table(duplicadosExcel)
         console.groupEnd()
 
-        alert(
-            [
-                'Resumen importación SALUD – SAMCO',
-                '────────────────────────',
-                `🆕 Nuevos: ${cntNuevos}`,
-                `⏩ Duplicados en Excel: ${cntDuplicadosExcel}`,
-                `⚠️ Ya existentes en BD: ${cntDuplicadosBD}`,
-                `❌ Errores: ${cntErrores}`,
-            ].join('\n')
-        )
+        alert(`🆕 ${cntNuevos} | ⏩ ${cntDuplicadosExcel} | ⚠️ ${cntDuplicadosBD} | ❌ ${cntErrores}`)
     }
 
-    /* ─────────────── Descargas ─────────────── */
+    /* ─────────────── MANUAL (NUEVO) ─────────────── */
+
+    const agregarManual = async () => {
+        if (!form.nombre || !form.apellido || !form.dni) {
+            alert('Faltan datos')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const dni = form.dni.trim()
+
+            const resExist = await fetch('/api/empleados')
+            const empleados = await resExist.json()
+
+            if (empleados.find((e: any) => String(e.dni) === dni)) {
+                alert('DNI ya existe')
+                setLoading(false)
+                return
+            }
+
+            const token = crypto.randomUUID()
+
+            const res = await fetch('/api/empleados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: form.nombre.toUpperCase(),
+                    apellido: form.apellido.toUpperCase(),
+                    dni,
+                    telefono: form.telefono,
+                    localidad: form.localidad,
+                    empresa: 'SAMCO',
+                    qrToken: token,
+                    pais: 'AR',
+                }),
+            })
+
+            if (!res.ok) throw new Error()
+
+            const qrUrl = await QRCode.toDataURL(
+                `${window.location.origin}/playero?token=${token}`
+            )
+
+            setSalud(prev => [
+                ...prev,
+                {
+                    ...form,
+                    nombre: form.nombre.toUpperCase(),
+                    apellido: form.apellido.toUpperCase(),
+                    qrUrl,
+                },
+            ])
+
+            setForm({
+                nombre: '',
+                apellido: '',
+                dni: '',
+                telefono: '',
+                localidad: '',
+            })
+
+        } catch {
+            alert('Error creando empleado de salud')
+        }
+
+        setLoading(false)
+    }
+
+    /* ─────────────── DESCARGAS ─────────────── */
 
     const generarTarjeta = async (idx: number) => {
         const nodo = document.getElementById(`tarjeta-salud-${idx}`)
         if (!nodo) return { blob: null, nombreArchivo: '' }
 
-        const boton = nodo.querySelector('button') as HTMLElement
-        if (boton) boton.style.display = 'none'
-
-        const canvas = await html2canvas(nodo as HTMLElement, { scale: 2 })
-
-        if (boton) boton.style.display = ''
+        const canvas = await html2canvas(nodo, { scale: 2 })
 
         const blob = await new Promise<Blob | null>((ok) =>
             canvas.toBlob(ok, 'image/png', 1)
@@ -210,15 +235,7 @@ export default function ImportarSaludSAMCO() {
         }
     }
 
-    const descargarTarjeta = async (idx: number) => {
-        const { blob, nombreArchivo } = await generarTarjeta(idx)
-        if (blob) saveAs(blob, nombreArchivo)
-    }
-
     const descargarTodas = async () => {
-        if (!salud.length) return
-
-        setLoading(true)
         const zip = new JSZip()
 
         for (let i = 0; i < salud.length; i++) {
@@ -228,62 +245,62 @@ export default function ImportarSaludSAMCO() {
 
         const zipBlob = await zip.generateAsync({ type: 'blob' })
         saveAs(zipBlob, 'tarjetas-salud-samco.zip')
-        setLoading(false)
     }
 
     return (
         <main className="min-h-screen p-6 bg-gray-900 text-white">
-            <h1 className="text-3xl font-bold mb-6 text-center">
-                Carga Masiva – Salud (SAMCO)
+            <h1 className="text-3xl font-bold text-center mb-6">
+                Importar Salud (SAMCO)
             </h1>
 
-            <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFile}
-                className="mb-6 block mx-auto"
-            />
+            {/* SWITCH */}
+            <div className="flex justify-center gap-4 mb-6">
+                <button onClick={() => setModo('excel')} className={`px-4 py-2 rounded ${modo === 'excel' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                    Excel
+                </button>
+                <button onClick={() => setModo('manual')} className={`px-4 py-2 rounded ${modo === 'manual' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                    Manual
+                </button>
+            </div>
 
-            {loading && (
-                <p className="text-center text-lg font-semibold">
-                    Procesando, por favor esperá…
-                </p>
+            {modo === 'excel' && (
+                <input type="file" accept=".xlsx,.xls" onChange={handleFile} className="mb-6 block mx-auto" />
             )}
 
+            {modo === 'manual' && (
+                <div className="max-w-xl mx-auto bg-gray-800 p-6 rounded space-y-3 mb-6">
+                    <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" className="w-full p-2 text-black rounded" />
+                    <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" className="w-full p-2 text-black rounded" />
+                    <input name="dni" value={form.dni} onChange={handleChange} placeholder="DNI" inputMode="numeric" className="w-full p-2 text-black rounded" />
+                    <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Teléfono" inputMode="numeric" className="w-full p-2 text-black rounded" />
+                    <input name="localidad" value={form.localidad} onChange={handleChange} placeholder="Localidad" className="w-full p-2 text-black rounded" />
+
+                    <button onClick={agregarManual} className="w-full bg-blue-700 py-2 rounded">
+                        Agregar
+                    </button>
+                </div>
+            )}
+
+            {loading && <p className="text-center">Procesando...</p>}
+
             {salud.length > 0 && (
-                <button
-                    onClick={descargarTodas}
-                    className="mx-auto mb-8 block bg-green-700 hover:bg-green-800 px-6 py-3 rounded font-semibold"
-                >
-                    Descargar TODAS en ZIP
+                <button onClick={descargarTodas} className="mx-auto mb-6 block bg-green-700 px-6 py-3 rounded">
+                    Descargar ZIP
                 </button>
             )}
 
             <div className="flex flex-wrap gap-6 justify-center">
                 {salud.map((s, idx) => (
-                    <div
-                        key={idx}
-                        id={`tarjeta-salud-${idx}`}
-                        className="bg-white text-black p-4 rounded shadow-lg w-[280px] space-y-3"
-                    >
+                    <div key={idx} id={`tarjeta-salud-${idx}`} className="bg-white text-black p-4 rounded w-[280px]">
                         <div className="flex justify-center">
-                            <img src="/idescuentos.png" alt="Logo" className="h-16" />
+                            <img src="/idescuentos.png" className="h-16" />
                         </div>
 
-                        <div className="flex justify-center">
-                            <img src={s.qrUrl} alt="QR Code" className="w-48 h-48" />
-                        </div>
+                        <img src={s.qrUrl} className="w-48 h-48 mx-auto" />
 
-                        <div className="text-center text-sm">
-                            <strong>{s.nombre} {s.apellido}</strong>
-                        </div>
-
-                        <button
-                            onClick={() => descargarTarjeta(idx)}
-                            className="mt-2 w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded"
-                        >
-                            Descargar Tarjeta
-                        </button>
+                        <p className="text-center font-semibold">
+                            {s.nombre} {s.apellido}
+                        </p>
                     </div>
                 ))}
             </div>

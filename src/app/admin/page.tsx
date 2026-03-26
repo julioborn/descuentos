@@ -9,7 +9,8 @@ import {
     DollarSign,
     Percent,
     BarChart3,
-    GraduationCap
+    GraduationCap,
+    Import
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
@@ -81,6 +82,11 @@ export default function AdminPage() {
             label: 'Estadísticas',
             path: '/admin/estadisticas',
             icon: <BarChart3 className="w-8 h-8 text-[#801818]" />,
+        },
+        {
+            label: 'Importar',
+            path: '/admin/importar',
+            icon: <Import className="w-8 h-8 text-[#801818]" />,
         },
     ];
 

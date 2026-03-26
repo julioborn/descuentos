@@ -18,9 +18,29 @@ type Docente = {
     qrUrl: string
 }
 
+type Empleado = {
+    _id: string
+    nombre: string
+    apellido: string
+    dni: string
+    telefono: string
+    empresa: string
+    localidad: string
+    qrToken: string
+    pais?: string
+}
+
+type DocenteExistenteResponse = {
+    _id?: string
+    empleadoId?: string
+    centrosEducativos?: string[]
+} | null
+
 export default function ImportarDocentes() {
     const [docentes, setDocentes] = useState<Docente[]>([])
     const [loading, setLoading] = useState(false)
+    const [modo, setModo] = useState<'excel' | 'manual'>('excel')
+
     const [form, setForm] = useState({
         nombre: '',
         apellido: '',
@@ -29,7 +49,24 @@ export default function ImportarDocentes() {
         localidad: '',
         centroEducativo: '',
     })
+
     const onlyDigits = (value: string) => value.replace(/\D/g, '')
+
+    const normalizarCentro = (c: string) =>
+        String(c)
+            .trim()
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }))
+    }
+
+    /* ─────────────── EXCEL ─────────────── */
 
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -37,19 +74,8 @@ export default function ImportarDocentes() {
 
         setLoading(true)
 
-        // 1) Leer Excel
-        const data = await file.arrayBuffer()
-        const wb = XLSX.read(data)
-        const hoja = wb.Sheets[wb.SheetNames[0]]
-        const filas = XLSX.utils.sheet_to_json<any>(hoja, { defval: '' })
-
         const lista: Docente[] = []
 
-        // helpers
-        const normalizarCentro = (c: string) =>
-            String(c).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-
-        // contadores para resumen
         let cntNuevosEmpleados = 0
         let cntExistSinCambios = 0
         let cntExistActualizados = 0
@@ -57,7 +83,6 @@ export default function ImportarDocentes() {
         let cntDuplicadosBDParalelo = 0
         let cntErrores = 0
 
-        // listados para consola
         const listadoNuevos: { nombre: string; apellido: string; dni: string }[] = []
         const listadoExistActualizados: { nombre: string; apellido: string; dni: string; agregados: string }[] = []
         const listadoExistSinCambios: { nombre: string; apellido: string; dni: string }[] = []
@@ -66,38 +91,47 @@ export default function ImportarDocentes() {
         const listadoErrores: { nombre?: string; apellido?: string; dni?: string; error: string }[] = []
 
         try {
-            // 2) Traer empleados existentes UNA vez
-            const empleadosExistRes = await fetch('/api/empleados')
-            const empleadosExist = await empleadosExistRes.json()
+            const data = await file.arrayBuffer()
+            const wb = XLSX.read(data)
+            const hoja = wb.Sheets[wb.SheetNames[0]]
+            const filas = XLSX.utils.sheet_to_json<Record<string, any>>(hoja, { defval: '' })
 
-            // Map por DNI para lookup rápido
-            const empleadoPorDni = new Map<string, any>(
-                empleadosExist.map((e: any) => [String(e.dni), e])
+            const empleadosExistRes = await fetch('/api/empleados')
+            const empleadosExist: Empleado[] = await empleadosExistRes.json()
+
+            const empleadoPorDni = new Map<string, Empleado>(
+                empleadosExist.map((emp) => [String(emp.dni), emp])
             )
 
-            // Para evitar procesar el mismo DNI dos veces en el mismo Excel
             const procesados = new Set<string>()
 
-            // 3) Iterar filas del Excel
             for (const fila of filas) {
-                const dni = String(fila.dni || '').trim()
-                const nombreFila = String(fila?.nombre || '').trim()
-                const apellidoFila = String(fila?.apellido || '').trim()
+                const dni = String(fila.dni || fila.DNI || '').trim()
+                const nombreFila = String(fila.nombre || fila.NOMBRE || '').trim().toUpperCase()
+                const apellidoFila = String(fila.apellido || fila.APELLIDO || '').trim().toUpperCase()
+                const telefonoFila = String(fila.telefono || fila.TELEFONO || '').trim()
+                const localidadFila = String(fila.localidad || fila.LOCALIDAD || '').trim()
+                const empresaFila = String(fila.empresa || fila.EMPRESA || 'DOCENTES').trim().toUpperCase()
 
                 if (!dni || procesados.has(dni)) {
-                    console.log(`⏩ DNI ${dni || '(vacío)'} salteado (vacío o duplicado en el Excel)`)
                     if (dni) {
                         cntDuplicadosExcel++
-                        listadoDupExcel.push({ nombre: nombreFila, apellido: apellidoFila, dni })
+                        listadoDupExcel.push({
+                            nombre: nombreFila,
+                            apellido: apellidoFila,
+                            dni,
+                        })
                     }
                     continue
                 }
+
                 procesados.add(dni)
 
-                // Normalizar centros para comparar
-                const centrosEntradaOriginal: string[] = String(fila.centroEducativo || '')
+                const centrosEntradaOriginal: string[] = String(
+                    fila.centroEducativo || fila.CENTROEDUCATIVO || fila.centro_educativo || ''
+                )
                     .split(',')
-                    .map((c: string) => c.trim())
+                    .map((c) => c.trim())
                     .filter(Boolean)
 
                 const centrosEntradaNorm = Array.from(
@@ -109,45 +143,38 @@ export default function ImportarDocentes() {
                 try {
                     let mostrarTarjeta = false
                     let qrUrl = ''
+
                     const existente = empleadoPorDni.get(dni)
 
                     if (existente) {
-                        const nombreCompleto =
-                            `${fila?.nombre ?? existente?.nombre ?? ''} ${fila?.apellido ?? existente?.apellido ?? ''}`.trim()
-
-                        // 1) Leer docente actual (si existe) para comparar
                         let prevCentrosNorm: string[] = []
+
                         try {
                             const docRes = await fetch(`/api/docentes?empleadoId=${existente._id}`)
                             if (docRes.ok) {
-                                const docData = await docRes.json() // puede ser null
+                                const docData: DocenteExistenteResponse = await docRes.json()
                                 if (docData && Array.isArray(docData.centrosEducativos)) {
                                     prevCentrosNorm = docData.centrosEducativos.map(normalizarCentro)
                                 }
                             }
-                        } catch (e) {
-                            console.warn(`(LOG) No pude leer docente actual para comparar (DNI ${dni})`, e)
+                        } catch (err) {
+                            console.warn(`No pude leer docente actual para comparar (DNI ${dni})`, err)
                         }
 
-                        // 2) Diferencia de centros (normalizado)
                         const nuevosCentrosNorm = centrosEntradaNorm.filter(
                             (c) => !prevCentrosNorm.includes(c)
                         )
 
                         if (nuevosCentrosNorm.length === 0) {
-                            console.log(
-                                `↺ Docente EXISTENTE sin cambios: ${nombreCompleto} (DNI ${dni}) — ya estaban: ${centrosEntradaOriginal.join(', ') || '(sin centros)'}`
-                            )
                             cntExistSinCambios++
-                            listadoExistSinCambios.push({ nombre: nombreFila || existente?.nombre, apellido: apellidoFila || existente?.apellido, dni })
+                            listadoExistSinCambios.push({
+                                nombre: nombreFila || existente.nombre,
+                                apellido: apellidoFila || existente.apellido,
+                                dni,
+                            })
                         } else {
-                            // Volvemos a los nombres originales para guardar (el backend igual deduplica)
                             const nuevosCentrosOriginal = centrosEntradaOriginal.filter((c) =>
                                 nuevosCentrosNorm.includes(normalizarCentro(c))
-                            )
-
-                            console.log(
-                                `➕ Docente EXISTENTE actualizado: ${nombreCompleto} (DNI ${dni}) — se agregan: ${nuevosCentrosOriginal.join(', ')}`
                             )
 
                             const upsertDocente = await fetch('/api/docentes', {
@@ -158,49 +185,53 @@ export default function ImportarDocentes() {
                                     centrosEducativos: nuevosCentrosOriginal,
                                 }),
                             })
-                            if (!upsertDocente.ok) throw new Error('Error creando/actualizando docente')
+
+                            if (!upsertDocente.ok) {
+                                throw new Error('Error creando/actualizando docente')
+                            }
 
                             cntExistActualizados++
                             listadoExistActualizados.push({
-                                nombre: nombreFila || existente?.nombre,
-                                apellido: apellidoFila || existente?.apellido,
+                                nombre: nombreFila || existente.nombre,
+                                apellido: apellidoFila || existente.apellido,
                                 dni,
-                                agregados: nuevosCentrosOriginal.join(', ')
+                                agregados: nuevosCentrosOriginal.join(', '),
                             })
                         }
 
-                        // 3) QR con token existente (no mostramos tarjeta en existentes)
                         qrUrl = await QRCode.toDataURL(
                             `${window.location.origin}/playero?token=${existente.qrToken}`
                         )
+
                         mostrarTarjeta = false
                     } else {
-                        console.log(
-                            `🆕 Creando nuevo empleado: ${fila.nombre} ${fila.apellido} (DNI: ${dni})`
-                        )
-
                         const empRes = await fetch('/api/empleados', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                nombre: fila.nombre,
-                                apellido: fila.apellido,
+                                nombre: nombreFila,
+                                apellido: apellidoFila,
                                 dni,
-                                telefono: String(fila.telefono ?? ''),
-                                empresa: fila.empresa,
-                                localidad: fila.localidad,
+                                telefono: telefonoFila,
+                                empresa: empresaFila || 'DOCENTES',
+                                localidad: localidadFila,
                                 qrToken: token,
                                 pais: 'AR',
                             }),
                         })
 
                         if (empRes.status === 409) {
-                            console.warn(`⚠️ Empleado duplicado detectado en paralelo para DNI ${dni}`)
                             cntDuplicadosBDParalelo++
-                            listadoDupBDParalelo.push({ nombre: nombreFila, apellido: apellidoFila, dni })
+                            listadoDupBDParalelo.push({
+                                nombre: nombreFila,
+                                apellido: apellidoFila,
+                                dni,
+                            })
 
                             const ya = empleadoPorDni.get(dni)
-                            if (!ya) throw new Error('Empleado duplicado pero no encontrado en cache')
+                            if (!ya) {
+                                throw new Error('Empleado duplicado pero no encontrado en cache')
+                            }
 
                             const upsertDocente = await fetch('/api/docentes', {
                                 method: 'POST',
@@ -210,22 +241,30 @@ export default function ImportarDocentes() {
                                     centrosEducativos: Array.from(new Set(centrosEntradaOriginal)),
                                 }),
                             })
-                            if (!upsertDocente.ok) throw new Error('Error creando/actualizando docente')
+
+                            if (!upsertDocente.ok) {
+                                throw new Error('Error creando/actualizando docente')
+                            }
 
                             qrUrl = await QRCode.toDataURL(
                                 `${window.location.origin}/playero?token=${ya.qrToken}`
                             )
+
                             mostrarTarjeta = false
                         } else {
-                            if (!empRes.ok) throw new Error('Error creando empleado')
-                            const empleadoCreado = await empRes.json()
+                            if (!empRes.ok) {
+                                throw new Error('Error creando empleado')
+                            }
+
+                            const empleadoCreado: Empleado = await empRes.json()
                             empleadoPorDni.set(dni, empleadoCreado)
 
-                            console.log(
-                                `✅ Empleado creado: ${fila.nombre} ${fila.apellido} (DNI: ${dni})`
-                            )
                             cntNuevosEmpleados++
-                            listadoNuevos.push({ nombre: nombreFila, apellido: apellidoFila, dni })
+                            listadoNuevos.push({
+                                nombre: nombreFila,
+                                apellido: apellidoFila,
+                                dni,
+                            })
 
                             const docenteRes = await fetch('/api/docentes', {
                                 method: 'POST',
@@ -235,50 +274,53 @@ export default function ImportarDocentes() {
                                     centrosEducativos: Array.from(new Set(centrosEntradaOriginal)),
                                 }),
                             })
-                            if (!docenteRes.ok) throw new Error('Error creando docente')
 
-                            console.log(
-                                `📚 Docente NUEVO asociado con centros: ${Array.from(
-                                    new Set(centrosEntradaOriginal)
-                                ).join(', ') || '(sin centros)'}`
-                            )
+                            if (!docenteRes.ok) {
+                                throw new Error('Error creando docente')
+                            }
 
                             qrUrl = await QRCode.toDataURL(
                                 `${window.location.origin}/playero?token=${token}`
                             )
-                            // Mostrar tarjeta SOLO cuando es empleado nuevo
+
                             mostrarTarjeta = true
+
+                            if (mostrarTarjeta) {
+                                lista.push({
+                                    nombre: empleadoCreado.nombre,
+                                    apellido: empleadoCreado.apellido,
+                                    dni,
+                                    telefono: empleadoCreado.telefono,
+                                    empresa: empleadoCreado.empresa,
+                                    localidad: empleadoCreado.localidad,
+                                    centrosEducativos: centrosEntradaOriginal,
+                                    qrUrl,
+                                })
+                            }
                         }
                     }
-
-                    if (mostrarTarjeta) {
-                        lista.push({
-                            nombre: fila.nombre,
-                            apellido: fila.apellido,
-                            dni,
-                            telefono: String(fila.telefono ?? ''),
-                            empresa: fila.empresa,
-                            localidad: fila.localidad,
-                            centrosEducativos: centrosEntradaOriginal,
-                            qrUrl,
-                        })
-                    }
-                } catch (err: any) {
+                } catch (err: unknown) {
                     cntErrores++
-                    listadoErrores.push({ nombre: nombreFila, apellido: apellidoFila, dni, error: String(err?.message || err) })
+                    listadoErrores.push({
+                        nombre: nombreFila,
+                        apellido: apellidoFila,
+                        dni,
+                        error: err instanceof Error ? err.message : String(err),
+                    })
                     console.error(`❌ Error al procesar DNI ${dni}:`, err)
                 }
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             cntErrores++
-            listadoErrores.push({ error: `Error preparando importación: ${String(e?.message || e)}` })
+            listadoErrores.push({
+                error: e instanceof Error ? e.message : String(e),
+            })
             console.error('❌ Error preparando importación:', e)
         }
 
         setDocentes(lista)
         setLoading(false)
 
-        // 🔎 Resumen en consola (con nombres y apellidos)
         console.groupCollapsed('📊 Resumen importación Docentes')
         console.log('🆕 Empleados nuevos:', cntNuevosEmpleados)
         if (listadoNuevos.length) console.table(listadoNuevos)
@@ -299,11 +341,10 @@ export default function ImportarDocentes() {
         if (listadoErrores.length) console.table(listadoErrores)
         console.groupEnd()
 
-        // Resumen (alert como ya tenías)
         alert(
             [
-                `Resumen importación Docentes`,
-                `────────────────────────`,
+                'Resumen importación Docentes',
+                '────────────────────────',
                 `🆕 Empleados nuevos: ${cntNuevosEmpleados}`,
                 `➕ Existentes actualizados (centros agregados): ${cntExistActualizados}`,
                 `↺ Existentes sin cambios: ${cntExistSinCambios}`,
@@ -314,11 +355,13 @@ export default function ImportarDocentes() {
         )
     }
 
+    /* ─────────────── DESCARGAS ─────────────── */
+
     const generarTarjeta = async (idx: number) => {
         const nodo = document.getElementById(`tarjeta-docente-${idx}`)
         if (!nodo) return { blob: null, nombreArchivo: '' }
 
-        const boton = nodo.querySelector('button') as HTMLElement
+        const boton = nodo.querySelector('button') as HTMLElement | null
         if (boton) boton.style.display = 'none'
 
         const canvas = await html2canvas(nodo as HTMLElement, { scale: 2 })
@@ -330,9 +373,10 @@ export default function ImportarDocentes() {
         )
 
         const docente = docentes[idx]
-        const nombreArchivo = `qr-${docente.dni}.png`
-
-        return { blob, nombreArchivo }
+        return {
+            blob,
+            nombreArchivo: `qr-${docente.dni}.png`,
+        }
     }
 
     const descargarTarjeta = async (idx: number) => {
@@ -356,12 +400,7 @@ export default function ImportarDocentes() {
         setLoading(false)
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        })
-    }
+    /* ─────────────── MANUAL ─────────────── */
 
     const crearDocente = async () => {
         const dni = onlyDigits(form.dni)
@@ -374,74 +413,99 @@ export default function ImportarDocentes() {
         setLoading(true)
 
         try {
-            const token = crypto.randomUUID()
-            let empleado: any
+            let empleado: Empleado | undefined
             let esNuevo = false
 
-            // 🔎 Buscar empleados existentes
-            const all = await fetch('/api/empleados').then(r => r.json())
-            const existente = all.find((e: any) => e.dni === dni)
+            const all: Empleado[] = await fetch('/api/empleados').then((r) => r.json())
+            const existente = all.find((e) => String(e.dni) === dni)
 
             if (existente) {
                 empleado = existente
             } else {
                 esNuevo = true
+                const token = crypto.randomUUID()
 
                 const empRes = await fetch('/api/empleados', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        nombre: form.nombre,
-                        apellido: form.apellido,
+                        nombre: form.nombre.toUpperCase().trim(),
+                        apellido: form.apellido.toUpperCase().trim(),
                         dni,
-                        telefono: form.telefono,
+                        telefono: form.telefono.trim(),
                         empresa: 'DOCENTES',
-                        localidad: form.localidad,
+                        localidad: form.localidad.trim(),
                         qrToken: token,
                         pais: 'AR',
                     }),
                 })
 
-                if (!empRes.ok) throw new Error('Error creando empleado')
+                if (!empRes.ok) {
+                    throw new Error('Error creando empleado')
+                }
 
                 empleado = await empRes.json()
             }
 
-            // 👉 SIEMPRE actualizamos docente (centros)
-            await fetch('/api/docentes', {
+            if (!empleado?._id) {
+                throw new Error('No se pudo obtener el empleado')
+            }
+
+            const centro = form.centroEducativo.trim()
+
+            const docenteRes = await fetch('/api/docentes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     empleadoId: empleado._id,
-                    centrosEducativos: [form.centroEducativo],
+                    centrosEducativos: centro ? [centro] : [],
                 }),
             })
 
-            // 🚫 SI YA EXISTÍA → NO CREAR TARJETA
+            if (!docenteRes.ok) {
+                throw new Error('Error creando/actualizando docente')
+            }
+
             if (!esNuevo) {
                 alert('Docente actualizado correctamente (ya existía)')
+                setForm({
+                    nombre: '',
+                    apellido: '',
+                    dni: '',
+                    telefono: '',
+                    localidad: '',
+                    centroEducativo: '',
+                })
+                setLoading(false)
                 return
             }
 
-            // ✅ SOLO si es nuevo → generar tarjeta
-            // mostrar el QR existente
             const qrUrl = await QRCode.toDataURL(
                 `${window.location.origin}/playero?token=${empleado.qrToken}`
             )
 
-            setDocentes([
+            setDocentes((prev) => [
+                ...prev,
                 {
-                    nombre: empleado.nombre,
-                    apellido: empleado.apellido,
+                    nombre: empleado!.nombre,
+                    apellido: empleado!.apellido,
                     dni,
-                    telefono: empleado.telefono,
-                    empresa: 'DOCENTES',
-                    localidad: empleado.localidad,
-                    centrosEducativos: [],
+                    telefono: empleado!.telefono,
+                    empresa: empleado!.empresa,
+                    localidad: empleado!.localidad,
+                    centrosEducativos: centro ? [centro] : [],
                     qrUrl,
                 },
             ])
 
+            setForm({
+                nombre: '',
+                apellido: '',
+                dni: '',
+                telefono: '',
+                localidad: '',
+                centroEducativo: '',
+            })
         } catch (err) {
             console.error(err)
             alert('Error creando docente')
@@ -452,41 +516,91 @@ export default function ImportarDocentes() {
 
     return (
         <main className="min-h-screen p-6 bg-gray-900 text-white">
-            <h1 className="text-3xl font-bold mb-6 text-center">Carga Masiva de Docentes</h1>
+            <h1 className="text-3xl font-bold text-center mb-6">
+                Importar Docentes
+            </h1>
 
-            {/* 🔥 FORMULARIO MANUAL */}
-            <div className="max-w-md mx-auto bg-gray-800 p-6 rounded-xl space-y-4 mb-10">
-
-                <h2 className="text-lg font-bold text-center">Carga Manual</h2>
-
-                <input name="apellido" placeholder="Apellido" onChange={handleChange} className="w-full p-2 rounded text-black" />
-                <input name="nombre" placeholder="Nombre" onChange={handleChange} className="w-full p-2 rounded text-black" />
-                <input name="dni" placeholder="DNI" onChange={handleChange} className="w-full p-2 rounded text-black" />
-                <input name="telefono" placeholder="Teléfono" onChange={handleChange} className="w-full p-2 rounded text-black" />
-                <input name="localidad" placeholder="Localidad" onChange={handleChange} className="w-full p-2 rounded text-black" />
-                <input name="centroEducativo" placeholder="Centro Educativo" onChange={handleChange} className="w-full p-2 rounded text-black" />
-
+            <div className="flex justify-center gap-4 mb-6">
                 <button
-                    onClick={crearDocente}
-                    className="w-full bg-green-700 hover:bg-green-800 py-3 rounded font-semibold"
+                    onClick={() => setModo('excel')}
+                    className={`px-4 py-2 rounded ${modo === 'excel' ? 'bg-blue-600' : 'bg-gray-700'}`}
                 >
-                    Generar QR Manual
+                    Excel
                 </button>
-
+                <button
+                    onClick={() => setModo('manual')}
+                    className={`px-4 py-2 rounded ${modo === 'manual' ? 'bg-blue-600' : 'bg-gray-700'}`}
+                >
+                    Manual
+                </button>
             </div>
 
-            <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFile}
-                className="mb-6 block mx-auto"
-            />
+            {modo === 'manual' && (
+                <div className="max-w-xl mx-auto bg-gray-800 p-6 rounded space-y-3 mb-6">
+                    <input
+                        name="nombre"
+                        value={form.nombre}
+                        onChange={handleChange}
+                        placeholder="Nombre"
+                        className="w-full p-2 text-black rounded"
+                    />
+                    <input
+                        name="apellido"
+                        value={form.apellido}
+                        onChange={handleChange}
+                        placeholder="Apellido"
+                        className="w-full p-2 text-black rounded"
+                    />
+                    <input
+                        name="dni"
+                        value={form.dni}
+                        onChange={handleChange}
+                        placeholder="DNI"
+                        inputMode="numeric"
+                        className="w-full p-2 text-black rounded"
+                    />
+                    <input
+                        name="telefono"
+                        value={form.telefono}
+                        onChange={handleChange}
+                        placeholder="Teléfono"
+                        inputMode="numeric"
+                        className="w-full p-2 text-black rounded"
+                    />
+                    <input
+                        name="localidad"
+                        value={form.localidad}
+                        onChange={handleChange}
+                        placeholder="Localidad"
+                        className="w-full p-2 text-black rounded"
+                    />
+                    <input
+                        name="centroEducativo"
+                        value={form.centroEducativo}
+                        onChange={handleChange}
+                        placeholder="Centro Educativo"
+                        className="w-full p-2 text-black rounded"
+                    />
 
-            {loading && (
-                <p className="text-center text-lg font-semibold">
-                    Procesando, por favor esperá…
-                </p>
+                    <button
+                        onClick={crearDocente}
+                        className="w-full bg-blue-700 py-2 rounded"
+                    >
+                        Agregar
+                    </button>
+                </div>
             )}
+
+            {modo === 'excel' && (
+                <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFile}
+                    className="mb-6 block mx-auto"
+                />
+            )}
+
+            {loading && <p className="text-center">Procesando...</p>}
 
             {docentes.length > 0 && (
                 <button
@@ -500,9 +614,9 @@ export default function ImportarDocentes() {
             <div className="flex flex-wrap gap-6 justify-center">
                 {docentes.map((d, idx) => (
                     <div
-                        key={idx}
+                        key={`${d.dni}-${idx}`}
                         id={`tarjeta-docente-${idx}`}
-                        className="bg-white text-black p-4 rounded shadow-lg w-[280px] space-y-3 relative"
+                        className="bg-white text-black p-4 rounded shadow-lg w-[280px] space-y-3"
                     >
                         <div className="flex justify-center">
                             <img src="/idescuentos.png" alt="Logo" className="h-16" />
@@ -525,8 +639,6 @@ export default function ImportarDocentes() {
                     </div>
                 ))}
             </div>
-
-
         </main>
     )
 }
