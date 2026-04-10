@@ -285,6 +285,13 @@ export default function ImportarPolicias() {
                         <p className="text-center font-semibold">
                             {p.nombre} {p.apellido}
                         </p>
+
+                        <button
+                            onClick={() => generarTarjeta(idx).then(r => r.blob && saveAs(r.blob, r.nombreArchivo))}
+                            className="mt-2 w-full bg-blue-700 text-white py-2 rounded"
+                        >
+                            Descargar
+                        </button>
                     </div>
                 ))}
             </div>

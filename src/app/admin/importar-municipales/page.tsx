@@ -221,7 +221,12 @@ export default function ImportarMunicipales() {
         const nodo = document.getElementById(`tarjeta-municipal-${idx}`)
         if (!nodo) return { blob: null, nombreArchivo: '' }
 
+        const boton = nodo.querySelector('button') as HTMLElement | null
+        if (boton) boton.style.display = 'none'
+
         const canvas = await html2canvas(nodo, { scale: 2 })
+
+        if (boton) boton.style.display = ''
 
         const blob = await new Promise<Blob | null>((ok) =>
             canvas.toBlob(ok, 'image/png', 1)
@@ -299,6 +304,13 @@ export default function ImportarMunicipales() {
                         <p className="text-center font-semibold">
                             {m.nombre} {m.apellido}
                         </p>
+
+                        <button
+                            onClick={() => generarTarjeta(idx).then(r => r.blob && saveAs(r.blob, r.nombreArchivo))}
+                            className="mt-2 w-full bg-blue-700 text-white py-2 rounded"
+                        >
+                            Descargar
+                        </button>
                     </div>
                 ))}
             </div>
