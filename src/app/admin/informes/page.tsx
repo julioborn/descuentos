@@ -402,8 +402,8 @@ export default function InformesPage() {
                         onClick={() => setEmpresaActiva('TODAS')}
                         className={`px-4 py-2 rounded-xl font-semibold text-sm shadow-sm transition ${
                             empresaActiva === 'TODAS'
-                                ? 'bg-blue-700 text-white'
-                                : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'
+                                ? 'bg-gray-900 text-white'
+                                : 'bg-white border border-blue-200 text-gray-900 hover:bg-gray-50'
                         }`}
                     >
                         Todas las empresas
