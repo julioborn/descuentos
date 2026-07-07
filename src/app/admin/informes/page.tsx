@@ -80,12 +80,6 @@ export default function InformesPage() {
             ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : '-';
 
-    const banderaPorMoneda = (moneda: string) => {
-        if (moneda === 'ARS') return '🇦🇷';
-        if (moneda === 'Gs') return '🇵🇾';
-        return '';
-    };
-
     const empresasUnicas = useMemo(() => {
         return Array.from(new Set(cargas.map(c => c.empresa).filter(Boolean) as string[])).sort();
     }, [cargas]);
@@ -432,11 +426,8 @@ export default function InformesPage() {
 
                 {bloques.map((bloque) => (
                     <section key={`${bloque.empresa}-${bloque.moneda}`} className="space-y-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                            <span>{bloque.empresa}</span>
-                            <span className="text-sm font-normal text-gray-500">
-                                {banderaPorMoneda(bloque.moneda)} {bloque.moneda}
-                            </span>
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            {bloque.empresa}
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
