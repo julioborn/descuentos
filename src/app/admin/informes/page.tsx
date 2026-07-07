@@ -259,11 +259,7 @@ export default function InformesPage() {
 
             bloques.forEach((bloque, idx) => {
                 doc.setFontSize(11);
-                doc.text(
-                    `${banderaPorMoneda(bloque.moneda)} Moneda: ${bloque.moneda}`,
-                    40,
-                    startY
-                );
+                doc.text(`Moneda: ${bloque.moneda}`, 40, startY);
 
                 const rows = bloque.filas.map(f => [
                     periodoLabel(f),
@@ -272,7 +268,7 @@ export default function InformesPage() {
                 ]);
 
                 autoTable(doc, {
-                    head: [['Período', 'Litros', 'Monto']],
+                    head: [['Período', 'Litros', `Monto (${bloque.moneda})`]],
                     body: rows,
                     startY: startY + 10,
                     margin: { bottom: 60 },
