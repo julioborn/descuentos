@@ -34,6 +34,7 @@ export default function Header() {
                 { label: 'Precios', href: '/admin/precios' },
                 { label: 'Descuentos', href: '/admin/descuentos' },
                 { label: 'Estadísticas', href: '/admin/estadisticas' },
+                { label: 'Informes', href: '/admin/informes' },
             ]
             : role === 'playero'
                 ? [{ label: 'Inicio', href: '/playero' }]
