@@ -41,7 +41,7 @@ type Carga = {
 };
 
 type Fila = { anio: number; mes: number; litros: number; monto: number };
-type Bloque = { moneda: string; filas: Fila[]; totalLitros: number; totalMonto: number };
+type Bloque = { empresa: string; moneda: string; filas: Fila[]; totalLitros: number; totalMonto: number };
 
 const MESES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -110,14 +110,16 @@ export default function InformesPage() {
 
         const map = new Map<string, Map<string, Fila>>();
         for (const c of filtradasPorAnio) {
+            const empresa = c.empresa || 'Sin empresa';
             const moneda = c.moneda || '-';
+            const grupoKey = `${empresa}||${moneda}`;
             const fecha = new Date(c.fecha);
             const anio = fecha.getFullYear();
             const mes = fecha.getMonth() + 1;
             const key = `${anio}-${mes}`;
 
-            if (!map.has(moneda)) map.set(moneda, new Map());
-            const sub = map.get(moneda)!;
+            if (!map.has(grupoKey)) map.set(grupoKey, new Map());
+            const sub = map.get(grupoKey)!;
             const actual = sub.get(key) || { anio, mes, litros: 0, monto: 0 };
             actual.litros += Number(c.litros) || 0;
             actual.monto += Number(c.precioFinal) || 0;
@@ -125,7 +127,8 @@ export default function InformesPage() {
         }
 
         return Array.from(map.entries())
-            .map(([moneda, sub]) => {
+            .map(([grupoKey, sub]) => {
+                const [empresa, moneda] = grupoKey.split('||');
                 let filas: Fila[];
                 if (añoFiltro !== 'TODOS') {
                     filas = Array.from({ length: 12 }, (_, i) => {
@@ -137,9 +140,9 @@ export default function InformesPage() {
                 }
                 const totalLitros = filas.reduce((acc, f) => acc + f.litros, 0);
                 const totalMonto = filas.reduce((acc, f) => acc + f.monto, 0);
-                return { moneda, filas, totalLitros, totalMonto };
+                return { empresa, moneda, filas, totalLitros, totalMonto };
             })
-            .sort((a, b) => a.moneda.localeCompare(b.moneda));
+            .sort((a, b) => a.empresa.localeCompare(b.empresa) || a.moneda.localeCompare(b.moneda));
     }, [cargas, empresaFiltro, añoFiltro]);
 
     const periodoLabel = (f: Fila) =>
@@ -200,7 +203,13 @@ export default function InformesPage() {
                 setNumFmt(`B${totalsRowIdx}`);
                 setNumFmt(`C${totalsRowIdx}`);
 
-                const nombreHoja = (bloque.moneda || 'Sin moneda').slice(0, 31);
+                const baseHoja = `${bloque.empresa} - ${bloque.moneda}`.slice(0, 31);
+                let nombreHoja = baseHoja || 'Hoja';
+                let sufijo = 1;
+                while (workbook.SheetNames.includes(nombreHoja)) {
+                    sufijo += 1;
+                    nombreHoja = `${baseHoja.slice(0, 28)} (${sufijo})`;
+                }
                 XLSX.utils.book_append_sheet(workbook, worksheet, nombreHoja);
             });
 
@@ -259,7 +268,7 @@ export default function InformesPage() {
 
             bloques.forEach((bloque, idx) => {
                 doc.setFontSize(11);
-                doc.text(`Moneda: ${bloque.moneda}`, 40, startY);
+                doc.text(`Empresa: ${bloque.empresa}   |   Moneda: ${bloque.moneda}`, 40, startY);
 
                 const rows = bloque.filas.map(f => [
                     periodoLabel(f),
@@ -384,9 +393,9 @@ export default function InformesPage() {
                 )}
 
                 {bloques.map((bloque) => (
-                    <section key={bloque.moneda} className="space-y-4">
+                    <section key={`${bloque.empresa}-${bloque.moneda}`} className="space-y-4">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                            <span>{empresaFiltro === 'TODAS' ? 'Todas las empresas' : empresaFiltro}</span>
+                            <span>{bloque.empresa}</span>
                             <span className="text-sm font-normal text-gray-500">
                                 {banderaPorMoneda(bloque.moneda)} {bloque.moneda}
                             </span>
@@ -434,7 +443,7 @@ export default function InformesPage() {
                                     <tr className="bg-gray-900 text-white">
                                         <th className="p-3 text-left rounded-tl-lg">Período</th>
                                         <th className="p-3 text-right">Litros</th>
-                                        <th className="p-3 text-right rounded-tr-lg">Monto</th>
+                                        <th className="p-3 text-right rounded-tr-lg">Monto ({bloque.moneda})</th>
                                     </tr>
                                 </thead>
                                 <tbody>
