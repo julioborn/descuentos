@@ -48,11 +48,15 @@ const MESES = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+const MESES_OPCIONES = MESES.map((nombre, i) => ({ nombre, numero: i + 1 }));
+
 export default function InformesPage() {
     const [cargas, setCargas] = useState<Carga[]>([]);
     const [loading, setLoading] = useState(true);
     const [empresaFiltro, setEmpresaFiltro] = useState<'TODAS' | string>('TODAS');
     const [añoFiltro, setAñoFiltro] = useState<'TODOS' | number>('TODOS');
+    const [mesFiltro, setMesFiltro] = useState<number>(0); // 0 = todos los meses
+    const [empresaActiva, setEmpresaActiva] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCargas = async () => {
@@ -104,12 +108,15 @@ export default function InformesPage() {
             ? cargas
             : cargas.filter(c => norm(c.empresa) === norm(empresaFiltro));
 
-        const filtradasPorAnio = añoFiltro === 'TODOS'
-            ? base
-            : base.filter(c => new Date(c.fecha).getFullYear() === añoFiltro);
+        const filtradas = base.filter(c => {
+            const fecha = new Date(c.fecha);
+            const coincideAnio = añoFiltro === 'TODOS' || fecha.getFullYear() === añoFiltro;
+            const coincideMes = mesFiltro === 0 || (fecha.getMonth() + 1) === mesFiltro;
+            return coincideAnio && coincideMes;
+        });
 
         const map = new Map<string, Map<string, Fila>>();
-        for (const c of filtradasPorAnio) {
+        for (const c of filtradas) {
             const empresa = c.empresa || 'Sin empresa';
             const moneda = c.moneda || '-';
             const grupoKey = `${empresa}||${moneda}`;
@@ -130,7 +137,7 @@ export default function InformesPage() {
             .map(([grupoKey, sub]) => {
                 const [empresa, moneda] = grupoKey.split('||');
                 let filas: Fila[];
-                if (añoFiltro !== 'TODOS') {
+                if (añoFiltro !== 'TODOS' && mesFiltro === 0) {
                     filas = Array.from({ length: 12 }, (_, i) => {
                         const mes = i + 1;
                         return sub.get(`${añoFiltro}-${mes}`) || { anio: añoFiltro as number, mes, litros: 0, monto: 0 };
@@ -143,10 +150,26 @@ export default function InformesPage() {
                 return { empresa, moneda, filas, totalLitros, totalMonto };
             })
             .sort((a, b) => a.empresa.localeCompare(b.empresa) || a.moneda.localeCompare(b.moneda));
-    }, [cargas, empresaFiltro, añoFiltro]);
+    }, [cargas, empresaFiltro, añoFiltro, mesFiltro]);
 
     const periodoLabel = (f: Fila) =>
         añoFiltro !== 'TODOS' ? MESES[f.mes - 1] : `${MESES[f.mes - 1]} ${f.anio}`;
+
+    const empresasEnBloques = useMemo(() => {
+        return Array.from(new Set(bloques.map(b => b.empresa)));
+    }, [bloques]);
+
+    useEffect(() => {
+        if (empresasEnBloques.length === 0) {
+            setEmpresaActiva(null);
+        } else if (!empresaActiva || !empresasEnBloques.includes(empresaActiva)) {
+            setEmpresaActiva(empresasEnBloques[0]);
+        }
+    }, [empresasEnBloques]);
+
+    const bloquesVisibles = useMemo(() => {
+        return bloques.filter(b => b.empresa === empresaActiva);
+    }, [bloques, empresaActiva]);
 
     const slugify = (str?: string) =>
         (str ?? '')
@@ -161,6 +184,10 @@ export default function InformesPage() {
         const partes: string[] = ['Informe'];
         partes.push(empresaFiltro !== 'TODAS' ? slugify(empresaFiltro) : 'todas-las-empresas');
         partes.push(añoFiltro !== 'TODOS' ? String(añoFiltro) : 'todos-los-anios');
+        if (mesFiltro !== 0) {
+            const nombreMes = MESES_OPCIONES.find(m => m.numero === mesFiltro)?.nombre;
+            if (nombreMes) partes.push(slugify(nombreMes));
+        }
         return `${partes.join('-').slice(0, 140)}.${ext}`;
     };
 
@@ -256,6 +283,7 @@ export default function InformesPage() {
             const descFiltros = [
                 `Empresa: ${empresaFiltro === 'TODAS' ? 'Todas' : empresaFiltro}`,
                 `Año: ${añoFiltro === 'TODOS' ? 'Todos' : añoFiltro}`,
+                `Mes: ${mesFiltro === 0 ? 'Todos' : MESES_OPCIONES.find(m => m.numero === mesFiltro)?.nombre}`,
             ].join('   |   ');
             doc.text(descFiltros, 40, 58);
 
@@ -268,7 +296,7 @@ export default function InformesPage() {
 
             bloques.forEach((bloque, idx) => {
                 doc.setFontSize(11);
-                doc.text(`Empresa: ${bloque.empresa}   |   Moneda: ${bloque.moneda}`, 40, startY);
+                doc.text(`Empresa: ${bloque.empresa}`, 40, startY);
 
                 const rows = bloque.filas.map(f => [
                     periodoLabel(f),
@@ -342,7 +370,7 @@ export default function InformesPage() {
                 <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
                     <h2 className="font-semibold text-gray-800">Filtros</h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <select
                             value={empresaFiltro}
                             onChange={(e) => setEmpresaFiltro(e.target.value)}
@@ -365,6 +393,17 @@ export default function InformesPage() {
                             <option value="TODOS">Todos los años</option>
                             {añosDisponibles.map((año) => (
                                 <option key={año} value={año}>{año}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={mesFiltro}
+                            onChange={(e) => setMesFiltro(Number(e.target.value))}
+                            className="rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
+                        >
+                            <option value="0">Todos los meses</option>
+                            {MESES_OPCIONES.map((m) => (
+                                <option key={m.numero} value={m.numero}>{m.nombre}</option>
                             ))}
                         </select>
                     </div>
@@ -392,7 +431,25 @@ export default function InformesPage() {
                     </div>
                 )}
 
-                {bloques.map((bloque) => (
+                {empresasEnBloques.length > 1 && (
+                    <div className="flex flex-wrap gap-2">
+                        {empresasEnBloques.map((empresa) => (
+                            <button
+                                key={empresa}
+                                onClick={() => setEmpresaActiva(empresa)}
+                                className={`px-4 py-2 rounded-xl font-semibold text-sm shadow-sm transition ${
+                                    empresaActiva === empresa
+                                        ? 'bg-[#801818] text-white'
+                                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                {empresa}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {bloquesVisibles.map((bloque) => (
                     <section key={`${bloque.empresa}-${bloque.moneda}`} className="space-y-4">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                             <span>{bloque.empresa}</span>
