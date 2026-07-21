@@ -41,7 +41,7 @@ export default function ImportarPage() {
             icon: <HeartPulse className="w-8 h-8 text-[#801818]" />
         },
         {
-            label: 'Paraguay (COTRECO)',
+            label: 'Paraguay',
             path: '/admin/importar-paraguay',
             icon: <Globe className="w-8 h-8 text-[#801818]" />
         }
