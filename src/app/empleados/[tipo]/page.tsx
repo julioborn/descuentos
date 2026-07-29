@@ -124,7 +124,7 @@ export default function EmpleadosTipoPage() {
                         : ` en la categoría "${config.titulo}"`
 
                 const mensaje = encodeURIComponent(
-                    `Hola, intenté registrarme${categoriaTexto} con mi DNI ${onlyDigits(dni)}, pero no aparezco en el sistema.`
+                    `Hola, intenté registrarme${categoriaTexto} con mi ${tipo === 'paraguay' ? 'CI' : 'DNI'} ${onlyDigits(dni)}, pero no aparezco en el sistema.`
                 )
 
                 const whatsappUrl = `https://wa.me/5493483451648?text=${mensaje}`
@@ -310,7 +310,7 @@ export default function EmpleadosTipoPage() {
                                         </div>
 
                                         <div className="text-sm text-gray-600 font-medium">
-                                            DNI {empleado.dni}
+                                            {esParaguay ? 'CI' : 'DNI'} {empleado.dni}
                                         </div>
 
                                         <div className="text-sm font-semibold text-[#801818]">
@@ -338,7 +338,7 @@ export default function EmpleadosTipoPage() {
                                     </div>
 
                                     <div className="text-sm text-gray-600 font-medium">
-                                        DNI {empleado.dni}
+                                        {esParaguay ? 'CI' : 'DNI'} {empleado.dni}
                                     </div>
 
                                     <div className="text-sm font-semibold text-[#801818]">

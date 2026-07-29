@@ -17,6 +17,7 @@ type EmpleadoLean = {
     empresa: string;
     subcategoria?: string;
     localidad?: string;
+    pais?: string;
 
     qrToken: string;
     qrDescargado: boolean;
@@ -27,12 +28,17 @@ type EmpleadoLean = {
 
 const normalize = (s: string) => s.trim().toUpperCase();
 
+// Tipos que filtran por lista fija de empresas
 const TIPO_EMPRESAS: Record<string, string[]> = {
     seguridad: ["POLICIA", "POLICÍA", "SEGURIDAD"],
     salud: ["SAMCO", "SALUD", "HOSPITAL"],
     municipalidad: ["MUNICIPALIDAD", "MUNI", "MUNICIPIO", "MUNICIPAL"],
-    paraguay: ["COTRECO"],
     global: ["*"],
+};
+
+// Tipos que filtran por país (cualquier empresa de ese país)
+const TIPO_PAISES: Record<string, string> = {
+    paraguay: "PY",
 };
 
 export async function POST(req: Request) {
@@ -58,7 +64,7 @@ export async function POST(req: Request) {
             }
         }
 
-        if (!tipo || !TIPO_EMPRESAS[tipo]) {
+        if (!tipo || (!TIPO_EMPRESAS[tipo] && !TIPO_PAISES[tipo])) {
             return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
         }
 
@@ -75,17 +81,27 @@ export async function POST(req: Request) {
             );
         }
 
-        // Validación por tipo (excepto global)
-        const allowed = TIPO_EMPRESAS[tipo];
-        if (!(allowed.length === 1 && allowed[0] === "*")) {
-            const empEmpresa = normalize(emp.empresa || "");
-            const ok = allowed.some((e) => normalize(e) === empEmpresa);
-
-            if (!ok) {
+        // Validación por país (Paraguay: cualquier empresa de PY)
+        if (TIPO_PAISES[tipo]) {
+            if (normalize(emp.pais || "") !== normalize(TIPO_PAISES[tipo])) {
                 return NextResponse.json(
-                    { error: "Tu DNI no registra un beneficio activo para este acceso." },
+                    { error: "Tu CI no registra un beneficio activo para este acceso." },
                     { status: 403 }
                 );
+            }
+        } else {
+            // Validación por tipo/empresa (excepto global)
+            const allowed = TIPO_EMPRESAS[tipo];
+            if (!(allowed.length === 1 && allowed[0] === "*")) {
+                const empEmpresa = normalize(emp.empresa || "");
+                const ok = allowed.some((e) => normalize(e) === empEmpresa);
+
+                if (!ok) {
+                    return NextResponse.json(
+                        { error: "Tu DNI no registra un beneficio activo para este acceso." },
+                        { status: 403 }
+                    );
+                }
             }
         }
 

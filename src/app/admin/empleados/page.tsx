@@ -42,6 +42,8 @@ export default function EmpleadosPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
     const role = session?.user?.role;
+    const labelDoc = role === 'admin_py' ? 'CI' : 'DNI';
+    const labelDocPara = (pais?: string) => (pais === 'PY' ? 'CI' : 'DNI');
 
     const [empleados, setEmpleados] = useState<Empleado[]>([]);
     const [loading, setLoading] = useState(true);
@@ -258,7 +260,7 @@ ${emp.nombre} ${emp.apellido}
 </div>
 
 <div style="margin-top:10px;font-size:16px;color:#374151;font-weight:500">
-DNI: ${emp.dni}
+${labelDocPara(emp.pais)}: ${emp.dni}
 </div>
 
 <div style="margin-top:4px;font-size:16px;color:#374151;font-weight:500">
@@ -441,7 +443,7 @@ focus:ring-2 focus:ring-[#801818] focus:outline-none cursor-pointer"
                             <tr className="bg-gray-900 text-white">
                                 <th className="p-3">Apellido</th>
                                 <th className="p-3">Nombre</th>
-                                <th className="p-3">DNI</th>
+                                <th className="p-3">{labelDoc}</th>
                                 <th className="p-3">Teléfono</th>
                                 <th className="p-3">Empresa</th>
                                 {hayPoliciasEnVista && (
@@ -529,7 +531,7 @@ cursor-pointer
                                     </p>
 
                                     <p className="text-xs text-gray-500">
-                                        DNI {emp.dni}
+                                        {labelDocPara(emp.pais)} {emp.dni}
                                     </p>
                                 </div>
 

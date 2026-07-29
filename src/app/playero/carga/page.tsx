@@ -38,6 +38,8 @@ export default function CargaPage() {
     const [form, setForm] = useState({ producto: '', litros: '' });
     const { data: session } = useSession();
     const username = session?.user?.name; // asumimos que 'name' es 'playeropy' o 'playeroarg'
+    const esParaguay = session?.user?.moneda === 'Gs';
+    const labelDoc = esParaguay ? 'CI' : 'DNI';
     const [porcentajeDescuento, setPorcentajeDescuento] = useState(0);
 
 
@@ -143,7 +145,7 @@ export default function CargaPage() {
             html: `
     <div class="sw-body">
         <div><b>Empleado:</b> ${empleado.nombre} ${empleado.apellido}</div>
-        <div><b>DNI:</b> ${empleado.dni}</div>
+        <div><b>${labelDoc}:</b> ${empleado.dni}</div>
         <div><b>Empresa:</b> ${empleado.empresa}</div>
         <div><b>Producto:</b> ${form.producto}</div>
         <div><b>Litros:</b> ${fmtAR(litros)}</div>
@@ -335,7 +337,7 @@ export default function CargaPage() {
                 </h2>
 
                 <p className="text-gray-600">
-                    <span className="font-semibold">DNI:</span> {empleado.dni}
+                    <span className="font-semibold">{labelDoc}:</span> {empleado.dni}
                 </p>
 
                 <p className="text-gray-500">

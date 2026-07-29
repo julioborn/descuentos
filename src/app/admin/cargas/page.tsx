@@ -72,6 +72,12 @@ export default function CargasPage() {
             ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : '-';
 
+    // Si todas las cargas visibles son de Paraguay (Gs), mostramos "CI" en vez de "DNI"
+    const monedasUnicas = useMemo(() => {
+        return Array.from(new Set(cargas.map(c => c.moneda).filter(Boolean)));
+    }, [cargas]);
+    const labelDoc = monedasUnicas.length === 1 && monedasUnicas[0] === 'Gs' ? 'CI' : 'DNI';
+
     // Mapa Localidad -> Set(Empresa)
     const empresasPorLocalidad = useMemo(() => {
         const map = new Map<string, Set<string>>();
@@ -491,9 +497,9 @@ export default function CargasPage() {
         try {
             // Armamos datos: precios y litros como NÚMEROS (no strings) para que SUM funcione
             const headers = [
-                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', 'DNI', 'Producto',
+                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', labelDoc, 'Producto',
                 'Litros', 'Precio surtidor', 'Precio con descuento', 'Moneda'
-            ] as const;
+            ];
 
             const data = filtradas.map(c => {
                 const fechaObj = new Date(c.fecha);
@@ -508,7 +514,7 @@ export default function CargasPage() {
                     Localidad: c.localidad,
                     Empresa: c.empresa || '-',
                     Empleado: c.nombreEmpleado,
-                    DNI: c.dniEmpleado,
+                    [labelDoc]: c.dniEmpleado,
                     Producto: c.producto,
                     Litros: c.litros != null ? Number(c.litros) : null, // número
                     'Precio surtidor': c.precioFinalSinDescuento != null ? Number(c.precioFinalSinDescuento) : null, // número
@@ -609,7 +615,7 @@ export default function CargasPage() {
                     Localidad: c.localidad,
                     Empresa: c.empresa || '-',
                     Empleado: c.nombreEmpleado,
-                    DNI: c.dniEmpleado,
+                    [labelDoc]: c.dniEmpleado,
                     Producto: c.producto,
                     Litros: c.litros != null ? fmt(Number(c.litros)) : '-',
                     'Precio surtidor': c.precioFinalSinDescuento != null ? fmt(Number(c.precioFinalSinDescuento)) : '-',
@@ -619,12 +625,12 @@ export default function CargasPage() {
             });
 
             const columns = [
-                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', 'DNI', 'Producto',
+                'Fecha', 'Hora', 'Localidad', 'Empresa', 'Empleado', labelDoc, 'Producto',
                 'Litros', 'Precio surtidor', 'Precio con descuento', 'Moneda'
-            ] as const;
+            ];
 
-            const rows = dataFormateada.map(r => [
-                r.Fecha, r.Hora, r.Localidad, r.Empresa, r.Empleado, r.DNI, r.Producto,
+            const rows = dataFormateada.map((r: any) => [
+                r.Fecha, r.Hora, r.Localidad, r.Empresa, r.Empleado, r[labelDoc], r.Producto,
                 r.Litros, r['Precio surtidor'], r['Precio con descuento'], r.Moneda
             ]);
 
@@ -1124,7 +1130,7 @@ export default function CargasPage() {
                                 <th className="p-3 text-left rounded-tl-lg">Fecha</th>
                                 <th className="p-3 text-left">Hora</th>
                                 <th className="p-3 text-left">Empleado</th>
-                                <th className="p-3 text-left">DNI</th>
+                                <th className="p-3 text-left">{labelDoc}</th>
                                 <th className="p-3 text-left">Empresa</th>
                                 <th className="p-3 text-left">Localidad</th>
                                 <th className="p-3 text-left">Producto</th>
@@ -1281,7 +1287,7 @@ transition
                                         </p>
 
                                         <p className="text-xs text-gray-500 mt-1">
-                                            DNI {c.dniEmpleado}
+                                            {labelDoc} {c.dniEmpleado}
                                         </p>
                                     </div>
 

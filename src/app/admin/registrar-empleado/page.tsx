@@ -113,7 +113,11 @@ export default function RegistrarEmpleadoPage() {
                             <input
                                 key={key}
                                 name={key}
-                                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                                placeholder={
+                                    key === 'dni'
+                                        ? (form.pais === 'PY' ? 'CI' : 'DNI')
+                                        : key.charAt(0).toUpperCase() + key.slice(1)
+                                }
                                 value={value}
                                 onChange={handleChange}
                                 className="p-3 rounded bg-slate-800 border border-slate-600 placeholder-gray-400 text-white"
