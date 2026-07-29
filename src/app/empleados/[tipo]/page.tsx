@@ -213,7 +213,7 @@ export default function EmpleadosTipoPage() {
                 await fetch('/api/empleados/descargar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dni: empleado.dni }),
+                    body: JSON.stringify({ dni: empleado.dni, tipo }),
                 })
 
                 const nodo = document.getElementById('tarjeta')
@@ -241,7 +241,7 @@ export default function EmpleadosTipoPage() {
             await fetch('/api/empleados/descargar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dni: empleado.dni }),
+                body: JSON.stringify({ dni: empleado.dni, tipo }),
             })
         } finally {
             setProcesando(false)

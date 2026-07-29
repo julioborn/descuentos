@@ -4,16 +4,18 @@ import { Empleado } from "@/models/Empleado";
 
 type Body = {
     dni?: string;
+    tipo?: string;
 };
 
 export async function POST(req: Request) {
     try {
         const body = (await req.json()) as Body;
         const dni = (body.dni || "").replace(/\D/g, "");
+        const esParaguay = (body.tipo || "").trim().toLowerCase() === "paraguay";
 
-        if (!dni || dni.length < 7 || dni.length > 8) {
+        if (!dni || (esParaguay ? dni.length < 6 : dni.length < 7 || dni.length > 8)) {
             return NextResponse.json(
-                { error: "DNI inválido" },
+                { error: esParaguay ? "CI inválida" : "DNI inválido" },
                 { status: 400 }
             );
         }
