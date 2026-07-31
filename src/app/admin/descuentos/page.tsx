@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
+import Loader from '@/components/Loader';
 
 type Descuento = {
     _id: string;
@@ -106,111 +107,160 @@ export default function AdminDescuentosPage() {
 
     if (status === 'loading' || !pais) {
         return (
-            <main className="min-h-screen flex items-center justify-center bg-gray-50">
-                <p className="text-gray-600">Cargando…</p>
+            <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <Loader />
             </main>
         );
     }
 
     return (
-        <main className="min-h-screen px-6 py-12 bg-gray-50">
+        <main className="min-h-screen bg-stone-50 text-stone-900">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-            <h1 className="text-3xl font-bold text-center mb-10 text-[#111827]">
-                Descuentos
-            </h1>
+                {/* Encabezado */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                            Configuración
+                        </p>
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
+                            Descuentos
+                        </h1>
+                    </div>
 
-            {/* Lista */}
-            <div className="space-y-6 mb-12 max-w-md mx-auto">
+                    <div className="flex items-center gap-2 self-start rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#801818]" />
+                        {descuentos.length} {descuentos.length === 1 ? 'empresa' : 'empresas'}
+                    </div>
+                </div>
 
-                {descuentos.map((d) => (
+                {/* Lista */}
+                {descuentos.length === 0 ? (
+                    <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center shadow-sm">
+                        <p className="text-sm text-stone-500">
+                            Todavía no hay empresas con descuento cargado.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-                    <div
-                        key={d._id}
-                        className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
-                    >
+                        {descuentos.map((d) => (
 
-                        <div className="text-lg font-semibold text-gray-800 mb-3">
-                            {d.empresa}
-                        </div>
+                            <div
+                                key={d._id}
+                                className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm"
+                            >
 
-                        <div className="flex gap-3">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
+                                        %
+                                    </div>
+                                    <div className="text-base font-semibold text-stone-800 truncate">
+                                        {d.empresa}
+                                    </div>
+                                </div>
 
-                            <div className="relative flex-1">
+                                <div className="flex gap-3">
 
-                                <input
-                                    type="number"
-                                    value={d.porcentaje}
-                                    min={0}
-                                    step={0.01}
-                                    onChange={(e) =>
-                                        handleEditChange(d._id, e.target.value)
-                                    }
-                                    className="w-full bg-gray-100 border border-gray-200 rounded-lg py-2 pr-10 pl-3 focus:outline-none focus:ring-2 focus:ring-[#801818]"
-                                    placeholder="Porcentaje"
-                                />
+                                    <div className="relative flex-1">
 
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-                                    %
-                                </span>
+                                        <input
+                                            type="number"
+                                            value={d.porcentaje}
+                                            min={0}
+                                            step={0.01}
+                                            onChange={(e) =>
+                                                handleEditChange(d._id, e.target.value)
+                                            }
+                                            className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 pr-10 pl-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                                            placeholder="Porcentaje"
+                                        />
+
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm">
+                                            %
+                                        </span>
+
+                                    </div>
+
+                                    <button
+                                        onClick={() => guardarUno(d)}
+                                        className="bg-[#801818] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition shadow-sm"
+                                    >
+                                        Guardar
+                                    </button>
+
+                                </div>
 
                             </div>
 
-                            <button
-                                onClick={() => guardarUno(d)}
-                                className="bg-[#801818] text-white px-4 py-2 rounded-lg hover:bg-red-700 transition shadow-sm"
-                            >
-                                Guardar
-                            </button>
-
-                        </div>
+                        ))}
 
                     </div>
+                )}
 
-                ))}
+                {/* Agregar empresa */}
 
-            </div>
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm max-w-md">
 
-            {/* Agregar empresa */}
+                    <div className="flex items-center gap-1.5 mb-3">
+                        <svg
+                            className="h-3.5 w-3.5 text-stone-400"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                            Agregar empresa
+                        </h2>
+                    </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm max-w-md mx-auto">
+                    <div className="space-y-3">
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Nombre de la empresa
+                            </label>
+                            <input
+                                type="text"
+                                value={nuevaEmpresa}
+                                onChange={(e) => setNuevaEmpresa(e.target.value)}
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                                placeholder="Ej: COTRECO"
+                            />
+                        </div>
 
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                    Agregar empresa
-                </h2>
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Porcentaje de descuento
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={nuevoPorcentaje}
+                                    onChange={(e) => setNuevoPorcentaje(e.target.value)}
+                                    className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 pr-10 pl-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                                    placeholder="Ej: 5"
+                                />
 
-                <input
-                    type="text"
-                    value={nuevaEmpresa}
-                    onChange={(e) => setNuevaEmpresa(e.target.value)}
-                    className="w-full bg-gray-100 border border-gray-200 rounded-lg py-2 px-3 mb-3 focus:outline-none focus:ring-2 focus:ring-[#801818]"
-                    placeholder="Nombre de la empresa"
-                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm">
+                                    %
+                                </span>
+                            </div>
+                        </div>
+                    </div>
 
-                <div className="relative mb-4">
-
-                    <input
-                        type="number"
-                        value={nuevoPorcentaje}
-                        onChange={(e) => setNuevoPorcentaje(e.target.value)}
-                        className="w-full bg-gray-100 border border-gray-200 rounded-lg py-2 pr-10 pl-3 focus:outline-none focus:ring-2 focus:ring-[#801818]"
-                        placeholder="Porcentaje de descuento"
-                    />
-
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-                        %
-                    </span>
+                    <button
+                        onClick={agregarDescuento}
+                        className="w-full bg-[#801818] hover:bg-red-700 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm mt-4"
+                    >
+                        Agregar empresa
+                    </button>
 
                 </div>
 
-                <button
-                    onClick={agregarDescuento}
-                    className="w-full bg-[#801818] hover:bg-red-700 text-white py-2 rounded-lg transition shadow-sm"
-                >
-                    Agregar empresa
-                </button>
-
             </div>
-
         </main>
     );
 }
