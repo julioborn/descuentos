@@ -229,86 +229,123 @@ export default function ImportarEmpleados() {
     };
 
     return (
-        <main className="min-h-screen p-6 bg-gray-900 text-white">
+        <main className="min-h-screen bg-stone-50 text-stone-900">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Importar Empleados
-            </h1>
-
-            {/* SWITCH */}
-            <div className="flex justify-center gap-4 mb-6">
-                <button onClick={() => setModo('excel')}
-                    className={`px-4 py-2 rounded ${modo === 'excel' ? 'bg-blue-600' : 'bg-gray-700'}`}>
-                    Excel
-                </button>
-                <button onClick={() => setModo('manual')}
-                    className={`px-4 py-2 rounded ${modo === 'manual' ? 'bg-blue-600' : 'bg-gray-700'}`}>
-                    Manual
-                </button>
-            </div>
-
-            {/* MANUAL */}
-            {modo === 'manual' && (
-                <div className="max-w-xl mx-auto bg-gray-800 p-6 rounded space-y-3 mb-6">
-                    <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" className="w-full p-2 text-black rounded" />
-                    <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" className="w-full p-2 text-black rounded" />
-                    <input name="dni" value={form.dni} onChange={handleChange} placeholder="DNI" inputMode="numeric" className="w-full p-2 text-black rounded" />
-                    <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Teléfono" inputMode="numeric" className="w-full p-2 text-black rounded" />
-                    <input name="empresa" value={form.empresa} onChange={handleChange} placeholder="Empresa" className="w-full p-2 text-black rounded" />
-                    <input name="localidad" value={form.localidad} onChange={handleChange} placeholder="Localidad" className="w-full p-2 text-black rounded" />
-
-                    <button onClick={crearEmpleado} className="w-full bg-blue-700 py-2 rounded">
-                        Agregar
-                    </button>
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                        Herramientas
+                    </p>
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
+                        Importar Empleados
+                    </h1>
                 </div>
-            )}
 
-            {/* EXCEL */}
-            {modo === 'excel' && (
-                <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFile}
-                    className="mb-6 block mx-auto"
-                />
-            )}
-
-            {loading && <p className="text-center">Procesando...</p>}
-
-            {empleados.length > 0 && (
-                <button
-                    onClick={descargarTodas}
-                    className="mx-auto mb-6 block bg-green-700 px-6 py-3 rounded"
-                >
-                    Descargar ZIP
-                </button>
-            )}
-
-            <div className="flex flex-wrap gap-6 justify-center">
-                {empleados.map((emp, idx) => (
-                    <div key={idx} id={`tarjeta-${idx}`}
-                        className="bg-white text-black p-4 rounded w-[280px]">
-
-                        <div className="flex justify-center">
-                            <img src="/idescuentos.png" className="h-16" />
-                        </div>
-
-                        <img src={emp.qrUrl} className="w-48 h-48 mx-auto" />
-
-                        <p className="text-center font-semibold">
-                            {emp.nombre} {emp.apellido}
-                        </p>
-
-                        <button
-                            onClick={() => generarTarjeta(idx).then(r => r.blob && saveAs(r.blob, r.nombreArchivo))}
-                            className="mt-2 w-full bg-blue-700 text-white py-2 rounded"
-                        >
-                            Descargar
+                <section className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    {/* SWITCH */}
+                    <div className="flex gap-2">
+                        <button onClick={() => setModo('excel')}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${modo === 'excel' ? 'bg-[#801818] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>
+                            Excel
+                        </button>
+                        <button onClick={() => setModo('manual')}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${modo === 'manual' ? 'bg-[#801818] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>
+                            Manual
                         </button>
                     </div>
-                ))}
-            </div>
 
+                    {/* MANUAL */}
+                    {modo === 'manual' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">Nombre</label>
+                                <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">Apellido</label>
+                                <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">DNI</label>
+                                <input name="dni" value={form.dni} onChange={handleChange} placeholder="DNI" inputMode="numeric" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">Teléfono</label>
+                                <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Teléfono" inputMode="numeric" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">Empresa</label>
+                                <input name="empresa" value={form.empresa} onChange={handleChange} placeholder="Empresa" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">Localidad</label>
+                                <input name="localidad" value={form.localidad} onChange={handleChange} placeholder="Localidad" className="w-full rounded-lg px-3 py-2 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition" />
+                            </div>
+
+                            <button onClick={crearEmpleado} className="sm:col-span-2 bg-[#801818] hover:bg-red-700 text-white py-2 rounded-xl text-sm font-semibold transition shadow-sm">
+                                Agregar
+                            </button>
+                        </div>
+                    )}
+
+                    {/* EXCEL */}
+                    {modo === 'excel' && (
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Archivo Excel
+                            </label>
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls"
+                                onChange={handleFile}
+                                className="block w-full text-sm text-stone-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#801818]/10 file:text-[#801818] hover:file:bg-[#801818]/20 cursor-pointer"
+                            />
+                        </div>
+                    )}
+                </section>
+
+                {loading && (
+                    <div className="flex items-center gap-2 text-sm text-stone-500">
+                        <span className="h-2 w-2 rounded-full bg-[#801818] animate-pulse" />
+                        Procesando...
+                    </div>
+                )}
+
+                {empleados.length > 0 && (
+                    <button
+                        onClick={descargarTodas}
+                        className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white text-sm font-semibold shadow-sm transition"
+                    >
+                        Descargar ZIP
+                    </button>
+                )}
+
+                <div className="flex flex-wrap gap-6">
+                    {empleados.map((emp, idx) => (
+                        <div key={idx} id={`tarjeta-${idx}`}
+                            className="bg-white text-stone-900 border border-stone-200 p-4 rounded-2xl shadow-sm w-[280px]">
+
+                            <div className="flex justify-center">
+                                <img src="/idescuentos.png" className="h-16" />
+                            </div>
+
+                            <img src={emp.qrUrl} className="w-48 h-48 mx-auto" />
+
+                            <p className="text-center font-semibold">
+                                {emp.nombre} {emp.apellido}
+                            </p>
+
+                            <button
+                                onClick={() => generarTarjeta(idx).then(r => r.blob && saveAs(r.blob, r.nombreArchivo))}
+                                className="mt-2 w-full bg-[#801818] hover:bg-red-700 text-white py-2 rounded-xl text-sm font-semibold transition shadow-sm"
+                            >
+                                Descargar
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+            </div>
         </main>
     );
 }
