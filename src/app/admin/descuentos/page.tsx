@@ -134,6 +134,67 @@ export default function AdminDescuentosPage() {
                     </div>
                 </div>
 
+                {/* Agregar empresa */}
+                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
+
+                    <div className="flex items-center gap-1.5 mb-3">
+                        <svg
+                            className="h-3.5 w-3.5 text-stone-400"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                            Agregar empresa
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px_auto] gap-3 sm:items-end">
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Nombre de la empresa
+                            </label>
+                            <input
+                                type="text"
+                                value={nuevaEmpresa}
+                                onChange={(e) => setNuevaEmpresa(e.target.value)}
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                                placeholder="Ej: COTRECO"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Porcentaje de descuento
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={nuevoPorcentaje}
+                                    onChange={(e) => setNuevoPorcentaje(e.target.value)}
+                                    className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 pr-10 pl-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                                    placeholder="Ej: 5"
+                                />
+
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm">
+                                    %
+                                </span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={agregarDescuento}
+                            className="bg-[#801818] hover:bg-red-700 text-white py-2 px-6 rounded-lg text-sm font-semibold transition shadow-sm"
+                        >
+                            Agregar empresa
+                        </button>
+                    </div>
+
+                </div>
+
                 {/* Lista */}
                 {descuentos.length === 0 ? (
                     <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center shadow-sm">
@@ -197,68 +258,6 @@ export default function AdminDescuentosPage() {
 
                     </div>
                 )}
-
-                {/* Agregar empresa */}
-
-                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm max-w-md">
-
-                    <div className="flex items-center gap-1.5 mb-3">
-                        <svg
-                            className="h-3.5 w-3.5 text-stone-400"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                            Agregar empresa
-                        </h2>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div>
-                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
-                                Nombre de la empresa
-                            </label>
-                            <input
-                                type="text"
-                                value={nuevaEmpresa}
-                                onChange={(e) => setNuevaEmpresa(e.target.value)}
-                                className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
-                                placeholder="Ej: COTRECO"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
-                                Porcentaje de descuento
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type="number"
-                                    value={nuevoPorcentaje}
-                                    onChange={(e) => setNuevoPorcentaje(e.target.value)}
-                                    className="w-full bg-stone-50 border border-stone-200 rounded-lg py-2 pr-10 pl-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
-                                    placeholder="Ej: 5"
-                                />
-
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 font-semibold text-sm">
-                                    %
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={agregarDescuento}
-                        className="w-full bg-[#801818] hover:bg-red-700 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm mt-4"
-                    >
-                        Agregar empresa
-                    </button>
-
-                </div>
 
             </div>
         </main>
