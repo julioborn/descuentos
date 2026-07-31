@@ -1,17 +1,29 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export default function PlayeroPage() {
     const router = useRouter();
+    const { data: session } = useSession();
+    const localidad = session?.user?.localidad;
 
     return (
-        <main className="min-h-screen bg-gray-100 px-6 py-12 flex items-start justify-center">
+        <main className="min-h-screen bg-stone-50 px-6 py-12 flex items-start justify-center">
 
-            <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-8 shadow-sm text-center space-y-6 mt-10">
+            <div className="max-w-md w-full bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-center space-y-6 mt-10">
+
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
+                        Panel de carga
+                    </p>
+                    {localidad && (
+                        <p className="text-sm text-stone-500">{localidad}</p>
+                    )}
+                </div>
 
                 {/* ICONO */}
                 <div className="flex justify-center">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gray-100">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[#801818]/10">
                         <svg fill="none" stroke-width="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
                             strokeWidth={1.5}
@@ -23,7 +35,7 @@ export default function PlayeroPage() {
                 </div>
 
                 {/* DESCRIPCION */}
-                <p className="text-gray-500 text-md leading-relaxed">
+                <p className="text-stone-500 text-md leading-relaxed">
                     Escaneá el código QR del empleado.
                 </p>
 

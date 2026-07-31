@@ -57,14 +57,23 @@ export default function QRScannerPage() {
     }, [router]);
 
     return (
-        <main className="min-h-screen bg-gray-100 px-6 py-10 flex items-start pt-10 justify-center">
+        <main className="min-h-screen bg-stone-50 px-6 py-10 flex items-start pt-10 justify-center">
 
-            <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-center space-y-6">
+            <div className="max-w-md w-full bg-white border border-stone-200 rounded-2xl p-6 shadow-sm text-center space-y-6">
+
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
+                        Escaneo de QR
+                    </p>
+                    <p className="text-sm text-stone-500">
+                        Apuntá la cámara al código del empleado
+                    </p>
+                </div>
 
                 <div className="flex justify-center">
                     <video
                         ref={videoRef}
-                        className="w-72 h-72 object-cover rounded-xl border border-gray-200 shadow-sm bg-black"
+                        className="w-72 h-72 object-cover rounded-2xl border border-stone-200 shadow-sm bg-black"
                         autoPlay
                         muted
                         playsInline

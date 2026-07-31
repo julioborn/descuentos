@@ -326,35 +326,45 @@ export default function CargaPage() {
         }
     };
 
-    if (!empleado) return <Loader />;
+    if (!empleado) {
+        return (
+            <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <Loader />
+            </main>
+        );
+    }
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gray-100">
+        <main className="min-h-screen bg-stone-50 px-6 py-10">
 
-            <div className="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+            <div className="max-w-md mx-auto mb-6 bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+                    Empleado
+                </p>
+
                 <h2 className="text-2xl font-bold text-[#111827]">
                     {empleado.nombre} {empleado.apellido}
                 </h2>
 
-                <p className="text-gray-600">
-                    <span className="font-semibold">{labelDoc}:</span> {empleado.dni}
+                <p className="text-stone-500">
+                    <span className="font-semibold text-stone-700">{labelDoc}:</span> {empleado.dni}
                 </p>
 
-                <p className="text-gray-500">
+                <span className="inline-flex items-center rounded-full bg-[#801818]/10 px-3 py-1 text-xs font-semibold text-[#801818]">
                     {empleado.empresa}
-                </p>
+                </span>
             </div>
 
             <form
                 onSubmit={handleSubmit}
-                className="space-y-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6 max-w-md mx-auto"
+                className="space-y-6 bg-white border border-stone-200 rounded-2xl shadow-sm p-6 max-w-md mx-auto"
             >
                 <div className="relative">
                     <select
                         name="producto"
                         value={form.producto}
                         onChange={handleChange}
-                        className="appearance-none w-full p-4 text-lg font-semibold rounded-xl border border-gray-300 bg-white text-gray-900 pr-10 focus:ring-2 focus:ring-[#801818] outline-none"
+                        className="appearance-none w-full p-4 text-lg font-semibold rounded-xl border border-stone-200 bg-stone-50 text-stone-900 pr-10 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 outline-none transition"
                     >
                         <option value="">Elegir producto</option>
                         {precios.map(p => (
@@ -366,7 +376,7 @@ export default function CargaPage() {
                     </select>
 
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
@@ -380,10 +390,10 @@ export default function CargaPage() {
                     value={form.litros}
                     onChange={handleChange}
                     disabled={!form.producto}
-                    className={`w-full p-4 text-2xl text-center border rounded-xl outline-none
+                    className={`w-full p-4 text-2xl text-center border rounded-xl outline-none transition
     ${!form.producto
-                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#801818]'
+                            ? 'bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed'
+                            : 'bg-stone-50 border-stone-200 text-stone-900 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40'
                         }`}
                     placeholder="Litros"
                 />
@@ -393,7 +403,7 @@ export default function CargaPage() {
                     <div className="
       mx-auto max-w-md rounded-2xl
       bg-gradient-to-b from-slate-900 to-slate-800
-      border border-gray-300
+      border border-stone-300
       p-4
     ">
                         <div className="flex items-center justify-between text-slate-300 text-[11px] uppercase tracking-widest">
@@ -407,7 +417,7 @@ export default function CargaPage() {
                     </div>
 
                     {porcentajeDescuento > 0 && (
-                        <p className="mt-4 text-center text-xl font-semibold text-gray-900">
+                        <p className="mt-4 text-center text-xl font-semibold text-stone-800">
                             Descuento {porcentajeDescuento}%
                         </p>
                     )}
@@ -415,7 +425,7 @@ export default function CargaPage() {
 
                 <button
                     type="submit"
-                    className="w-full py-4 rounded-xl bg-[#801818] hover:bg-red-700 text-white text-xl font-bold transition"
+                    className="w-full py-4 rounded-xl bg-[#801818] hover:bg-red-700 text-white text-xl font-bold transition shadow-sm"
                 >
                     Cargar
                 </button>
