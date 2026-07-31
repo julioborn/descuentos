@@ -191,11 +191,14 @@ export default function EmpleadosPage() {
             if (!res.ok) throw new Error();
             const empleado = await res.json();
 
+            const labelDni = labelDocPara(empleado.pais);
+
             const { value: values } = await Swal.fire({
                 title: 'Editar empleado',
                 html: `
           <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
           <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
+          <input id="swal-dni" class="swal2-input" placeholder="${labelDni}" value="${empleado.dni}">
           <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
           <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
           <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
@@ -212,14 +215,15 @@ export default function EmpleadosPage() {
                 preConfirm: () => {
                     const nombre = (document.getElementById('swal-nombre') as HTMLInputElement).value.trim();
                     const apellido = (document.getElementById('swal-apellido') as HTMLInputElement).value.trim();
+                    const dni = (document.getElementById('swal-dni') as HTMLInputElement).value.trim();
                     const telefono = (document.getElementById('swal-telefono') as HTMLInputElement).value.trim();
                     const empresa = (document.getElementById('swal-empresa') as HTMLInputElement).value.trim();
                     const localidad = (document.getElementById('swal-localidad') as HTMLInputElement).value.trim();
-                    if (!nombre || !apellido || !telefono || !empresa || !localidad) {
+                    if (!nombre || !apellido || !dni || !telefono || !empresa || !localidad) {
                         Swal.showValidationMessage('Todos los campos son obligatorios');
                         return;
                     }
-                    return { nombre, apellido, telefono, empresa, localidad };
+                    return { nombre, apellido, dni, telefono, empresa, localidad };
                 },
             });
 
@@ -230,6 +234,10 @@ export default function EmpleadosPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(values),
             });
+            if (updateRes.status === 409) {
+                Swal.fire('Error', `Ya existe otro empleado con ese ${labelDni}.`, 'error');
+                return;
+            }
             if (!updateRes.ok) throw new Error();
             const actualizado = await updateRes.json();
 

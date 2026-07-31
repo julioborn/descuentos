@@ -19,9 +19,24 @@ export async function GET(_: NextRequest, { params }: Params) {
 export async function PATCH(req: NextRequest, { params }: Params) {
     await connectMongoDB();
     const data = await req.json();
-    const actualizado = await Empleado.findByIdAndUpdate(params.id, data, { new: true });
-    if (!actualizado) return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 });
-    return NextResponse.json(actualizado);
+
+    try {
+        const actualizado = await Empleado.findByIdAndUpdate(params.id, data, {
+            new: true,
+            runValidators: true,
+        });
+        if (!actualizado) return NextResponse.json({ error: 'Empleado no encontrado' }, { status: 404 });
+        return NextResponse.json(actualizado);
+    } catch (err: any) {
+        if (err?.code === 11000) {
+            return NextResponse.json(
+                { error: 'Ya existe otro empleado con ese DNI/CI en ese país' },
+                { status: 409 }
+            );
+        }
+        console.error('Error editando empleado:', err);
+        return NextResponse.json({ error: 'Error al editar empleado' }, { status: 500 });
+    }
 }
 
 // ⬇ DELETE: eliminar
