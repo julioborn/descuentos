@@ -217,17 +217,17 @@ export default function Header() {
             {/* ---------- Menú lateral ---------- */}
             <aside
                 className={clsx(
-                    'fixed top-0 left-0 h-full w-72 bg-white text-stone-900 z-50 shadow-xl border-r border-stone-200 transform transition-transform duration-300',
+                    'fixed top-0 left-0 h-full w-72 bg-gray-900 text-white z-50 shadow-xl transform transition-transform duration-300',
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
-                <div className="px-5 py-4 flex items-center justify-between border-b border-stone-100">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+                <div className="px-5 py-4 flex items-center justify-between border-b border-white/10">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                         Menú
                     </p>
                     <button
                         onClick={toggleMenu}
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition text-xl"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white transition text-xl"
                         aria-label="Cerrar menú"
                     >
                         <HiX />
@@ -244,17 +244,17 @@ export default function Header() {
                                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition',
                                 isActive(href)
                                     ? 'bg-[#801818] text-white shadow-sm'
-                                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                                    : 'text-white/70 hover:bg-white/10 hover:text-white'
                             )}
                         >
-                            <span className={isActive(href) ? 'text-white' : 'text-stone-400'}>
+                            <span className={isActive(href) ? 'text-white' : 'text-white/40'}>
                                 {NAV_ICONS[label]}
                             </span>
                             {label}
                         </Link>
                     ))}
 
-                    <div className="mt-4 border-t border-stone-100 pt-4 px-1">
+                    <div className="mt-4 border-t border-white/10 pt-4 px-1">
                         <LogoutButton />
                     </div>
                 </nav>
