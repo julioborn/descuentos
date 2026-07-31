@@ -107,7 +107,7 @@ export default function Header() {
                     <img
                         src="/icons/logolargo.png"
                         alt="Logo"
-                        className="hidden sm:block h-10 w-auto"
+                        className="hidden sm:block h-12 w-auto"
                     />
                     <img
                         src="/icons/icon-512.png"
