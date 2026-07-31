@@ -136,23 +136,23 @@ export default function AdminPage() {
 
             {/* -------- Encabezado -------- */}
             <header className="border-b border-stone-200 bg-white">
-                <div className="max-w-6xl mx-auto px-6 py-10 sm:py-12">
-                    <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div className="max-w-6xl mx-auto px-6 py-5 sm:py-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
                                 Panel de administración
                             </p>
-                            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#111827]">
+                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#111827]">
                                 Administración
                             </h1>
-                            <p className="mt-3 text-stone-500 max-w-md">
+                            <p className="mt-1 text-xs text-stone-500 max-w-md">
                                 Gestioná empleados, cargas y beneficios de combustible desde un mismo lugar.
                             </p>
                         </div>
 
                         {role && (
-                            <div className="flex items-center gap-2 self-start rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600">
-                                <span className="h-2 w-2 rounded-full bg-[#801818]" />
+                            <div className="flex items-center gap-1.5 self-start rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-600">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#801818]" />
                                 {ROLE_LABEL[role] ?? role}
                             </div>
                         )}
