@@ -17,7 +17,7 @@ import {
 import { useSession } from 'next-auth/react';
 
 // ---- metadata de presentación (no altera datos/lógica de "secciones") ----
-const GROUP_ORDER = ['Operación diaria', 'Configuración', 'Análisis y reportes', 'Herramientas'] as const;
+const GROUP_ORDER = ['Operación diaria', 'Herramientas', 'Análisis y reportes', 'Configuración'] as const;
 
 const META: Record<string, { grupo: typeof GROUP_ORDER[number]; descripcion: string }> = {
     Empleados: { grupo: 'Operación diaria', descripcion: 'Altas, bajas y datos de cada beneficiario.' },
