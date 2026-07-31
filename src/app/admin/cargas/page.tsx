@@ -1291,7 +1291,7 @@ ${adv?.mas75
                                             {new Date(c.fecha).toLocaleDateString('es-AR', {
                                                 day: '2-digit',
                                                 month: '2-digit',
-                                                year: 'numeric',
+                                                year: '2-digit',
                                             })}
                                         </td>
                                         <td className="p-3 text-stone-600">
