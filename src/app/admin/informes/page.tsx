@@ -333,58 +333,103 @@ export default function InformesPage() {
         }
     };
 
-    if (loading) return <Loader />;
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <Loader />
+            </main>
+        );
+    }
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gray-50 text-gray-900">
-            <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <main className="min-h-screen bg-stone-50 text-stone-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                <h1 className="text-3xl font-bold text-center mb-6 text-[#111827]">
-                    Informes por Empresa
-                </h1>
+                {/* Encabezado */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                            Análisis y reportes
+                        </p>
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
+                            Informes por Empresa
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#801818]" />
+                        {bloques.length} {bloques.length === 1 ? 'bloque' : 'bloques'} de datos
+                    </div>
+                </div>
 
                 {/* -------- filtros -------- */}
-                <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
-                    <h2 className="font-semibold text-gray-800">Filtros</h2>
+                <section className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3">
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <select
-                            value={añoFiltro}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
-                            }}
-                            className="rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
+                    <div className="flex items-center gap-1.5">
+                        <svg
+                            className="h-3.5 w-3.5 text-stone-400"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
                         >
-                            <option value="TODOS">Todos los años</option>
-                            {añosDisponibles.map((año) => (
-                                <option key={año} value={año}>{año}</option>
-                            ))}
-                        </select>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 10h12M10 16h4" />
+                        </svg>
+                        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                            Filtros
+                        </h2>
+                    </div>
 
-                        <select
-                            value={mesFiltro}
-                            onChange={(e) => setMesFiltro(Number(e.target.value))}
-                            className="rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
-                        >
-                            <option value="0">Todos los meses</option>
-                            {MESES_OPCIONES.map((m) => (
-                                <option key={m.numero} value={m.numero}>{m.nombre}</option>
-                            ))}
-                        </select>
+                    <div className="h-px bg-stone-100" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Año
+                            </label>
+                            <select
+                                value={añoFiltro}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
+                                }}
+                                className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                            >
+                                <option value="TODOS">Todos los años</option>
+                                {añosDisponibles.map((año) => (
+                                    <option key={año} value={año}>{año}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Mes
+                            </label>
+                            <select
+                                value={mesFiltro}
+                                onChange={(e) => setMesFiltro(Number(e.target.value))}
+                                className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                            >
+                                <option value="0">Todos los meses</option>
+                                {MESES_OPCIONES.map((m) => (
+                                    <option key={m.numero} value={m.numero}>{m.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                         <button
                             onClick={exportarExcel}
-                            className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white font-semibold shadow-sm transition"
+                            className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white text-sm font-semibold shadow-sm transition"
                         >
                             Descargar Excel
                         </button>
 
                         <button
                             onClick={exportarPDF}
-                            className="flex items-center gap-2 rounded-xl bg-[#801818] hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-sm transition"
+                            className="flex items-center gap-2 rounded-xl bg-[#801818] hover:bg-red-700 px-4 py-2 text-white text-sm font-semibold shadow-sm transition"
                         >
                             Descargar PDF
                         </button>
@@ -392,7 +437,7 @@ export default function InformesPage() {
                 </section>
 
                 {bloques.length === 0 && (
-                    <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-500 shadow-sm">
+                    <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center text-stone-500 shadow-sm">
                         No hay datos para los filtros seleccionados.
                     </div>
                 )}
@@ -402,8 +447,8 @@ export default function InformesPage() {
                         onClick={() => setEmpresaActiva('TODAS')}
                         className={`px-4 py-2 rounded-xl font-semibold text-sm shadow-sm transition ${
                             empresaActiva === 'TODAS'
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-white border border-blue-200 text-gray-900 hover:bg-gray-50'
+                                ? 'bg-blue-700 text-white'
+                                : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'
                         }`}
                     >
                         Todas las empresas
@@ -416,7 +461,7 @@ export default function InformesPage() {
                             className={`px-4 py-2 rounded-xl font-semibold text-sm shadow-sm transition ${
                                 empresaActiva === empresa
                                     ? 'bg-[#801818] text-white'
-                                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                                    : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
                             }`}
                         >
                             {empresa}
@@ -426,13 +471,13 @@ export default function InformesPage() {
 
                 {bloques.map((bloque) => (
                     <section key={`${bloque.empresa}-${bloque.moneda}`} className="space-y-4">
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-lg font-semibold text-stone-800">
                             {bloque.empresa}
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
-                                <h3 className="text-sm font-semibold mb-4 text-gray-700">Litros por mes</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                                <h3 className="text-sm font-semibold mb-4 text-stone-700">Litros por mes</h3>
                                 <Bar
                                     data={{
                                         labels: bloque.filas.map(periodoLabel),
@@ -446,8 +491,8 @@ export default function InformesPage() {
                                 />
                             </div>
 
-                            <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
-                                <h3 className="text-sm font-semibold mb-4 text-gray-700">
+                            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+                                <h3 className="text-sm font-semibold mb-4 text-stone-700">
                                     Monto generado por mes ({bloque.moneda})
                                 </h3>
                                 <Line
@@ -466,10 +511,10 @@ export default function InformesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 border border-gray-200 shadow-sm rounded-2xl p-5 overflow-x-auto">
+                        <div className="bg-white border border-stone-200 shadow-sm rounded-2xl p-5 overflow-x-auto">
                             <table className="min-w-[500px] w-full text-sm border-separate border-spacing-y-2">
-                                <thead className="text-left text-gray-800">
-                                    <tr className="bg-gray-900 text-white">
+                                <thead className="text-left text-stone-800">
+                                    <tr className="bg-[#111827] text-white">
                                         <th className="p-3 text-left rounded-tl-lg">Período</th>
                                         <th className="p-3 text-right">Litros</th>
                                         <th className="p-3 text-right rounded-tr-lg">Monto ({bloque.moneda})</th>
@@ -477,9 +522,9 @@ export default function InformesPage() {
                                 </thead>
                                 <tbody>
                                     {bloque.filas.map((f) => (
-                                        <tr key={`${f.anio}-${f.mes}`} className="bg-gray-100 hover:bg-gray-200 transition shadow-sm">
-                                            <td className="p-3 rounded-l-lg font-medium">{periodoLabel(f)}</td>
-                                            <td className="p-3 text-right font-semibold">{fmtMoneyAR(f.litros)}</td>
+                                        <tr key={`${f.anio}-${f.mes}`} className="bg-stone-50 hover:bg-stone-100 transition shadow-sm">
+                                            <td className="p-3 rounded-l-lg font-medium text-stone-700">{periodoLabel(f)}</td>
+                                            <td className="p-3 text-right font-semibold text-stone-900">{fmtMoneyAR(f.litros)}</td>
                                             <td className="p-3 text-right rounded-r-lg font-bold text-green-700">
                                                 {fmtMoneyAR(f.monto)} {bloque.moneda}
                                             </td>
@@ -487,7 +532,7 @@ export default function InformesPage() {
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="bg-gray-900 text-white font-bold">
+                                    <tr className="bg-[#111827] text-white font-bold">
                                         <td className="p-3 rounded-l-lg">Totales</td>
                                         <td className="p-3 text-right">{fmtMoneyAR(bloque.totalLitros)}</td>
                                         <td className="p-3 text-right rounded-r-lg">
