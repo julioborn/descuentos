@@ -39,41 +39,69 @@ export default function LoginPage() {
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-            <div className="bg-white backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
-                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Iniciar Sesión</h1>
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <input
-                        type="text"
-                        placeholder="Usuario"
-                        value={nombre}
-                        onChange={e => setNombre(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
-                    />
+            <div className="w-full max-w-md">
 
-                    <input
-                        type={mostrarPassword ? "text" : "password"}
-                        placeholder="Contraseña"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
-                    />
+                <div className="flex justify-center mb-8">
+                    <img src="/icons/logolargo.png" alt="Logo" className="hidden sm:block h-12 w-auto" />
+                    <img src="/icons/icon-512.png" alt="Logo" className="sm:hidden w-16 h-16" />
+                </div>
 
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                        <input
-                            type="checkbox"
-                            checked={mostrarPassword}
-                            onChange={() => setMostrarPassword(prev => !prev)}
-                        />
-                        Mostrar contraseña
-                    </label>
+                <div className="bg-white shadow-2xl rounded-2xl p-8 border border-stone-200">
 
-                    <button
-                        type="submit"
-                        className="w-full bg-red-800 hover:bg-red-700 text-white font-semibold py-2 rounded-xl transition"
-                    >
-                        Entrar
-                    </button>
-                </form>
+                    <div className="text-center mb-6">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                            Sistema de descuentos
+                        </p>
+                        <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+                            Iniciar sesión
+                        </h1>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Usuario
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Usuario"
+                                value={nombre}
+                                onChange={e => setNombre(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-stone-200 bg-stone-50 text-stone-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                Contraseña
+                            </label>
+                            <input
+                                type={mostrarPassword ? "text" : "password"}
+                                placeholder="Contraseña"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-stone-200 bg-stone-50 text-stone-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 transition"
+                            />
+                        </div>
+
+                        <label className="flex items-center gap-2 text-sm text-stone-600">
+                            <input
+                                type="checkbox"
+                                checked={mostrarPassword}
+                                onChange={() => setMostrarPassword(prev => !prev)}
+                                className="accent-[#801818]"
+                            />
+                            Mostrar contraseña
+                        </label>
+
+                        <button
+                            type="submit"
+                            className="w-full bg-[#801818] hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition shadow-sm"
+                        >
+                            Entrar
+                        </button>
+                    </form>
+                </div>
             </div>
         </main>
     );

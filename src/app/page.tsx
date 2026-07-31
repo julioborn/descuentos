@@ -4,6 +4,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Loader from '@/components/Loader';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -23,5 +24,5 @@ export default function HomePage() {
     }
   }, [session, status, router]);
 
-  return null; // no mostrar nada mientras redirige
+  return <Loader />; // feedback visual mientras redirige
 }
