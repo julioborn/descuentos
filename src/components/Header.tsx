@@ -115,9 +115,9 @@ export default function Header() {
 
             {/* ---------- Cinta de precios ---------- */}
             {precios.length > 0 && (
-                <div className="relative overflow-hidden bg-[#111827] border-t border-white/10 text-white">
+                <div className="relative h-6 overflow-hidden bg-[#111827] border-t border-white/10 text-white">
                     {/* Desktop: fila estática */}
-                    <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-1.5 text-xs">
+                    <div className="hidden sm:flex h-full flex-nowrap items-center justify-center gap-x-5 overflow-x-auto px-4 text-[11px] leading-none">
                         {precios.map((p) => (
                             <span key={p.producto} className="inline-flex items-center gap-1 whitespace-nowrap">
                                 <span className="font-medium text-gray-300">{p.producto}</span>
@@ -129,8 +129,8 @@ export default function Header() {
                     </div>
 
                     {/* Mobile: cinta infinita (marquee) */}
-                    <div className="sm:hidden py-1.5">
-                        <div className="ticker-track flex w-max items-center gap-6 text-xs">
+                    <div className="sm:hidden h-full flex items-center">
+                        <div className="ticker-track flex w-max items-center gap-5 text-[11px] leading-none">
                             {[...precios, ...precios].map((p, idx) => (
                                 <span
                                     key={`${p.producto}-${idx}`}
