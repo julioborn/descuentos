@@ -174,13 +174,29 @@ export default function EmpleadosPage() {
 
     /* acciones */
     const eliminarEmpleado = async (id: string) => {
+        const emp = empleados.find((e) => e._id === id);
+        const nombreCompleto = emp ? `${emp.nombre} ${emp.apellido}` : 'este empleado';
+
         const { isConfirmed } = await Swal.fire({
             title: '¿Eliminar empleado?',
-            text: 'Esta acción no se puede deshacer.',
+            html: `
+                <p style="color:#57534e;font-size:14px;margin:0 0 4px;">Vas a eliminar a</p>
+                <p style="color:#111827;font-size:17px;font-weight:700;margin:0 0 10px;">${nombreCompleto}</p>
+                <p style="color:#a8a29e;font-size:13px;margin:0;">Esta acción no se puede deshacer.</p>
+            `,
             icon: 'warning',
+            iconColor: '#801818',
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            background: '#ffffff',
+            color: '#111827',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl',
+                confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
+            },
         });
         if (!isConfirmed) return;
 
@@ -202,24 +218,58 @@ export default function EmpleadosPage() {
 
             const labelDni = labelDocPara(empleado.pais);
 
+            const campoStyle = `
+                width:100%;
+                padding:10px 12px;
+                border-radius:10px;
+                border:1px solid #e7e5e4;
+                background:#fafaf9;
+                color:#1c1917;
+                font-size:14px;
+                outline:none;
+                box-sizing:border-box;
+            `.replace(/\s+/g, ' ');
+
+            const campo = (id: string, label: string, value: string) => `
+                <div style="text-align:left">
+                    <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a8a29e;margin-bottom:4px;">
+                        ${label}
+                    </label>
+                    <input id="${id}" class="emp-edit-field" style="${campoStyle}" value="${value}">
+                </div>
+            `;
+
             const { value: values } = await Swal.fire({
                 title: 'Editar empleado',
                 html: `
-          <input id="swal-nombre" class="swal2-input" placeholder="Nombre" value="${empleado.nombre}">
-          <input id="swal-apellido" class="swal2-input" placeholder="Apellido" value="${empleado.apellido}">
-          <input id="swal-dni" class="swal2-input" placeholder="${labelDni}" value="${empleado.dni}">
-          <input id="swal-telefono" class="swal2-input" placeholder="Teléfono" value="${empleado.telefono}">
-          <input id="swal-empresa" class="swal2-input" placeholder="Empresa" value="${empleado.empresa}">
-          <input id="swal-localidad" class="swal2-input" placeholder="Localidad" value="${empleado.localidad}">
-        `,
+                    <style>
+                        .emp-edit-field:focus {
+                            border-color: rgba(128,24,24,.5) !important;
+                            box-shadow: 0 0 0 3px rgba(128,24,24,.12) !important;
+                            background: #fff !important;
+                        }
+                    </style>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px;">
+                        ${campo('swal-nombre', 'Nombre', empleado.nombre)}
+                        ${campo('swal-apellido', 'Apellido', empleado.apellido)}
+                        ${campo('swal-dni', labelDni, empleado.dni)}
+                        ${campo('swal-telefono', 'Teléfono', empleado.telefono)}
+                        ${campo('swal-empresa', 'Empresa', empleado.empresa)}
+                        ${campo('swal-localidad', 'Localidad', empleado.localidad)}
+                    </div>
+                `,
+                width: 480,
                 focusConfirm: false,
                 confirmButtonText: 'Guardar',
                 cancelButtonText: 'Cancelar',
                 showCancelButton: true,
+                buttonsStyling: false,
+                background: '#ffffff',
+                color: '#111827',
                 customClass: {
-                    confirmButton:
-                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
-                    cancelButton: 'swal2-cancel px-6 py-2 rounded',
+                    popup: 'rounded-2xl shadow-xl text-left',
+                    confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                    cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
                 },
                 preConfirm: () => {
                     const nombre = (document.getElementById('swal-nombre') as HTMLInputElement).value.trim();
@@ -268,42 +318,41 @@ export default function EmpleadosPage() {
             });
 
             const html = `
-<div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+
+<div style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:9999px;background:rgba(128,24,24,.1);color:#801818;font-size:16px;font-weight:800;">
+${inicialesDe(emp.nombre, emp.apellido)}
+</div>
 
 <div style="text-align:center">
 
-<div style="font-size:22px;font-weight:800;color:#111827;letter-spacing:.3px">
+<div style="font-size:20px;font-weight:800;color:#111827;letter-spacing:.2px">
 ${emp.nombre} ${emp.apellido}
 </div>
 
-<div style="margin-top:10px;font-size:16px;color:#374151;font-weight:500">
-${labelDocPara(emp.pais)}: ${emp.dni}
+<div style="margin-top:8px;font-size:14px;color:#57534e;font-weight:500">
+${labelDocPara(emp.pais)} ${emp.dni} · TEL ${emp.telefono}
 </div>
 
-<div style="margin-top:4px;font-size:16px;color:#374151;font-weight:500">
-TEL: ${emp.telefono}
-</div>
-
-<div style="margin-top:14px;font-size:18px;font-weight:700;color:#1f2937">
+<div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:9999px;background:rgba(128,24,24,.1);color:#801818;font-size:12px;font-weight:700;">
 ${emp.empresa}
 </div>
 ${emp.empresa === "POLICIA" && emp.subcategoria
-                    ? `<div style="font-size:14px;color:#4b5563">${emp.subcategoria}</div>`
+                    ? `<div style="margin-top:6px;font-size:13px;color:#78716c">${emp.subcategoria}</div>`
                     : ""
                 }
 
-<div style="margin-top:14px;font-size:15px;color:#4b5563">
+<div style="margin-top:10px;font-size:13px;color:#a8a29e">
 ${emp.localidad}
 </div>
-
 
 </div>
 
 <div style="
-padding:14px;
-background:#f3f4f6;
+padding:16px;
+background:#fafaf9;
+border:1px solid #e7e5e4;
 border-radius:16px;
-box-shadow:0 6px 16px rgba(0,0,0,0.08);
 display:flex;
 justify-content:center;
 ">
@@ -316,15 +365,16 @@ justify-content:center;
 `;
             await Swal.fire({
                 html,
-                width: 520,
+                width: 480,
                 showConfirmButton: true,
                 confirmButtonText: "Cerrar",
+                buttonsStyling: false,
                 background: "#ffffff",
                 color: "#111827",
                 customClass: {
                     popup: "rounded-2xl shadow-xl p-6",
                     confirmButton:
-                        "bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl",
+                        "bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm",
                 },
             });
         } catch (e) {
