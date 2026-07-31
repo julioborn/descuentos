@@ -173,49 +173,69 @@ export default function EstadisticasPage() {
         return map;
     }, [cargasFiltradasPorAnio]);
 
-    if (loading) return <Loader />;
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <Loader />
+            </main>
+        );
+    }
 
     return (
-        <main className="min-h-screen px-6 py-12 bg-gray-50">
+        <main className="min-h-screen bg-stone-50">
 
-            <div className="max-w-7xl mx-auto space-y-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                <h1 className="text-4xl font-bold text-center text-[#111827]">
-                    Estadísticas
-                </h1>
+                {/* Encabezado */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                            Análisis y reportes
+                        </p>
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
+                            Estadísticas
+                        </h1>
+                    </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-
-                    <span className="text-gray-600 font-semibold">
-                        Año:
-                    </span>
-
-                    <select
-                        value={anioSeleccionado}
-                        onChange={(e) =>
-                            setAnioSeleccionado(
-                                e.target.value === 'TODOS' ? 'TODOS' : Number(e.target.value)
-                            )
-                        }
-                        className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 min-w-[160px]"
-                    >
-
-                        <option value="TODOS">Todos</option>
-
-                        {aniosDisponibles.map((a) => (
-                            <option key={a} value={a}>
-                                {a}
-                            </option>
-                        ))}
-
-                    </select>
-
+                    <div className="flex items-center gap-2 self-start rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#801818]" />
+                        {cargasFiltradasPorAnio.length} cargas {anioSeleccionado === 'TODOS' ? '(todos los años)' : `en ${anioSeleccionado}`}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Selector de año */}
+                <section className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm">
+                    <div className="max-w-[200px]">
+                        <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                            Año
+                        </label>
+                        <select
+                            value={anioSeleccionado}
+                            onChange={(e) =>
+                                setAnioSeleccionado(
+                                    e.target.value === 'TODOS' ? 'TODOS' : Number(e.target.value)
+                                )
+                            }
+                            className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 text-stone-700
+focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                        >
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                            <option value="TODOS">Todos</option>
+
+                            {aniosDisponibles.map((a) => (
+                                <option key={a} value={a}>
+                                    {a}
+                                </option>
+                            ))}
+
+                        </select>
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-sm font-semibold mb-6 text-stone-700">
                             Litros cargados por mes
                         </h2>
                         <Bar
@@ -230,8 +250,8 @@ export default function EstadisticasPage() {
                         />
                     </section>
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-sm font-semibold mb-6 text-stone-700">
                             Ingresos por mes
                         </h2>
                         <Line
@@ -248,8 +268,8 @@ export default function EstadisticasPage() {
                         />
                     </section>
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-sm font-semibold mb-6 text-stone-700">
                             Distribución por producto
                         </h2>
 
@@ -275,8 +295,8 @@ export default function EstadisticasPage() {
                         </div>
                     </section>
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-sm font-semibold mb-6 text-stone-700">
                             Top empleados
                         </h2>
 
@@ -293,8 +313,8 @@ export default function EstadisticasPage() {
 
                     </section>
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                        <h2 className="text-lg font-semibold mb-6 text-gray-800">
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <h2 className="text-sm font-semibold mb-6 text-stone-700">
                             Cargas por localidad
                         </h2>
 
@@ -315,15 +335,15 @@ export default function EstadisticasPage() {
 
                     </section>
 
-                    <section className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                    <section className="bg-white border border-stone-200 p-6 sm:p-8 rounded-2xl shadow-sm">
 
                         <div className="flex items-center justify-between mb-4">
 
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <h2 className="text-sm font-semibold text-stone-700">
                                 Día con más cargas
                             </h2>
 
-                            <span className="px-3 py-1 rounded-full bg-[#801818] text-white font-bold">
+                            <span className="px-3 py-1 rounded-full bg-[#801818] text-white text-sm font-bold">
                                 {diaMasCargas.dia} ({diaMasCargas.cantidad})
                             </span>
 
@@ -331,7 +351,7 @@ export default function EstadisticasPage() {
 
                         <div className="mb-6">
 
-                            <h3 className="text-sm text-gray-500 mb-2 font-semibold">
+                            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-2">
                                 Top 3 días
                             </h3>
 
@@ -340,18 +360,18 @@ export default function EstadisticasPage() {
                                 {topDias.map((t, i) => (
                                     <span
                                         key={t.dia}
-                                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-sm"
+                                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 text-sm"
                                     >
 
                                         <span className="inline-grid place-items-center w-6 h-6 rounded-full bg-[#111827] text-white font-bold">
                                             {i + 1}
                                         </span>
 
-                                        <span className="font-semibold">
+                                        <span className="font-semibold text-stone-700">
                                             {t.dia}
                                         </span>
 
-                                        <span className="text-gray-500">
+                                        <span className="text-stone-500">
                                             ({t.cantidad})
                                         </span>
 
