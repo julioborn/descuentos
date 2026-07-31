@@ -260,10 +260,10 @@ export default function Header() {
                 </nav>
             </aside>
 
-            {/* ---------- Overlay al abrir menú (solo móvil) ---------- */}
+            {/* ---------- Overlay al abrir menú (cierra al tocar fuera) ---------- */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                    className="fixed inset-0 bg-black/50 z-40"
                     onClick={toggleMenu}
                 />
             )}
