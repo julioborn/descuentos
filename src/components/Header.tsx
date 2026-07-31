@@ -91,25 +91,36 @@ export default function Header() {
                     />
                 </Link>
 
-                {/* Botón recargar (solo móviles) */}
-                <button
-                    onClick={() => window.location.reload()}
-                    className="sm:hidden text-2xl absolute right-4 top-1/2 -translate-y-1/2"
-                    aria-label="Recargar página"
-                >
-                    <HiOutlineRefresh />
-                </button>
+                {/* Bandera del país + recargar (esquina derecha) */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                    {moneda && (
+                        <span
+                            className="text-2xl leading-none"
+                            title={moneda === 'ARS' ? 'Argentina' : 'Paraguay'}
+                            aria-label={moneda === 'ARS' ? 'Argentina' : 'Paraguay'}
+                        >
+                            {banderaPorMoneda(moneda)}
+                        </span>
+                    )}
+
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="sm:hidden text-2xl"
+                        aria-label="Recargar página"
+                    >
+                        <HiOutlineRefresh />
+                    </button>
+                </div>
             </header>
 
             {/* ---------- Cinta de precios ---------- */}
             {precios.length > 0 && (
                 <div className="relative overflow-hidden bg-[#111827] border-t border-white/10 text-white">
                     {/* Desktop: fila estática */}
-                    <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2 text-sm">
+                    <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-1.5 text-xs">
                         {precios.map((p) => (
-                            <span key={p.producto} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="opacity-70">{banderaPorMoneda(p.moneda)}</span>
-                                <span className="font-medium text-gray-200">{p.producto}</span>
+                            <span key={p.producto} className="inline-flex items-center gap-1 whitespace-nowrap">
+                                <span className="font-medium text-gray-300">{p.producto}</span>
                                 <span className="font-bold text-emerald-400">
                                     {simboloPorMoneda(p.moneda)} {fmtPrecio(p.precio)}
                                 </span>
@@ -118,15 +129,14 @@ export default function Header() {
                     </div>
 
                     {/* Mobile: cinta infinita (marquee) */}
-                    <div className="sm:hidden py-2">
-                        <div className="ticker-track flex w-max items-center gap-8 text-sm">
+                    <div className="sm:hidden py-1.5">
+                        <div className="ticker-track flex w-max items-center gap-6 text-xs">
                             {[...precios, ...precios].map((p, idx) => (
                                 <span
                                     key={`${p.producto}-${idx}`}
-                                    className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                                    className="inline-flex items-center gap-1 whitespace-nowrap"
                                 >
-                                    <span className="opacity-70">{banderaPorMoneda(p.moneda)}</span>
-                                    <span className="font-medium text-gray-200">{p.producto}</span>
+                                    <span className="font-medium text-gray-300">{p.producto}</span>
                                     <span className="font-bold text-emerald-400">
                                         {simboloPorMoneda(p.moneda)} {fmtPrecio(p.precio)}
                                     </span>
