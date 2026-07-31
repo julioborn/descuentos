@@ -17,11 +17,31 @@ type PrecioProducto = {
 const simboloPorMoneda = (moneda?: string) =>
     moneda === 'ARS' ? '$' : moneda === 'Gs' ? 'Gs' : '';
 
-const banderaPorMoneda = (moneda?: string) =>
-    moneda === 'ARS' ? '🇦🇷' : moneda === 'Gs' ? '🇵🇾' : '';
-
 const fmtPrecio = (n: number) =>
     n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Banderas como SVG propio: los emojis de bandera (🇦🇷/🇵🇾) no se renderizan
+// como ícono en Windows (muestran "AR"/"PY" en texto), así que evitamos el emoji.
+function FlagAR({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 3 2" className={className} aria-hidden="true">
+            <rect width="3" height="2" fill="#fff" />
+            <rect width="3" height="0.6667" fill="#75AADB" />
+            <rect width="3" height="0.6667" y="1.3333" fill="#75AADB" />
+            <circle cx="1.5" cy="1" r="0.22" fill="#F6B40E" stroke="#85340A" strokeWidth="0.02" />
+        </svg>
+    );
+}
+
+function FlagPY({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 3 2" className={className} aria-hidden="true">
+            <rect width="3" height="0.6667" fill="#D52B1E" />
+            <rect width="3" height="0.6667" y="0.6667" fill="#fff" />
+            <rect width="3" height="0.6667" y="1.3333" fill="#0038A8" />
+        </svg>
+    );
+}
 
 export default function Header() {
     const { data: session } = useSession();
@@ -93,13 +113,17 @@ export default function Header() {
 
                 {/* Bandera del país + recargar (esquina derecha) */}
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                    {moneda && (
+                    {moneda && (moneda === 'ARS' || moneda === 'Gs') && (
                         <span
-                            className="text-2xl leading-none"
+                            className="inline-flex h-5 w-7 overflow-hidden rounded-[3px] ring-1 ring-white/20"
                             title={moneda === 'ARS' ? 'Argentina' : 'Paraguay'}
                             aria-label={moneda === 'ARS' ? 'Argentina' : 'Paraguay'}
                         >
-                            {banderaPorMoneda(moneda)}
+                            {moneda === 'ARS' ? (
+                                <FlagAR className="h-full w-full" />
+                            ) : (
+                                <FlagPY className="h-full w-full" />
+                            )}
                         </span>
                     )}
 
