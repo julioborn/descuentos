@@ -4,6 +4,7 @@ import { useEffect, useState, ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
+import { FuelIcon } from 'lucide-react';
 
 type Producto = {
     _id: string;
@@ -145,9 +146,7 @@ export default function AdminPreciosPage() {
 
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-[#801818]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="w-5 h-5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-                                        </svg>
+                                        <FuelIcon className="w-5 h-5" />
                                     </div>
                                     <div className="text-base font-semibold text-stone-800">
                                         {p.producto}
