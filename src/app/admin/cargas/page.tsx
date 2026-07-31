@@ -27,6 +27,13 @@ type Carga = {
     localidad: string;
 };
 
+const inicialesDeNombre = (nombreCompleto?: string) => {
+    const partes = (nombreCompleto ?? '').trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return '—';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return `${partes[0][0]}${partes[1][0]}`.toUpperCase();
+};
+
 /* Ventana de paginación con elipsis (igual a /docentes) */
 function buildPageWindow(total: number, current: number, maxButtons = 7) {
     if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
@@ -342,7 +349,13 @@ export default function CargasPage() {
         return map;
     }, [filtradas]);
 
-    if (loading) return <Loader />;
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <Loader />
+            </main>
+        );
+    }
 
     // const editarCarga = async (id: string) => {
     //     try {
@@ -425,12 +438,31 @@ export default function CargasPage() {
     // };
 
     const eliminarCarga = async (id: string) => {
+        const carga = cargas.find((c) => c._id === id);
+        const detalle = carga
+            ? `${carga.nombreEmpleado} · ${carga.litros} L de ${carga.producto}`
+            : 'esta carga';
+
         const { isConfirmed } = await Swal.fire({
-            title: '¿Eliminar?',
-            text: 'Esta acción no se puede deshacer.',
+            title: '¿Eliminar carga?',
+            html: `
+                <p style="color:#57534e;font-size:14px;margin:0 0 4px;">Vas a eliminar</p>
+                <p style="color:#111827;font-size:16px;font-weight:700;margin:0 0 10px;">${detalle}</p>
+                <p style="color:#a8a29e;font-size:13px;margin:0;">Esta acción no se puede deshacer.</p>
+            `,
             icon: 'warning',
+            iconColor: '#801818',
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            background: '#ffffff',
+            color: '#111827',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl',
+                confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
+            },
         });
 
         if (!isConfirmed) return;
@@ -738,55 +770,76 @@ export default function CargasPage() {
             if (!res.ok) throw new Error('fetch carga');
             const carga: Carga = await res.json();
 
+            const campoStyle = `
+                width:100%;
+                padding:10px 12px;
+                border-radius:10px;
+                border:1px solid #e7e5e4;
+                background:#fafaf9;
+                color:#1c1917;
+                font-size:14px;
+                outline:none;
+                box-sizing:border-box;
+                margin:0;
+            `.replace(/\s+/g, ' ');
+
+            const label = (texto: string) => `
+                <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a8a29e;margin-bottom:4px;">
+                    ${texto}
+                </label>
+            `;
+
             const { value: values } = await Swal.fire({
                 title: 'Editar carga',
-                width: 700,
-                background: '#1f2937',
-                color: '#e5e7eb',
+                width: 560,
+                background: '#ffffff',
+                color: '#111827',
                 buttonsStyling: false,
                 showCancelButton: true,
                 confirmButtonText: 'Guardar',
                 cancelButtonText: 'Cancelar',
                 customClass: {
-                    confirmButton:
-                        'swal2-confirm bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded',
-                    cancelButton:
-                        'swal2-cancel bg-gray-500/60 hover:bg-gray-500/80 text-white font-semibold px-6 py-2 rounded'
+                    popup: 'rounded-2xl shadow-xl text-left',
+                    confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                    cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
                 },
                 html: `
+        <style>
+          .carga-edit-field:focus {
+            border-color: rgba(128,24,24,.5) !important;
+            box-shadow: 0 0 0 3px rgba(128,24,24,.12) !important;
+            background: #fff !important;
+          }
+        </style>
         <div id="swal-form" style="
-          display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:flex-start;width:100%;box-sizing:border-box;">
+          display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:flex-start;width:100%;box-sizing:border-box;margin-top:6px;">
           <div>
-            <label style="font-weight:600;display:block;margin-bottom:6px;">Litros</label>
-            <input id="swal-litros" class="swal2-input" inputmode="decimal"
+            ${label('Litros')}
+            <input id="swal-litros" class="carga-edit-field" inputmode="decimal"
                    value="${carga.litros ?? ''}" placeholder="0,00"
-                   style="width:100%;margin:0;box-sizing:border-box;">
+                   style="${campoStyle}">
           </div>
           <div>
-            <label style="font-weight:600;display:block;margin-bottom:6px;">Producto</label>
-            <input id="swal-producto" class="swal2-input"
+            ${label('Producto')}
+            <input id="swal-producto" class="carga-edit-field"
                    value="${carga.producto ?? ''}" placeholder="Ej: Súper"
-                   style="width:100%;margin:0;box-sizing:border-box;">
+                   style="${campoStyle}">
           </div>
           <div>
-            <label style="font-weight:600;display:block;margin-bottom:6px;">
-              Precio surtidor (${carga.moneda})
-            </label>
-            <input id="swal-precioSin" class="swal2-input" inputmode="decimal"
+            ${label(`Precio surtidor (${carga.moneda})`)}
+            <input id="swal-precioSin" class="carga-edit-field" inputmode="decimal"
                    value="${carga.precioFinalSinDescuento ?? ''}" placeholder="0,00"
-                   style="width:100%;margin:0;box-sizing:border-box;">
+                   style="${campoStyle}">
           </div>
           <div>
-            <label style="font-weight:600;display:block;margin-bottom:6px;">
-              Precio con descuento (${carga.moneda})
-            </label>
-            <input id="swal-precio" class="swal2-input" inputmode="decimal"
+            ${label(`Precio con descuento (${carga.moneda})`)}
+            <input id="swal-precio" class="carga-edit-field" inputmode="decimal"
                    value="${carga.precioFinal ?? ''}" placeholder="0,00"
-                   style="width:100%;margin:0;box-sizing:border-box;">
+                   style="${campoStyle}">
           </div>
           <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:-6px">
-            <input id="swal-auto" type="checkbox" checked />
-            <label for="swal-auto">Autocalcular precios al cambiar litros</label>
+            <input id="swal-auto" type="checkbox" checked style="accent-color:#801818;" />
+            <label for="swal-auto" style="font-size:13px;color:#57534e;">Autocalcular precios al cambiar litros</label>
           </div>
         </div>
       `,
@@ -858,30 +911,55 @@ export default function CargasPage() {
     };
 
     return (
-        <main className="min-h-screen px-6 py-10 bg-gray-50 text-gray-900">
-            <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <main className="min-h-screen bg-stone-50 text-stone-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                <h1 className="text-3xl font-bold text-center mb-6 text-[#111827]">
-                    Cargas
-                </h1>
+                {/* Encabezado */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                            Operación diaria
+                        </p>
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111827]">
+                            Cargas
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#801818]" />
+                        {filtradas.length} de {cargas.length} cargas
+                    </div>
+                </div>
 
                 {/* -------- filtros -------- */}
-                <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
-                    {/* HEADER FILTROS (solo mobile) */}
+                <section className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3">
+
+                    {/* HEADER FILTROS */}
                     <div className="flex items-center justify-between">
 
-                        <h2 className="font-semibold text-gray-800">
-                            Filtros
-                        </h2>
+                        <div className="flex items-center gap-1.5">
+                            <svg
+                                className="h-3.5 w-3.5 text-stone-400"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 10h12M10 16h4" />
+                            </svg>
+                            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                                Filtros
+                            </h2>
+                        </div>
 
                         <button
                             onClick={() => setFiltrosAbiertos(!filtrosAbiertos)}
-                            className="flex items-center gap-1 text-sm text-gray-600"
+                            className="flex items-center gap-1 text-xs font-medium text-[#801818]"
                         >
                             <span>{filtrosAbiertos ? "Ocultar" : "Mostrar"}</span>
 
                             <svg
-                                className={`w-4 h-4 transition-transform ${filtrosAbiertos ? "rotate-180" : ""}`}
+                                className={`w-3.5 h-3.5 transition-transform ${filtrosAbiertos ? "rotate-180" : ""}`}
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="2"
@@ -894,137 +972,172 @@ export default function CargasPage() {
 
                     </div>
 
+                    <div className="h-px bg-stone-100" />
+
                     {/* 🔍 BUSCADOR (siempre visible) */}
-                    <div className="relative">
-                        <input
-                            value={busqueda}
-                            onChange={(e) => {
-                                setBusqueda(e.target.value)
-                                setPagina(1)
-                            }}
-                            placeholder="Buscar…"
-                            className="w-full rounded-xl px-4 py-3 pr-11
-        bg-gray-100 border border-gray-200
-        focus:ring-2 focus:ring-[#801818] focus:outline-none"
-                        />
-                        <HiSearch
-                            size={20}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-                        />
+                    <div>
+                        <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                            Buscar
+                        </label>
+                        <div className="relative">
+                            <input
+                                value={busqueda}
+                                onChange={(e) => {
+                                    setBusqueda(e.target.value)
+                                    setPagina(1)
+                                }}
+                                placeholder={`Empleado, ${labelDoc}…`}
+                                className="w-full rounded-lg px-3 py-2 pr-9 text-sm
+bg-stone-50 border border-stone-200
+focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none transition"
+                            />
+                            <HiSearch
+                                size={16}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
+                            />
+                        </div>
                     </div>
 
                     {/* FILTROS */}
-                    <div className={`${filtrosAbiertos ? "block" : "hidden"} space-y-3`}>
+                    <div className={`${filtrosAbiertos ? "block" : "hidden"} space-y-2.5`}>
 
                         {/* FILA 1 */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                             {/* LOCALIDAD */}
-                            <select
-                                value={localidadFiltro}
-                                onChange={(e) => {
-                                    setLocalidadFiltro(e.target.value);
-                                    setEmpresaFiltro('TODAS');
-                                    setPagina(1);
-                                }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                <option value="TODAS">Todas las localidades</option>
-                                {localidadesUnicas.map((loc) => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                ))}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Localidad
+                                </label>
+                                <select
+                                    value={localidadFiltro}
+                                    onChange={(e) => {
+                                        setLocalidadFiltro(e.target.value);
+                                        setEmpresaFiltro('TODAS');
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200
+            focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    <option value="TODAS">Todas las localidades</option>
+                                    {localidadesUnicas.map((loc) => (
+                                        <option key={loc} value={loc}>{loc}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             {/* EMPRESA */}
-                            <select
-                                value={empresaFiltro}
-                                onChange={(e) => {
-                                    setEmpresaFiltro(e.target.value);
-                                    setPagina(1);
-                                }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                <option value="TODAS">Todas las empresas</option>
-                                {empresasOpciones.map((empresa) => (
-                                    <option key={empresa} value={empresa}>{empresa}</option>
-                                ))}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Empresa
+                                </label>
+                                <select
+                                    value={empresaFiltro}
+                                    onChange={(e) => {
+                                        setEmpresaFiltro(e.target.value);
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200
+            focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    <option value="TODAS">Todas las empresas</option>
+                                    {empresasOpciones.map((empresa) => (
+                                        <option key={empresa} value={empresa}>{empresa}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             {/* PRODUCTO */}
-                            <select
-                                value={productoFiltro}
-                                onChange={(e) => {
-                                    setProductoFiltro(e.target.value);
-                                    setPagina(1);
-                                }}
-                                className="rounded-xl px-3 py-2 bg-white border border-gray-200
-            focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                <option value="TODOS">Todos los productos</option>
-                                {productosUnicos.map((p) => {
-                                    const carga = cargas.find(c => c.producto === p);
-                                    const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
-                                    return (
-                                        <option key={p} value={p}>{bandera} {p}</option>
-                                    );
-                                })}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Producto
+                                </label>
+                                <select
+                                    value={productoFiltro}
+                                    onChange={(e) => {
+                                        setProductoFiltro(e.target.value);
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200
+            focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    <option value="TODOS">Todos los productos</option>
+                                    {productosUnicos.map((p) => {
+                                        const carga = cargas.find(c => c.producto === p);
+                                        const bandera = carga ? banderaPorMoneda(carga.moneda) : '';
+                                        return (
+                                            <option key={p} value={p}>{bandera} {p}</option>
+                                        );
+                                    })}
+                                </select>
+                            </div>
 
                         </div>
 
                         {/* FILA 2 */}
-                        <div className="grid grid-cols-1 md:grid-cols-[160px_160px_minmax(220px,320px)_120px_auto] gap-3 items-center">
+                        <div className="grid grid-cols-1 md:grid-cols-[160px_160px_minmax(220px,320px)_120px_auto] gap-2.5 items-end">
                             {/* AÑO */}
-                            <select
-                                value={añoFiltro}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
-                                    setMesFiltro(0);
-                                    setPagina(1);
-                                }}
-                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                <option value="TODOS">Todos los años</option>
-                                {añosDisponibles.map((año) => (
-                                    <option key={año} value={año}>{año}</option>
-                                ))}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Año
+                                </label>
+                                <select
+                                    value={añoFiltro}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setAñoFiltro(val === 'TODOS' ? 'TODOS' : parseInt(val));
+                                        setMesFiltro(0);
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    <option value="TODOS">Todos los años</option>
+                                    {añosDisponibles.map((año) => (
+                                        <option key={año} value={año}>{año}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             {/* MES */}
-                            <select
-                                value={mesFiltro}
-                                onChange={(e) => {
-                                    setMesFiltro(Number(e.target.value));
-                                    setPagina(1);
-                                }}
-                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                <option value="0">Todos los meses</option>
-                                {mesesDelAño.map((m) => (
-                                    <option key={m.numero} value={m.numero}>{m.nombre}</option>
-                                ))}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Mes
+                                </label>
+                                <select
+                                    value={mesFiltro}
+                                    onChange={(e) => {
+                                        setMesFiltro(Number(e.target.value));
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    <option value="0">Todos los meses</option>
+                                    {mesesDelAño.map((m) => (
+                                        <option key={m.numero} value={m.numero}>{m.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             {/* RANGO */}
                             <div className="relative w-full" ref={calendarioRef}>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Fecha
+                                </label>
                                 <button
                                     type="button"
                                     onClick={() => setMostrarCalendario((prev) => !prev)}
-                                    className="w-full rounded-xl px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-left"
+                                    className="w-full rounded-lg px-3 py-1.5 text-sm bg-stone-50 border border-stone-200 hover:bg-stone-100 text-left transition"
                                 >
                                     {range?.from ? (
                                         range?.to
                                             ? `${format(range.from, "d MMM", { locale: es })} — ${format(range.to, "d MMM yyyy", { locale: es })}`
                                             : `Desde ${format(range.from, "d MMM yyyy", { locale: es })}`
                                     ) : (
-                                        "Fecha"
+                                        "Elegir fecha"
                                     )}
                                 </button>
 
                                 {mostrarCalendario && (
-                                    <div className="absolute z-50 top-12 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4">
+                                    <div className="absolute z-50 top-16 left-0 bg-white border border-stone-200 rounded-xl shadow-xl p-4">
                                         <DayPicker
                                             mode="range"
                                             locale={es}
@@ -1067,24 +1180,29 @@ export default function CargasPage() {
                             </div>
 
                             {/* ITEMS POR PÁGINA */}
-                            <select
-                                value={itemsPorPagina}
-                                onChange={(e) => {
-                                    setItemsPorPagina(parseInt(e.target.value));
-                                    setPagina(1);
-                                }}
-                                className="w-full rounded-xl px-3 py-2 bg-white border border-gray-200 focus:ring-[#801818] focus:outline-none cursor-pointer"
-                            >
-                                {[5, 10, 20, 50, 100].map((cantidad) => (
-                                    <option key={cantidad} value={cantidad}>
-                                        Ver {cantidad}
-                                    </option>
-                                ))}
-                            </select>
+                            <div>
+                                <label className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-stone-400">
+                                    Por página
+                                </label>
+                                <select
+                                    value={itemsPorPagina}
+                                    onChange={(e) => {
+                                        setItemsPorPagina(parseInt(e.target.value));
+                                        setPagina(1);
+                                    }}
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-sm bg-stone-50 border border-stone-200 focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none cursor-pointer transition"
+                                >
+                                    {[5, 10, 20, 50, 100].map((cantidad) => (
+                                        <option key={cantidad} value={cantidad}>
+                                            Ver {cantidad}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
                             {/* SEGUNDA FILA */}
                             <div className="flex items-center">
-                                <label className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer select-none">
+                                <label className="inline-flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm cursor-pointer select-none">
                                     <input
                                         type="checkbox"
                                         checked={soloHoy}
@@ -1092,7 +1210,7 @@ export default function CargasPage() {
                                             setSoloHoy(e.target.checked);
                                             setPagina(1);
                                         }}
-                                        className="accent-red-700"
+                                        className="accent-[#801818]"
                                     />
                                     <span>Cargas del día</span>
                                 </label>
@@ -1104,14 +1222,14 @@ export default function CargasPage() {
 
                             <button
                                 onClick={exportarExcel}
-                                className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white font-semibold shadow-sm transition"
+                                className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white text-sm font-semibold shadow-sm transition"
                             >
                                 Descargar Excel
                             </button>
 
                             <button
                                 onClick={exportarPDF}
-                                className="flex items-center gap-2 rounded-xl bg-[#801818] hover:bg-red-700 px-4 py-2 text-white font-semibold shadow-sm transition"
+                                className="flex items-center gap-2 rounded-xl bg-[#801818] hover:bg-red-700 px-4 py-2 text-white text-sm font-semibold shadow-sm transition"
                             >
                                 Descargar PDF
                             </button>
@@ -1122,11 +1240,22 @@ export default function CargasPage() {
 
                 </section>
 
+                {/* -------- Estado vacío -------- */}
+                {pageList.length === 0 && (
+                    <div className="bg-white border border-stone-200 rounded-2xl p-10 text-center shadow-sm">
+                        <p className="text-sm text-stone-500">
+                            No se encontraron cargas con estos filtros.
+                        </p>
+                    </div>
+                )}
+
+                {pageList.length > 0 && (
+                <>
                 {/* -------- Tabla desktop -------- */}
-                <div className="hidden sm:block bg-gray-50 border border-gray-200 shadow-sm rounded-2xl p-5 space-y-4 overflow-x-auto">
+                <div className="hidden sm:block bg-white border border-stone-200 shadow-sm rounded-2xl p-5 space-y-4 overflow-x-auto">
                     <table className="min-w-[1100px] w-full text-sm border-separate border-spacing-y-2">
-                        <thead className="text-left text-gray-800">
-                            <tr className="bg-gray-900 text-white">
+                        <thead className="text-left text-stone-800">
+                            <tr className="bg-[#111827] text-white">
                                 <th className="p-3 text-left rounded-tl-lg">Fecha</th>
                                 <th className="p-3 text-left">Hora</th>
                                 <th className="p-3 text-left">Empleado</th>
@@ -1153,65 +1282,74 @@ transition shadow-sm hover:shadow-md
 ${adv?.mas75
                                                 ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500"
                                                 : adv?.muchasCargas
-                                                    ? "bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400"
-                                                    : "bg-gray-100 hover:bg-gray-200"
+                                                    ? "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400"
+                                                    : "bg-stone-50 hover:bg-stone-100"
                                             }
 `}
                                     >
-                                        <td className="p-3 rounded-l-lg">
+                                        <td className="p-3 rounded-l-lg text-stone-600">
                                             {new Date(c.fecha).toLocaleDateString('es-AR', {
                                                 day: '2-digit',
                                                 month: '2-digit',
                                                 year: 'numeric',
                                             })}
                                         </td>
-                                        <td className="p-3">
+                                        <td className="p-3 text-stone-600">
                                             {new Date(c.fecha).toLocaleTimeString('es-AR', {
                                                 hour12: false,
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                             })}
                                         </td>
-                                        <td className="p-3 font-semibold">
-                                            <div className="flex items-center gap-2">
-                                                {c.nombreEmpleado}
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
+                                                    {inicialesDeNombre(c.nombreEmpleado)}
+                                                </div>
+                                                <div className="min-w-0 flex items-center gap-2">
+                                                    <span className="font-semibold text-stone-900 truncate">
+                                                        {c.nombreEmpleado}
+                                                    </span>
 
-                                                {(() => {
-                                                    const adv = advertenciasPorId.get(c._id);
-                                                    if (!adv) return null;
+                                                    {(() => {
+                                                        const adv = advertenciasPorId.get(c._id);
+                                                        if (!adv) return null;
 
-                                                    return (
-                                                        <div className="flex gap-1 ml-1">
-                                                            {adv.muchasCargas && (
-                                                                <span
-                                                                    title="Más de una carga en el día"
-                                                                    className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 text-[11px] font-bold"
-                                                                >
-                                                                    !
-                                                                </span>
-                                                            )}
+                                                        return (
+                                                            <div className="flex gap-1 shrink-0">
+                                                                {adv.muchasCargas && (
+                                                                    <span
+                                                                        title="Más de una carga en el día"
+                                                                        className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-600 text-[11px] font-bold"
+                                                                    >
+                                                                        !
+                                                                    </span>
+                                                                )}
 
-                                                            {adv.mas75 && (
-                                                                <span
-                                                                    title="Más de 75 litros"
-                                                                    className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-[11px]"
-                                                                >
-                                                                    ⛽
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()}
+                                                                {adv.mas75 && (
+                                                                    <span
+                                                                        title="Más de 75 litros"
+                                                                        className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-[11px]"
+                                                                    >
+                                                                        ⛽
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="p-3">{c.dniEmpleado}</td>
-                                        <td className="p-3 text-red-800 font-semibold">
-                                            {c.empresa || '-'}
+                                        <td className="p-3 text-stone-600">{c.dniEmpleado}</td>
+                                        <td className="p-3">
+                                            <span className="inline-flex items-center rounded-full bg-[#801818]/10 px-2.5 py-1 text-xs font-semibold text-[#801818]">
+                                                {c.empresa || '-'}
+                                            </span>
                                         </td>
-                                        <td className="p-3">{c.localidad || '-'}</td>
-                                        <td className="p-3">{/*{banderaPorMoneda(c.moneda)}*/} {c.producto}</td>
-                                        <td className="p-3 text-center font-semibold">{c.litros}</td>
-                                        <td className="p-3 text-center text-gray-600">
+                                        <td className="p-3 text-stone-600">{c.localidad || '-'}</td>
+                                        <td className="p-3 text-stone-600">{c.producto}</td>
+                                        <td className="p-3 text-center font-semibold text-stone-900">{c.litros}</td>
+                                        <td className="p-3 text-center text-stone-500">
                                             {c.precioFinalSinDescuento?.toLocaleString() || '-'} {c.moneda}
                                         </td>
                                         <td className="p-3 text-center font-bold text-green-700">
@@ -1219,10 +1357,10 @@ ${adv?.mas75
                                         </td>
 
                                         <td className="p-3 text-center rounded-r-lg">
-                                            <div className='flex gap-1'>
+                                            <div className='flex gap-1 justify-center'>
                                                 <button
                                                     onClick={() => editarCarga(c._id)}
-                                                    className="inline-flex items-center text-white justify-center w-8 h-8 rounded-full bg-yellow-600 hover:bg-yellow-500 shadow-md"
+                                                    className="inline-flex items-center text-white justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-400 shadow-sm transition"
                                                     title="Editar"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -1232,7 +1370,7 @@ ${adv?.mas75
                                                 </button>
                                                 <button
                                                     onClick={() => eliminarCarga(c._id)}
-                                                    className="inline-flex text-white items-center justify-center w-8 h-8 rounded-full bg-red-700 hover:bg-red-600 shadow-md"
+                                                    className="inline-flex text-white items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 shadow-sm transition"
                                                     title="Eliminar"
                                                 >
                                                     <svg
@@ -1267,63 +1405,66 @@ ${adv?.mas75
                         return (
                             <div
                                 key={c._id}
-                                className="
-bg-white
+                                className={`
 relative
-border border-gray-200
-rounded-xl
-p-4
-shadow-sm
-active:scale-[0.99]
-transition
-"
+border rounded-2xl p-4 shadow-sm active:scale-[0.99] transition
+${adv?.mas75
+                                        ? "bg-red-50 border-red-200"
+                                        : adv?.muchasCargas
+                                            ? "bg-amber-50 border-amber-200"
+                                            : "bg-white border-stone-200"
+                                    }
+`}
                             >
 
                                 {/* HEADER */}
-                                <div className="flex justify-between items-start">
-                                    <div className="min-w-0 flex-1 pr-3">
-                                        <p className="font-semibold text-gray-900 break-words">
-                                            {c.nombreEmpleado}
-                                        </p>
+                                <div className="flex justify-between items-start gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
+                                            {inicialesDeNombre(c.nombreEmpleado)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-stone-900 truncate">
+                                                {c.nombreEmpleado}
+                                            </p>
 
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {labelDoc} {c.dniEmpleado}
-                                        </p>
+                                            <p className="text-xs text-stone-500 mt-0.5">
+                                                {labelDoc} {c.dniEmpleado}
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div className="flex flex-col items-end gap-2 shrink-0">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => editarCarga(c._id)}
-                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 hover:bg-yellow-400 text-white"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                                                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-                                                </svg>
-                                            </button>
+                                    <div className="flex gap-2 shrink-0">
+                                        <button
+                                            onClick={() => editarCarga(c._id)}
+                                            className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-sm"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                                                <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                                            </svg>
+                                        </button>
 
-                                            <button
-                                                onClick={() => eliminarCarga(c._id)}
-                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 text-white"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                                                    <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={() => eliminarCarga(c._id)}
+                                            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#801818] hover:bg-red-700 text-white shadow-sm"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
 
 
                                 {/* EMPRESA + LOCALIDAD */}
-                                <div className="flex-col items-center mt-3">
+                                <div className="flex items-center justify-between mt-3">
 
-                                    <div className="text-sm font-medium text-red-800">
+                                    <span className="inline-flex items-center rounded-full bg-[#801818]/10 px-2.5 py-1 text-xs font-semibold text-[#801818]">
                                         {c.empresa || '-'}
-                                    </div>
+                                    </span>
 
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-stone-500">
                                         {c.localidad}
                                     </div>
 
@@ -1331,13 +1472,13 @@ transition
 
 
                                 {/* FECHA */}
-                                <div className="mt-2 text-xs text-gray-500">
+                                <div className="mt-2 text-xs text-stone-500">
                                     {new Date(c.fecha).toLocaleDateString('es-AR')} — {new Date(c.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
 
 
                                 {/* PRODUCTO */}
-                                <div className="mt-2 text-xs text-gray-500">
+                                <div className="mt-2 text-xs text-stone-500">
                                     {c.producto} • {c.litros} L
                                 </div>
 
@@ -1347,11 +1488,11 @@ transition
 
                                     <div className="flex items-center gap-2 text-sm">
 
-                                        <span className="line-through text-gray-400">
+                                        <span className="line-through text-stone-400">
                                             {c.precioFinalSinDescuento?.toLocaleString()} {c.moneda}
                                         </span>
 
-                                        <span className="text-gray-400">
+                                        <span className="text-stone-400">
                                             →
                                         </span>
 
@@ -1368,7 +1509,7 @@ transition
                                         {adv?.muchasCargas && (
                                             <span
                                                 title="Más de una carga en el día"
-                                                className="flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-600 text-sm font-bold"
+                                                className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-600 text-sm font-bold"
                                             >
                                                 !
                                             </span>
@@ -1391,25 +1532,27 @@ transition
                     })}
 
                 </div>
+                </>
+                )}
 
                 {/* -------- Paginación -------- */}
                 {totalPag > 1 && (
                     <div className="flex flex-col items-center gap-3">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-stone-500">
                             Mostrando{" "}
-                            <span className="font-semibold">
+                            <span className="font-semibold text-stone-700">
                                 {(págActual - 1) * itemsPorPagina + 1}
                                 {"–"}
                                 {Math.min(págActual * itemsPorPagina, filtradas.length)}
                             </span>{" "}
-                            de <span className="font-semibold">{filtradas.length}</span>
+                            de <span className="font-semibold text-stone-700">{filtradas.length}</span>
                         </div>
 
                         <div className="flex flex-wrap justify-center items-center gap-1">
                             <button
                                 onClick={() => setPagina(1)}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30"
                                 aria-label="Primera"
                             >
                                 «
@@ -1418,7 +1561,7 @@ transition
                             <button
                                 onClick={() => setPagina((p) => Math.max(p - 1, 1))}
                                 disabled={págActual === 1}
-                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30"
                                 aria-label="Anterior"
                             >
                                 <HiChevronLeft size={20} />
@@ -1426,14 +1569,14 @@ transition
 
                             {buildPageWindow(totalPag, págActual, 7).map((it, idx) =>
                                 it === "…" ? (
-                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-gray-600">
+                                    <span key={`e-${idx}`} className="px-2 h-9 grid place-items-center text-stone-400">
                                         …
                                     </span>
                                 ) : (
                                     <button
                                         key={it}
                                         onClick={() => setPagina(it as number)}
-                                        className={`w-9 h-9 rounded-full font-semibold transition ${págActual === it ? "bg-red-700 text-white" : "bg-white border border-gray-200 hover:bg-gray-100"
+                                        className={`w-9 h-9 rounded-full font-semibold transition ${págActual === it ? "bg-[#801818] text-white" : "bg-white border border-stone-200 hover:bg-stone-100"
                                             }`}
                                     >
                                         {it}
@@ -1444,7 +1587,7 @@ transition
                             <button
                                 onClick={() => setPagina((p) => Math.min(p + 1, totalPag))}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30"
                                 aria-label="Siguiente"
                             >
                                 <HiChevronRight size={20} />
@@ -1453,7 +1596,7 @@ transition
                             <button
                                 onClick={() => setPagina(totalPag)}
                                 disabled={págActual === totalPag}
-                                className="px-3 h-9 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30"
+                                className="px-3 h-9 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 disabled:opacity-30"
                                 aria-label="Última"
                             >
                                 »
