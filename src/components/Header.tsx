@@ -99,15 +99,20 @@ export default function Header() {
                     {isOpen ? <HiX /> : <HiMenu />}
                 </button>
 
-                {/* Logo centrado */}
+                {/* Logo centrado: largo en desktop, ícono corto en mobile */}
                 <Link
                     href="/"
                     className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                 >
                     <img
+                        src="/icons/logolargo.png"
+                        alt="Logo"
+                        className="hidden sm:block h-10 w-auto"
+                    />
+                    <img
                         src="/icons/icon-512.png"
                         alt="Logo"
-                        className="w-14 h-14"
+                        className="sm:hidden w-14 h-14"
                     />
                 </Link>
 
