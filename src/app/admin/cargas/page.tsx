@@ -1253,7 +1253,7 @@ focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none t
                 <>
                 {/* -------- Tabla desktop -------- */}
                 <div className="hidden sm:block bg-white border border-stone-200 shadow-sm rounded-2xl p-5 space-y-4 overflow-x-auto">
-                    <table className="min-w-[1100px] w-full text-sm border-separate border-spacing-y-2">
+                    <table className="w-full text-sm border-separate border-spacing-y-2">
                         <thead className="text-left text-stone-800">
                             <tr className="bg-[#111827] text-white">
                                 <th className="p-3 text-left rounded-tl-lg">Fecha</th>
