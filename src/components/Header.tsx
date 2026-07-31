@@ -2,19 +2,45 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { HiMenu, HiX, HiOutlineRefresh } from 'react-icons/hi';
 import LogoutButton from './LogoutButton';
 import clsx from 'clsx';
 
+type PrecioProducto = {
+    producto: string;
+    precio: number;
+    moneda: string;
+};
+
+const simboloPorMoneda = (moneda?: string) =>
+    moneda === 'ARS' ? '$' : moneda === 'Gs' ? 'Gs' : '';
+
+const banderaPorMoneda = (moneda?: string) =>
+    moneda === 'ARS' ? '🇦🇷' : moneda === 'Gs' ? '🇵🇾' : '';
+
+const fmtPrecio = (n: number) =>
+    n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function Header() {
     const { data: session } = useSession();
     const role = session?.user?.role;
+    const moneda = session?.user?.moneda;
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
+    const [precios, setPrecios] = useState<PrecioProducto[]>([]);
 
     const toggleMenu = () => setIsOpen(!isOpen);
+
+    useEffect(() => {
+        if (!moneda) return;
+
+        fetch(`/api/precios?moneda=${moneda}`)
+            .then((res) => res.json())
+            .then((data: PrecioProducto[]) => setPrecios(Array.isArray(data) ? data : []))
+            .catch(() => setPrecios([]));
+    }, [moneda]);
 
     const isActive = (href: string) => {
         if (href === '/admin') return pathname === '/admin';
@@ -74,6 +100,57 @@ export default function Header() {
                     <HiOutlineRefresh />
                 </button>
             </header>
+
+            {/* ---------- Cinta de precios ---------- */}
+            {precios.length > 0 && (
+                <div className="relative overflow-hidden bg-[#111827] border-t border-white/10 text-white">
+                    {/* Desktop: fila estática */}
+                    <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2 text-sm">
+                        {precios.map((p) => (
+                            <span key={p.producto} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="opacity-70">{banderaPorMoneda(p.moneda)}</span>
+                                <span className="font-medium text-gray-200">{p.producto}</span>
+                                <span className="font-bold text-emerald-400">
+                                    {simboloPorMoneda(p.moneda)} {fmtPrecio(p.precio)}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+
+                    {/* Mobile: cinta infinita (marquee) */}
+                    <div className="sm:hidden py-2">
+                        <div className="ticker-track flex w-max items-center gap-8 text-sm">
+                            {[...precios, ...precios].map((p, idx) => (
+                                <span
+                                    key={`${p.producto}-${idx}`}
+                                    className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    <span className="opacity-70">{banderaPorMoneda(p.moneda)}</span>
+                                    <span className="font-medium text-gray-200">{p.producto}</span>
+                                    <span className="font-bold text-emerald-400">
+                                        {simboloPorMoneda(p.moneda)} {fmtPrecio(p.precio)}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <style jsx>{`
+                        .ticker-track {
+                            animation: ticker-scroll 22s linear infinite;
+                            padding-left: 1rem;
+                        }
+                        @keyframes ticker-scroll {
+                            from {
+                                transform: translateX(0);
+                            }
+                            to {
+                                transform: translateX(-50%);
+                            }
+                        }
+                    `}</style>
+                </div>
+            )}
 
             {/* ---------- Menú lateral ---------- */}
             <aside
