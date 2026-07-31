@@ -128,7 +128,7 @@ export default function AdminPage() {
 
     const seccionesFiltradas =
         role === 'admin_py'
-            ? secciones.filter((s) => s.label !== 'Docentes')
+            ? secciones.filter((s) => s.label !== 'Docentes' && s.label !== 'Importar')
             : secciones;
 
     return (
