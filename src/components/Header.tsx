@@ -7,6 +7,29 @@ import { usePathname } from 'next/navigation';
 import { HiMenu, HiX, HiOutlineRefresh } from 'react-icons/hi';
 import LogoutButton from './LogoutButton';
 import clsx from 'clsx';
+import {
+    Home,
+    UsersIcon,
+    GraduationCap,
+    FuelIcon,
+    DollarSign,
+    Percent,
+    BarChart3,
+    FileText,
+    Import,
+} from 'lucide-react';
+
+const NAV_ICONS: Record<string, React.ReactNode> = {
+    'Inicio': <Home className="w-[18px] h-[18px]" />,
+    'Empleados': <UsersIcon className="w-[18px] h-[18px]" />,
+    'Docentes': <GraduationCap className="w-[18px] h-[18px]" />,
+    'Cargas': <FuelIcon className="w-[18px] h-[18px]" />,
+    'Precios': <DollarSign className="w-[18px] h-[18px]" />,
+    'Descuentos': <Percent className="w-[18px] h-[18px]" />,
+    'Estadísticas': <BarChart3 className="w-[18px] h-[18px]" />,
+    'Informes': <FileText className="w-[18px] h-[18px]" />,
+    'Importar': <Import className="w-[18px] h-[18px]" />,
+};
 
 type PrecioProducto = {
     producto: string;
@@ -194,37 +217,44 @@ export default function Header() {
             {/* ---------- Menú lateral ---------- */}
             <aside
                 className={clsx(
-                    'fixed top-0 left-0 h-full w-64 bg-gray-900 text-white z-50 shadow-lg transform transition-transform duration-300',
+                    'fixed top-0 left-0 h-full w-72 bg-white text-stone-900 z-50 shadow-xl border-r border-stone-200 transform transition-transform duration-300',
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
-                <div className="px-6 py-4 flex items-center justify-between border-b border-white/10">
-                    <h2 className="text-xl font-bold">Menú</h2>
+                <div className="px-5 py-4 flex items-center justify-between border-b border-stone-100">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+                        Menú
+                    </p>
                     <button
                         onClick={toggleMenu}
-                        className="text-2xl"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition text-xl"
                         aria-label="Cerrar menú"
                     >
                         <HiX />
                     </button>
                 </div>
 
-                <nav className="flex flex-col px-4 py-6 space-y-4 text-lg">
+                <nav className="flex flex-col px-3 py-4 gap-1">
                     {navItems.map(({ label, href }) => (
                         <Link
                             key={href}
                             href={href}
                             onClick={toggleMenu}
                             className={clsx(
-                                'block px-4 py-3 rounded-lg transition',
-                                isActive(href) ? 'bg-red-800 text-white' : 'hover:bg-white/10'
+                                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition',
+                                isActive(href)
+                                    ? 'bg-[#801818] text-white shadow-sm'
+                                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                             )}
                         >
+                            <span className={isActive(href) ? 'text-white' : 'text-stone-400'}>
+                                {NAV_ICONS[label]}
+                            </span>
                             {label}
                         </Link>
                     ))}
 
-                    <div className="mt-6 border-t border-white/10 pt-4">
+                    <div className="mt-4 border-t border-stone-100 pt-4 px-1">
                         <LogoutButton />
                     </div>
                 </nav>
