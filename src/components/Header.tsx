@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { HiMenu, HiX, HiOutlineRefresh } from 'react-icons/hi';
+import { HiMenu, HiX } from 'react-icons/hi';
 import LogoutButton from './LogoutButton';
 import clsx from 'clsx';
 import {
@@ -66,6 +66,9 @@ function FlagPY({ className }: { className?: string }) {
     );
 }
 
+const PULL_THRESHOLD = 70; // px que hay que arrastrar para disparar el refresh
+const PULL_MAX = 100; // tope visual del arrastre
+
 export default function Header() {
     const { data: session } = useSession();
     const role = session?.user?.role;
@@ -73,6 +76,15 @@ export default function Header() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [precios, setPrecios] = useState<PrecioProducto[]>([]);
+
+    // ---- Pull-to-refresh nativo (mobile) ----
+    const [pullY, setPullY] = useState(0);
+    const [dragging, setDragging] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const touchStartYRef = useRef<number | null>(null);
+    const pullingRef = useRef(false);
+    const pullYRef = useRef(0);
+    const refreshingRef = useRef(false);
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -84,6 +96,69 @@ export default function Header() {
             .then((data: PrecioProducto[]) => setPrecios(Array.isArray(data) ? data : []))
             .catch(() => setPrecios([]));
     }, [moneda]);
+
+    useEffect(() => {
+        const onTouchStart = (e: TouchEvent) => {
+            if (refreshingRef.current) return;
+            if (window.scrollY <= 0) {
+                touchStartYRef.current = e.touches[0].clientY;
+                pullingRef.current = true;
+                setDragging(true);
+            } else {
+                touchStartYRef.current = null;
+                pullingRef.current = false;
+            }
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+            if (!pullingRef.current || touchStartYRef.current === null) return;
+
+            const delta = e.touches[0].clientY - touchStartYRef.current;
+
+            if (delta > 0 && window.scrollY <= 0) {
+                e.preventDefault(); // evita el bounce/scroll nativo mientras arrastramos el nuestro
+                const damped = Math.min(delta * 0.5, PULL_MAX);
+                pullYRef.current = damped;
+                setPullY(damped);
+            } else {
+                pullingRef.current = false;
+                pullYRef.current = 0;
+                setPullY(0);
+                setDragging(false);
+            }
+        };
+
+        const onTouchEnd = () => {
+            if (!pullingRef.current) return;
+            pullingRef.current = false;
+            setDragging(false);
+
+            if (pullYRef.current >= PULL_THRESHOLD) {
+                refreshingRef.current = true;
+                setRefreshing(true);
+                pullYRef.current = PULL_THRESHOLD;
+                setPullY(PULL_THRESHOLD);
+                setTimeout(() => window.location.reload(), 350);
+            } else {
+                pullYRef.current = 0;
+                setPullY(0);
+            }
+
+            touchStartYRef.current = null;
+        };
+
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+        return () => {
+            window.removeEventListener('touchstart', onTouchStart);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('touchcancel', onTouchEnd);
+        };
+    }, []);
 
     const isActive = (href: string) => {
         if (href === '/admin') return pathname === '/admin';
@@ -139,7 +214,7 @@ export default function Header() {
                     />
                 </Link>
 
-                {/* Bandera del país + recargar (esquina derecha) */}
+                {/* Bandera del país (esquina derecha) */}
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
                     {moneda && (moneda === 'ARS' || moneda === 'Gs') && (
                         <span
@@ -154,16 +229,28 @@ export default function Header() {
                             )}
                         </span>
                     )}
-
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="sm:hidden text-2xl"
-                        aria-label="Recargar página"
-                    >
-                        <HiOutlineRefresh />
-                    </button>
                 </div>
             </header>
+
+            {/* ---------- Indicador de pull-to-refresh (solo mobile) ---------- */}
+            <div
+                className="sm:hidden fixed top-0 inset-x-0 z-[60] flex justify-center pointer-events-none"
+                style={{
+                    transform: `translateY(${pullY - 36}px)`,
+                    opacity: pullY > 4 || refreshing ? 1 : 0,
+                    transition: dragging ? 'none' : 'transform 0.25s ease, opacity 0.25s ease',
+                }}
+            >
+                <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-lg border border-stone-200">
+                    <div
+                        className={clsx(
+                            'h-5 w-5 rounded-full border-2 border-stone-200 border-t-[#801818]',
+                            refreshing && 'animate-spin'
+                        )}
+                        style={!refreshing ? { transform: `rotate(${(pullY / PULL_THRESHOLD) * 360}deg)` } : undefined}
+                    />
+                </div>
+            </div>
 
             {/* ---------- Cinta de precios ---------- */}
             {precios.length > 0 && (
@@ -201,6 +288,9 @@ export default function Header() {
                         .ticker-track {
                             animation: ticker-scroll 22s linear infinite;
                             padding-left: 1rem;
+                            will-change: transform;
+                            backface-visibility: hidden;
+                            transform: translateZ(0);
                         }
                         @keyframes ticker-scroll {
                             from {

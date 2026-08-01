@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body {
+  /* Evita que el "rubber band"/pull-to-refresh nativo del navegador
+     compita con el gesto custom del header en mobile. */
+  overscroll-behavior-y: contain;
+}
+
 :root {
   --background: #111827;
   /* gris que usas en bg-gray-700 */
