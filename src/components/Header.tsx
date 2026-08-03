@@ -91,11 +91,22 @@ export default function Header() {
     useEffect(() => {
         if (!moneda) return;
 
-        fetch(`/api/precios?moneda=${moneda}`)
-            .then((res) => res.json())
-            .then((data: PrecioProducto[]) => setPrecios(Array.isArray(data) ? data : []))
-            .catch(() => setPrecios([]));
-    }, [moneda]);
+        const fetchPrecios = () => {
+            fetch(`/api/precios?moneda=${moneda}`)
+                .then((res) => res.json())
+                .then((data: PrecioProducto[]) => setPrecios(Array.isArray(data) ? data : []))
+                .catch(() => setPrecios([]));
+        };
+
+        // Al montar y cada vez que se cambia de ruta (por si los precios
+        // se actualizaron en otra pestaña/sesion).
+        fetchPrecios();
+
+        // Refresco inmediato cuando se guarda un precio nuevo en /admin/precios,
+        // sin depender de navegar a otra pantalla.
+        window.addEventListener('precios:updated', fetchPrecios);
+        return () => window.removeEventListener('precios:updated', fetchPrecios);
+    }, [moneda, pathname]);
 
     useEffect(() => {
         const onTouchStart = (e: TouchEvent) => {

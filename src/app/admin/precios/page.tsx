@@ -78,6 +78,9 @@ export default function AdminPreciosPage() {
 
             if (!res.ok) throw new Error();
 
+            // Avisa al header (cinta de precios) para que se refresque al instante
+            window.dispatchEvent(new Event('precios:updated'));
+
             Swal.fire({
                 icon: 'success',
                 title: 'Precio actualizado',
