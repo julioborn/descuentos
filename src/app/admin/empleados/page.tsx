@@ -6,6 +6,10 @@ import Loader from '@/components/Loader';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HiChevronLeft, HiChevronRight, HiSearch } from 'react-icons/hi';
+import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 type Empleado = {
     _id: string;
@@ -26,6 +30,14 @@ const sinAcentos = (s: string) =>
 
 const inicialesDe = (nombre?: string, apellido?: string) =>
     `${(apellido?.[0] ?? '').toUpperCase()}${(nombre?.[0] ?? '').toUpperCase()}` || '\u2014';
+
+const slugify = (s?: string) =>
+    (s ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase();
 
 function buildPageWindow(total: number, current: number, maxButtons = 7) {
     if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
@@ -51,6 +63,8 @@ export default function EmpleadosPage() {
     const [empleados, setEmpleados] = useState<Empleado[]>([]);
     const [loading, setLoading] = useState(true);
     const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+    const [generandoZip, setGenerandoZip] = useState(false);
+    const [tarjetasZip, setTarjetasZip] = useState<{ emp: Empleado; qrUrl: string }[]>([]);
 
     /* filtros & paginación */
     const [busqueda, setBusqueda] = useState('');
@@ -307,6 +321,93 @@ export default function EmpleadosPage() {
         }
     };
 
+    /* Descargar en ZIP el QR de cada empleado que queda dentro del filtro actual */
+    const descargarQRsZip = async () => {
+        const lista = empleadosFiltrados;
+
+        if (lista.length === 0) {
+            Swal.fire('Sin resultados', 'No hay empleados para descargar con estos filtros.', 'warning');
+            return;
+        }
+
+        const { isConfirmed } = await Swal.fire({
+            title: 'Descargar QRs',
+            html: `Se van a generar <b>${lista.length}</b> código${lista.length === 1 ? '' : 's'} QR
+                   (empresa: <b>${empresaFiltro === 'TODAS' ? 'todas' : empresaFiltro}</b>).`,
+            icon: 'question',
+            iconColor: '#801818',
+            showCancelButton: true,
+            confirmButtonText: 'Descargar',
+            cancelButtonText: 'Cancelar',
+            buttonsStyling: false,
+            background: '#ffffff',
+            color: '#111827',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl',
+                confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
+            },
+        });
+        if (!isConfirmed) return;
+
+        setGenerandoZip(true);
+
+        try {
+            const origin = window.location.origin;
+
+            const pares = await Promise.all(
+                lista.map(async (emp) => ({
+                    emp,
+                    qrUrl: await QRCode.toDataURL(`${origin}/playero?token=${emp.qrToken}`, {
+                        width: 400,
+                        margin: 2,
+                    }),
+                }))
+            );
+
+            setTarjetasZip(pares);
+            await new Promise((r) => setTimeout(r, 200)); // esperar a que React pinte las tarjetas ocultas
+
+            const zip = new JSZip();
+
+            for (let i = 0; i < pares.length; i++) {
+                const nodo = document.getElementById(`tarjeta-zip-${i}`);
+                if (!nodo) continue;
+
+                const canvas = await html2canvas(nodo, { scale: 2 });
+                const blob = await new Promise<Blob | null>((resolve) =>
+                    canvas.toBlob(resolve, 'image/png', 1)
+                );
+
+                if (blob) {
+                    const { emp } = pares[i];
+                    const nombreArchivo = `qr-${slugify(emp.apellido)}-${slugify(emp.nombre)}-${emp.dni}.png`;
+                    zip.file(nombreArchivo, blob);
+                }
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const nombreZip = `QRs-${empresaFiltro === 'TODAS' ? 'todas-las-empresas' : slugify(empresaFiltro)}.zip`;
+            saveAs(zipBlob, nombreZip);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Listo',
+                text: `Se descargaron ${pares.length} QR${pares.length === 1 ? '' : 's'}.`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500,
+            });
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudieron generar los QRs.', 'error');
+        } finally {
+            setTarjetasZip([]);
+            setGenerandoZip(false);
+        }
+    };
+
     /* Detalle + QR on-demand al tocar fila */
     const verDetalle = async (emp: Empleado) => {
         try {
@@ -546,8 +647,44 @@ focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none c
                         </div>
                     </div>
 
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <button
+                            onClick={descargarQRsZip}
+                            disabled={generandoZip}
+                            className="flex items-center gap-2 rounded-xl bg-green-700 hover:bg-green-600 px-4 py-2 text-white text-sm font-semibold shadow-sm transition disabled:opacity-60"
+                        >
+                            {generandoZip ? 'Generando…' : 'Descargar QRs (ZIP)'}
+                        </button>
+                    </div>
 
                 </section>
+
+                {/* Tarjetas ocultas usadas solo para generar las imagenes del ZIP */}
+                {tarjetasZip.length > 0 && (
+                    <div className="fixed left-[-9999px] top-0">
+                        {tarjetasZip.map(({ emp, qrUrl }, idx) => (
+                            <div
+                                key={emp._id}
+                                id={`tarjeta-zip-${idx}`}
+                                className="bg-white p-6 rounded-2xl flex flex-col items-center gap-3 w-[280px]"
+                            >
+                                <img src="/idescuentos.png" alt="Logo" className="h-12" />
+                                <img src={qrUrl} alt="QR" className="w-48 h-48" />
+                                <div className="text-center">
+                                    <div className="font-bold text-[#111827]">
+                                        {emp.nombre} {emp.apellido}
+                                    </div>
+                                    <div className="text-sm text-stone-500">
+                                        {labelDocPara(emp.pais)} {emp.dni}
+                                    </div>
+                                    <div className="text-sm font-semibold text-[#801818]">
+                                        {emp.empresa}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Estado vacío */}
                 {listaPagina.length === 0 && (
