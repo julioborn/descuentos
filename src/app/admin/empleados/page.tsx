@@ -666,19 +666,18 @@ focus:ring-2 focus:ring-[#801818] focus:border-[#801818]/40 focus:outline-none c
                             <div
                                 key={emp._id}
                                 id={`tarjeta-zip-${idx}`}
-                                className="bg-white p-6 rounded-2xl flex flex-col items-center gap-3 w-[280px]"
+                                className="relative overflow-hidden bg-white p-9 rounded-[28px] flex flex-col items-center gap-6 w-[320px] border border-stone-200 shadow-lg"
                             >
-                                <img src="/idescuentos.png" alt="Logo" className="h-12" />
-                                <img src={qrUrl} alt="QR" className="w-48 h-48" />
-                                <div className="text-center">
-                                    <div className="font-bold text-[#111827]">
+                                <div className="absolute top-0 inset-x-0 h-1.5 bg-[#801818]" />
+
+                                <div className="mt-2 rounded-2xl border-2 border-[#801818]/25 p-4 bg-white">
+                                    <img src={qrUrl} alt="QR" className="w-52 h-52" />
+                                </div>
+
+                                <div className="flex flex-col items-center gap-2.5">
+                                    <div className="h-[2px] w-10 bg-[#801818] rounded-full" />
+                                    <div className="text-lg font-bold uppercase tracking-wide text-[#111827] text-center leading-snug">
                                         {emp.nombre} {emp.apellido}
-                                    </div>
-                                    <div className="text-sm text-stone-500">
-                                        {labelDocPara(emp.pais)} {emp.dni}
-                                    </div>
-                                    <div className="text-sm font-semibold text-[#801818]">
-                                        {emp.empresa}
                                     </div>
                                 </div>
                             </div>
