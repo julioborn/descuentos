@@ -95,9 +95,15 @@ export default function EmpleadosTipoPage() {
 
     if (!MAPA_TIPO[tipo] || !config) {
         return (
-            <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-                <p className="text-red-600 font-bold">QR inválido</p>
-            </main>
+            <>
+                <header className="bg-gray-900 h-20 flex items-center justify-center shadow-md">
+                    <img src="/icons/logolargo.png" alt="Logo" className="hidden sm:block h-12 w-auto" />
+                    <img src="/icons/icon-512.png" alt="Logo" className="sm:hidden w-14 h-14" />
+                </header>
+                <main className="min-h-screen flex items-center justify-center bg-stone-50 px-4">
+                    <p className="text-red-600 font-bold">QR inválido</p>
+                </main>
+            </>
         )
     }
 
@@ -252,16 +258,22 @@ export default function EmpleadosTipoPage() {
     const esParaguay = tipo === 'paraguay'
 
     return (
-        <main className="min-h-screen bg-gray-100 px-4 py-10 flex pt-20 items-start justify-center">
-            <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
-                <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-bold text-[#111827]">
-                        {config.titulo}
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                        {config.descripcion}
-                    </p>
-                </div>
+        <>
+            <header className="bg-gray-900 h-20 flex items-center justify-center shadow-md">
+                <img src="/icons/logolargo.png" alt="Logo" className="hidden sm:block h-12 w-auto" />
+                <img src="/icons/icon-512.png" alt="Logo" className="sm:hidden w-14 h-14" />
+            </header>
+
+            <main className="min-h-screen bg-stone-50 px-4 py-10 flex pt-10 items-start justify-center">
+                <div className="max-w-md w-full bg-white border border-stone-200 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="text-center space-y-2">
+                        <h1 className="text-3xl font-bold text-[#111827]">
+                            {config.titulo}
+                        </h1>
+                        <p className="text-sm text-stone-500">
+                            {config.descripcion}
+                        </p>
+                    </div>
 
                 {!empleado && (
                     <>
@@ -406,6 +418,7 @@ export default function EmpleadosTipoPage() {
                     </button>
                 )}
             </div>
-        </main>
+            </main>
+        </>
     )
 }
