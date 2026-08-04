@@ -5,6 +5,7 @@ import { Carga } from "@/models/Carga";
 import { Descuento } from "@/models/Descuento";
 import { Precio } from "@/models/Precio";
 import { Empleado } from "@/models/Empleado";
+import { Usuario } from "@/models/Usuario";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -79,7 +80,11 @@ export async function POST(req: NextRequest) {
         const precioFinal =
             precioFinalSinDescuento * (1 - porcentajeDescuento / 100);
 
-        /* 🧾 4. CREAR CARGA */
+        /* 📍 4. LOCALIDAD ACTUAL DEL PLAYERO (no la de la sesión, que puede estar vieja) */
+        const usuarioActual = await Usuario.findOne({ nombre: session.user.name });
+        const localidadActual = usuarioActual?.localidad || session.user.localidad;
+
+        /* 🧾 5. CREAR CARGA */
         const nuevaCarga = await Carga.create({
             nombreEmpleado: `${empleado.apellido} ${empleado.nombre}`,
             dniEmpleado: empleado.dni,
@@ -92,7 +97,7 @@ export async function POST(req: NextRequest) {
             porcentajeDescuento,
             moneda: session.user.moneda,
             fecha: new Date(),
-            localidad: session.user.localidad, // del playero
+            localidad: localidadActual,
         });
 
         return NextResponse.json(nuevaCarga);
