@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import * as XLSX from 'xlsx';
@@ -51,6 +52,9 @@ const MESES = [
 const MESES_OPCIONES = MESES.map((nombre, i) => ({ nombre, numero: i + 1 }));
 
 export default function InformesPage() {
+    const { data: session } = useSession();
+    const esParaguay = session?.user?.role === 'admin_py';
+
     const [cargas, setCargas] = useState<Carga[]>([]);
     const [loading, setLoading] = useState(true);
     const [añoFiltro, setAñoFiltro] = useState<'TODOS' | number>('TODOS');
@@ -250,7 +254,9 @@ export default function InformesPage() {
             const xLogo1 = pageW - rightMargin - w;
             const xLogo2 = xLogo1 - gap - w;
 
-            doc.addImage(logo2, 'JPEG', xLogo2, topY, w, h);
+            if (!esParaguay) {
+                doc.addImage(logo2, 'JPEG', xLogo2, topY, w, h);
+            }
             doc.addImage(logo1, 'PNG', xLogo1, topY, w, h);
 
             doc.setFontSize(14);
