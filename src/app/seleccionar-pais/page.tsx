@@ -75,9 +75,6 @@ export default function SeleccionarPaisPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 mb-1.5">
                         Superadministrador
                     </p>
-                    <h1 className="text-2xl font-black tracking-tight text-white">
-                        ¿Qué país querés administrar?
-                    </h1>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
