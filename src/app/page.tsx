@@ -15,7 +15,9 @@ export default function HomePage() {
 
     const rol = session?.user?.role;
 
-    if (rol === 'superadmin' || rol === 'admin_arg' || rol === 'admin_py') {
+    if (rol === 'superadmin') {
+      router.replace('/seleccionar-pais');
+    } else if (rol === 'admin_arg' || rol === 'admin_py') {
       router.replace('/admin');
     } else if (rol === 'playero') {
       router.replace('/playero');

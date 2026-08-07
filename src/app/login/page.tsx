@@ -25,7 +25,9 @@ export default function LoginPage() {
 
             const rol = session?.user?.role;
 
-            if (rol === "superadmin" || rol === "admin_arg" || rol === "admin_py") {
+            if (rol === "superadmin") {
+                router.push("/seleccionar-pais");
+            } else if (rol === "admin_arg" || rol === "admin_py") {
                 router.push("/admin");
             } else if (rol === "playero") {
                 router.push("/playero");

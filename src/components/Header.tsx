@@ -72,6 +72,7 @@ const PULL_MAX = 100; // tope visual del arrastre
 export default function Header() {
     const { data: session } = useSession();
     const role = session?.user?.role;
+    const baseRole = session?.user?.baseRole;
     const moneda = session?.user?.moneda;
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
@@ -354,6 +355,23 @@ export default function Header() {
                             {label}
                         </Link>
                     ))}
+
+                    {baseRole === 'superadmin' && (
+                        <Link
+                            href="/seleccionar-pais"
+                            onClick={toggleMenu}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition"
+                        >
+                            <span className="inline-flex h-[18px] w-[18px] items-center justify-center overflow-hidden rounded-[3px] ring-1 ring-white/20">
+                                {moneda === 'Gs' ? (
+                                    <FlagPY className="h-full w-full" />
+                                ) : (
+                                    <FlagAR className="h-full w-full" />
+                                )}
+                            </span>
+                            Cambiar país
+                        </Link>
+                    )}
 
                     <div className="mt-4 border-t border-white/10 pt-4 px-1">
                         <LogoutButton />

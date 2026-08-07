@@ -13,6 +13,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         redirect("/playero");
     }
 
+    if (session.user.role === "superadmin") {
+        redirect("/seleccionar-pais");
+    }
+
     return (
         <>
             <Header />
