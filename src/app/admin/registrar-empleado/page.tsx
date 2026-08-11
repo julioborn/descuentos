@@ -54,7 +54,10 @@ export default function RegistrarEmpleadoPage() {
 
             if (!res.ok) throw new Error();
 
-            const qr = await QRCode.toDataURL(`${window.location.origin}/playero?token=${token}`);
+            const urlQr = form.empresa === 'INDIECITO'
+                ? `${window.location.origin}/promo?token=${token}`
+                : `${window.location.origin}/playero?token=${token}`;
+            const qr = await QRCode.toDataURL(urlQr);
             setQrUrl(qr);
 
             Swal.fire({

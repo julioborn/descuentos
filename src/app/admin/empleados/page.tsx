@@ -39,6 +39,13 @@ const slugify = (s?: string) =>
         .replace(/^-+|-+$/g, '')
         .toLowerCase();
 
+// El QR de INDIECITO usa una p\u00e1gina p\u00fablica informativa (adem\u00e1s de servir
+// para cargar el descuento); el resto de las empresas mantiene el link de siempre.
+const urlParaQr = (origin: string, emp: { empresa: string; qrToken: string }) =>
+    emp.empresa === 'INDIECITO'
+        ? `${origin}/promo?token=${emp.qrToken}`
+        : `${origin}/playero?token=${emp.qrToken}`;
+
 function buildPageWindow(total: number, current: number, maxButtons = 7) {
     if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
     const windowSize = maxButtons - 2; // reservamos 1 y total
@@ -358,7 +365,7 @@ export default function EmpleadosPage() {
             const pares = await Promise.all(
                 lista.map(async (emp) => ({
                     emp,
-                    qrUrl: await QRCode.toDataURL(`${origin}/playero?token=${emp.qrToken}`, {
+                    qrUrl: await QRCode.toDataURL(urlParaQr(origin, emp), {
                         width: 400,
                         margin: 2,
                     }),
@@ -413,7 +420,7 @@ export default function EmpleadosPage() {
         try {
             const QR = await import('qrcode'); // carga diferida
             const origin = typeof window !== 'undefined' ? window.location.origin : '';
-            const qrUrl = await QR.toDataURL(`${origin}/playero?token=${emp.qrToken}`, {
+            const qrUrl = await QR.toDataURL(urlParaQr(origin, emp), {
                 width: 220,
                 margin: 2
             });
