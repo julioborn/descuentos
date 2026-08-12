@@ -2,7 +2,15 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Loader from '@/components/Loader';
+
+const DapsaMapa = dynamic(() => import('@/components/DapsaMapa'), {
+    ssr: false,
+    loading: () => (
+        <div className="h-[320px] w-full bg-stone-100 animate-pulse" />
+    ),
+});
 
 type PromoInfo = {
     nombre: string;
@@ -75,7 +83,7 @@ function PromoContent() {
 
                         <div className="bg-[#111827] px-6 py-8 text-center text-white">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 mb-2">
-                                {info.empresa}
+                                DAPSA
                             </p>
                             <p className="text-2xl font-black tracking-tight">
                                 Descuentos en combustible
@@ -89,6 +97,18 @@ function PromoContent() {
                             </p>
                         </div>
 
+                    </div>
+
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div className="px-6 pt-5 pb-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
+                                Nuestras estaciones
+                            </p>
+                            <p className="text-sm text-stone-500">
+                                Encontrá la sucursal DAPSA más cercana
+                            </p>
+                        </div>
+                        <DapsaMapa />
                     </div>
 
                 </div>
