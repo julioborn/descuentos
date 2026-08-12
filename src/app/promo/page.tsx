@@ -74,11 +74,11 @@ function PromoContent() {
         <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
             <div className="max-w-md w-full space-y-5">
 
-                {/* Firma: Irossini primero (la empresa), Dapsa despues (sus estaciones) */}
+                {/* Firma: Rossini primero (la empresa), Dapsa despues (sus estaciones) */}
                 <div className="flex flex-col items-center gap-3">
-                    <img src="/icons/irossini.jpg" alt="Irossini" className="h-16 w-16 rounded-full shadow-sm" />
+                    <img src="/icons/rossini-logo.jpg" alt="Rossini" className="h-14 w-auto" />
                     <div className="h-px w-10 bg-stone-300" />
-                    <img src="/icons/dapsa-logo.jpg" alt="Dapsa" className="h-8 w-auto rounded shadow-sm" />
+                    <img src="/icons/dapsa-logo.png" alt="Dapsa" className="h-10 w-auto" />
                 </div>
 
                 {info.promoActiva ? (

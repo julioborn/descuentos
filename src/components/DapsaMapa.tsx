@@ -29,7 +29,7 @@ const iconoDapsa = new L.DivIcon({
             box-shadow: 0 2px 6px rgba(0,0,0,0.35);
             overflow: hidden;
         ">
-            <img src="/icons/dapsa-logo.jpg" style="width: 28px; height: auto; display: block;" />
+            <img src="/icons/dapsa-logo.png" style="width: 28px; height: auto; display: block;" />
         </div>
     `,
     iconSize: [38, 38],
@@ -58,8 +58,8 @@ export default function DapsaMapa() {
             style={{ height: '460px', width: '100%' }}
         >
             <TileLayer
-                attribution='Tiles &copy; Esri'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {estaciones.map((e) => (
                 <Marker
