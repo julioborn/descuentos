@@ -76,7 +76,7 @@ function PromoContent() {
 
                 {/* Firma: Rossini primero (la empresa), Dapsa despues (sus estaciones) */}
                 <div className="flex flex-col items-center gap-3">
-                    <img src="/icons/rossini-logo.jpg" alt="Rossini" className="h-14 w-auto" />
+                    <img src="/icons/rossini-logo.png" alt="Rossini" className="h-14 w-auto" />
                     <div className="h-px w-10 bg-stone-300" />
                     <img src="/icons/dapsa-logo.png" alt="Dapsa" className="h-10 w-auto" />
                 </div>
