@@ -7,11 +7,15 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     await connectMongoDB();
-    const { porcentaje } = await req.json();
+    const { porcentaje, promoActiva } = await req.json();
+
+    const cambios: Record<string, unknown> = {};
+    if (porcentaje !== undefined) cambios.porcentaje = porcentaje;
+    if (promoActiva !== undefined) cambios.promoActiva = promoActiva;
 
     const actualizado = await Descuento.findByIdAndUpdate(
         params.id,
-        { porcentaje },
+        cambios,
         { new: true }
     );
 

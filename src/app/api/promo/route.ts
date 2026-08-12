@@ -29,5 +29,6 @@ export async function GET(req: NextRequest) {
         empresa: empleado.empresa,
         localidad: empleado.localidad,
         porcentaje: descuento?.porcentaje ?? 0,
+        promoActiva: descuento?.promoActiva ?? true,
     });
 }

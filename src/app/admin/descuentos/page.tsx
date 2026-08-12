@@ -10,6 +10,7 @@ type Descuento = {
     empresa: string;
     porcentaje: number;
     pais: 'arg' | 'py';
+    promoActiva?: boolean;
 };
 
 export default function AdminDescuentosPage() {
@@ -71,6 +72,35 @@ export default function AdminDescuentosPage() {
 
         } catch {
             Swal.fire('Error', 'No se pudo guardar el cambio', 'error');
+        }
+    };
+
+    const cambiarModoPromo = async (descuento: Descuento) => {
+        const nuevoValor = !(descuento.promoActiva ?? true);
+
+        try {
+            const res = await fetch(`/api/descuentos/${descuento._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ promoActiva: nuevoValor }),
+            });
+
+            if (!res.ok) throw new Error();
+
+            setDescuentos((prev) =>
+                prev.map((d) => (d._id === descuento._id ? { ...d, promoActiva: nuevoValor } : d))
+            );
+
+            Swal.fire({
+                icon: 'success',
+                title: nuevoValor ? 'Modo torneo activado' : 'Modo info de empresa activado',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        } catch {
+            Swal.fire('Error', 'No se pudo cambiar el modo', 'error');
         }
     };
 
@@ -251,6 +281,19 @@ export default function AdminDescuentosPage() {
                                     </button>
 
                                 </div>
+
+                                {d.empresa === 'INDIECITO' && (
+                                    <button
+                                        onClick={() => cambiarModoPromo(d)}
+                                        className={`mt-3 w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition ${(d.promoActiva ?? true)
+                                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                            }`}
+                                    >
+                                        <span className={`h-1.5 w-1.5 rounded-full ${(d.promoActiva ?? true) ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                                        {(d.promoActiva ?? true) ? 'QR en modo torneo' : 'QR en modo info de empresa'}
+                                    </button>
+                                )}
 
                             </div>
 

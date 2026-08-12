@@ -10,6 +10,7 @@ type PromoInfo = {
     empresa: string;
     localidad?: string;
     porcentaje: number;
+    promoActiva: boolean;
 };
 
 function PromoContent() {
@@ -56,6 +57,40 @@ function PromoContent() {
                     <p className="text-sm text-stone-500">
                         Este QR no corresponde a ningún beneficio activo.
                     </p>
+                </div>
+            </main>
+        );
+    }
+
+    if (!info.promoActiva) {
+        return (
+            <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
+                <div className="max-w-md w-full space-y-5">
+
+                    <div className="flex justify-center">
+                        <img src="/icons/icon-192.png" alt="Logo" className="h-14 w-14 rounded-2xl shadow-sm" />
+                    </div>
+
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+
+                        <div className="bg-[#111827] px-6 py-8 text-center text-white">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 mb-2">
+                                {info.empresa}
+                            </p>
+                            <p className="text-2xl font-black tracking-tight">
+                                Descuentos en combustible
+                            </p>
+                        </div>
+
+                        <div className="px-6 py-6 text-center space-y-3">
+                            <p className="text-sm text-stone-600 leading-relaxed">
+                                Este beneficio promocional ya no está activo, pero seguimos
+                                ofreciendo descuentos en combustible durante todo el año.
+                            </p>
+                        </div>
+
+                    </div>
+
                 </div>
             </main>
         );
