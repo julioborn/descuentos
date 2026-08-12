@@ -70,15 +70,41 @@ function PromoContent() {
         );
     }
 
-    if (!info.promoActiva) {
-        return (
-            <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
-                <div className="max-w-md w-full space-y-5">
+    return (
+        <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
+            <div className="max-w-md w-full space-y-5">
 
-                    <div className="flex justify-center">
-                        <img src="/icons/icon-192.png" alt="Logo" className="h-14 w-14 rounded-2xl shadow-sm" />
+                <div className="flex justify-center">
+                    <img src="/icons/icon-192.png" alt="Logo" className="h-14 w-14 rounded-2xl shadow-sm" />
+                </div>
+
+                {info.promoActiva ? (
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+
+                        <div className="bg-[#801818] px-6 py-8 text-center text-white">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">
+                                Beneficio activo
+                            </p>
+                            <p className="text-5xl font-black tracking-tight">
+                                {info.porcentaje}% OFF
+                            </p>
+                            <p className="mt-1 text-sm text-white/80">
+                                en combustible, con este QR
+                            </p>
+                        </div>
+
+                        <div className="px-6 py-6 text-center space-y-1">
+                            <p className="text-lg font-semibold text-[#111827]">
+                                {info.nombre} {info.apellido}
+                            </p>
+                            <p className="text-sm text-stone-500">
+                                {info.empresa}
+                                {info.localidad ? ` · ${info.localidad}` : ''}
+                            </p>
+                        </div>
+
                     </div>
-
+                ) : (
                     <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
 
                         <div className="bg-[#111827] px-6 py-8 text-center text-white">
@@ -98,63 +124,27 @@ function PromoContent() {
                         </div>
 
                     </div>
+                )}
 
-                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="px-6 pt-5 pb-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
-                                Nuestras estaciones
-                            </p>
-                            <p className="text-sm text-stone-500">
-                                Encontrá la sucursal DAPSA más cercana
-                            </p>
-                        </div>
-                        <DapsaMapa />
+                {info.promoActiva && (
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+                        <p className="text-sm text-stone-600 leading-relaxed">
+                            Presentá este código QR en el surtidor para acceder al descuento.
+                            Pegalo en un lugar visible del vehículo para poder escanearlo fácilmente.
+                        </p>
                     </div>
-
-                </div>
-            </main>
-        );
-    }
-
-    return (
-        <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
-            <div className="max-w-md w-full space-y-5">
-
-                <div className="flex justify-center">
-                    <img src="/icons/icon-192.png" alt="Logo" className="h-14 w-14 rounded-2xl shadow-sm" />
-                </div>
+                )}
 
                 <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
-
-                    <div className="bg-[#801818] px-6 py-8 text-center text-white">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">
-                            Beneficio activo
-                        </p>
-                        <p className="text-5xl font-black tracking-tight">
-                            {info.porcentaje}% OFF
-                        </p>
-                        <p className="mt-1 text-sm text-white/80">
-                            en combustible, con este QR
-                        </p>
-                    </div>
-
-                    <div className="px-6 py-6 text-center space-y-1">
-                        <p className="text-lg font-semibold text-[#111827]">
-                            {info.nombre} {info.apellido}
+                    <div className="px-6 pt-5 pb-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
+                            Nuestras estaciones
                         </p>
                         <p className="text-sm text-stone-500">
-                            {info.empresa}
-                            {info.localidad ? ` · ${info.localidad}` : ''}
+                            Encontrá la sucursal DAPSA más cercana
                         </p>
                     </div>
-
-                </div>
-
-                <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
-                    <p className="text-sm text-stone-600 leading-relaxed">
-                        Presentá este código QR en el surtidor para acceder al descuento.
-                        Pegalo en un lugar visible del vehículo para poder escanearlo fácilmente.
-                    </p>
+                    <DapsaMapa />
                 </div>
 
             </div>
