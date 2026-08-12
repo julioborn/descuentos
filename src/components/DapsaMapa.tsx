@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,8 +18,8 @@ const iconoDapsa = new L.DivIcon({
     className: '',
     html: `
         <div style="
-            width: 56px;
-            height: 56px;
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -29,25 +29,33 @@ const iconoDapsa = new L.DivIcon({
             box-shadow: 0 2px 6px rgba(0,0,0,0.35);
             overflow: hidden;
         ">
-            <img src="/icons/dapsa-logo.jpg" style="width: 42px; height: auto; display: block;" />
+            <img src="/icons/dapsa-logo.jpg" style="width: 28px; height: auto; display: block;" />
         </div>
     `,
-    iconSize: [56, 56],
-    iconAnchor: [28, 28],
-    popupAnchor: [0, -28],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+    popupAnchor: [0, -19],
 });
 
 export default function DapsaMapa() {
     const centro: [number, number] = [-29.85, -60.29];
     const mapRef = useRef<L.Map | null>(null);
 
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+        const bounds = L.latLngBounds(estaciones.map((e) => [e.lat, e.lng] as [number, number]));
+        map.fitBounds(bounds, { padding: [40, 40] });
+    }, []);
+
     return (
         <MapContainer
             ref={mapRef}
             center={centro}
             zoom={8}
+            zoomSnap={0.25}
             scrollWheelZoom={false}
-            style={{ height: '320px', width: '100%' }}
+            style={{ height: '460px', width: '100%' }}
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -64,7 +72,7 @@ export default function DapsaMapa() {
                         },
                     }}
                 >
-                    <Tooltip permanent direction="top" offset={[0, -28]} className="dapsa-tooltip">
+                    <Tooltip permanent direction="right" offset={[12, 0]} className="dapsa-tooltip">
                         {e.nombre}
                     </Tooltip>
                 </Marker>
