@@ -1,8 +1,11 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+const ZOOM_ESTACION = 14;
 
 const estaciones = [
     { nombre: 'La Criolla', lat: -30.232937, lng: -60.363938 },
@@ -36,9 +39,11 @@ const iconoDapsa = new L.DivIcon({
 
 export default function DapsaMapa() {
     const centro: [number, number] = [-29.85, -60.29];
+    const mapRef = useRef<L.Map | null>(null);
 
     return (
         <MapContainer
+            ref={mapRef}
             center={centro}
             zoom={8}
             scrollWheelZoom={false}
@@ -49,10 +54,19 @@ export default function DapsaMapa() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {estaciones.map((e) => (
-                <Marker key={e.nombre} position={[e.lat, e.lng]} icon={iconoDapsa}>
-                    <Popup>
-                        <strong>{e.nombre}</strong>
-                    </Popup>
+                <Marker
+                    key={e.nombre}
+                    position={[e.lat, e.lng]}
+                    icon={iconoDapsa}
+                    eventHandlers={{
+                        click: () => {
+                            mapRef.current?.flyTo([e.lat, e.lng], ZOOM_ESTACION, { duration: 0.8 });
+                        },
+                    }}
+                >
+                    <Tooltip permanent direction="top" offset={[0, -28]} className="dapsa-tooltip">
+                        {e.nombre}
+                    </Tooltip>
                 </Marker>
             ))}
         </MapContainer>
