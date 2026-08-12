@@ -74,8 +74,11 @@ function PromoContent() {
         <main className="min-h-screen bg-stone-50 px-4 py-10 flex items-start justify-center">
             <div className="max-w-md w-full space-y-5">
 
-                <div className="flex justify-center">
-                    <img src="/icons/icon-192.png" alt="Logo" className="h-14 w-14 rounded-2xl shadow-sm" />
+                {/* Firma: Irossini primero (la empresa), Dapsa despues (sus estaciones) */}
+                <div className="flex flex-col items-center gap-3">
+                    <img src="/icons/irossini.jpg" alt="Irossini" className="h-16 w-16 rounded-full shadow-sm" />
+                    <div className="h-px w-10 bg-stone-300" />
+                    <img src="/icons/dapsa-logo.jpg" alt="Dapsa" className="h-8 w-auto rounded shadow-sm" />
                 </div>
 
                 {info.promoActiva ? (
@@ -126,15 +129,6 @@ function PromoContent() {
                     </div>
                 )}
 
-                {info.promoActiva && (
-                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
-                        <p className="text-sm text-stone-600 leading-relaxed">
-                            Presentá este código QR en el surtidor para acceder al descuento.
-                            Pegalo en un lugar visible del vehículo para poder escanearlo fácilmente.
-                        </p>
-                    </div>
-                )}
-
                 <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="px-6 pt-5 pb-3">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
@@ -146,6 +140,19 @@ function PromoContent() {
                     </div>
                     <DapsaMapa />
                 </div>
+
+                {info.promoActiva && (
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+                        <p className="text-sm font-semibold text-[#111827]">
+                            Válido el fin de semana del 5 y 6 de septiembre
+                        </p>
+                        <p className="text-sm text-stone-600 leading-relaxed">
+                            Llevá el auto con esta calcomanía bien visible. Al cargar combustible
+                            en cualquiera de estas estaciones, los playeros te van a detectar el
+                            descuento escaneando el QR.
+                        </p>
+                    </div>
+                )}
 
             </div>
         </main>
