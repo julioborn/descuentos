@@ -83,7 +83,6 @@ function PromoContent() {
 
                 {info.promoActiva ? (
                     <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
-
                         <div className="bg-[#801818] px-6 py-8 text-center text-white">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">
                                 Beneficio activo
@@ -95,17 +94,6 @@ function PromoContent() {
                                 en combustible, con este QR
                             </p>
                         </div>
-
-                        <div className="px-6 py-6 text-center space-y-1">
-                            <p className="text-lg font-semibold text-[#111827]">
-                                {info.nombre} {info.apellido}
-                            </p>
-                            <p className="text-sm text-stone-500">
-                                {info.empresa}
-                                {info.localidad ? ` · ${info.localidad}` : ''}
-                            </p>
-                        </div>
-
                     </div>
                 ) : (
                     <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
@@ -129,6 +117,19 @@ function PromoContent() {
                     </div>
                 )}
 
+                {info.promoActiva && (
+                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
+                        <p className="text-sm font-semibold text-[#111827]">
+                            Válido el 4, 5 y 6 de septiembre
+                        </p>
+                        <p className="text-sm text-stone-600 leading-relaxed">
+                            Llevá el auto con esta calcomanía bien visible. Al cargar combustible
+                            en cualquiera de estas estaciones, los playeros te van a detectar el
+                            descuento escaneando el QR.
+                        </p>
+                    </div>
+                )}
+
                 <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="px-6 pt-5 pb-3">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 mb-1">
@@ -140,19 +141,6 @@ function PromoContent() {
                     </div>
                     <DapsaMapa />
                 </div>
-
-                {info.promoActiva && (
-                    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
-                        <p className="text-sm font-semibold text-[#111827]">
-                            Válido el fin de semana del 5 y 6 de septiembre
-                        </p>
-                        <p className="text-sm text-stone-600 leading-relaxed">
-                            Llevá el auto con esta calcomanía bien visible. Al cargar combustible
-                            en cualquiera de estas estaciones, los playeros te van a detectar el
-                            descuento escaneando el QR.
-                        </p>
-                    </div>
-                )}
 
             </div>
         </main>
