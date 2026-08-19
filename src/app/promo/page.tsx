@@ -76,7 +76,7 @@ function PromoContent() {
 
                 {/* Firma: Rossini y Dapsa lado a lado */}
                 <div className="flex items-center justify-center gap-4">
-                    <img src="/icons/rossini-logo.png" alt="Rossini" className="h-11 w-auto" />
+                    <img src="/icons/rossini-logo-nobg.png" alt="Rossini" className="h-11 w-auto" />
                     <div className="h-8 w-px bg-stone-300" />
                     <img src="/icons/dapsa-logo.png" alt="Dapsa" className="h-8 w-auto" />
                 </div>
