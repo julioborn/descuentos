@@ -35,6 +35,22 @@ const inicialesDeNombre = (nombreCompleto?: string) => {
     return `${partes[0][0]}${partes[1][0]}`.toUpperCase();
 };
 
+function AvatarCarga({ carga, className }: { carga: Carga; className: string }) {
+    if (carga.empresa === 'INDIECITO') {
+        return (
+            <div className={`shrink-0 overflow-hidden rounded-full bg-[#801818]/10 ${className}`}>
+                <img src="/icons/indiecito-logo.png" alt="INDIECITO" className="h-full w-full object-cover" />
+            </div>
+        );
+    }
+
+    return (
+        <div className={`flex shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818] ${className}`}>
+            {inicialesDeNombre(carga.nombreEmpleado)}
+        </div>
+    );
+}
+
 /* Ventana de paginación con elipsis (igual a /docentes) */
 function buildPageWindow(total: number, current: number, maxButtons = 7) {
     if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
@@ -329,10 +345,15 @@ export default function CargasPage() {
     const advertenciasPorId = useMemo(() => {
         const map = new Map<string, { muchasCargas: boolean; mas75: boolean }>();
 
+        // INDIECITO usa un QR unico compartido por muchos autos: cargarlo
+        // varias veces en el mismo dia es el comportamiento esperado, no una duplicacion.
+        const esQrCompartido = (empresa?: string) => empresa === 'INDIECITO';
+
         // Agrupamos por DNI + día
         const cargasPorPersonaDia = new Map<string, number>();
 
         filtradas.forEach(c => {
+            if (esQrCompartido(c.empresa)) return;
             const fechaObj = new Date(c.fecha);
             const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
 
@@ -344,7 +365,7 @@ export default function CargasPage() {
             const fechaObj = new Date(c.fecha);
             const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
 
-            const muchasCargas = (cargasPorPersonaDia.get(diaClave) || 0) > 1;
+            const muchasCargas = !esQrCompartido(c.empresa) && (cargasPorPersonaDia.get(diaClave) || 0) > 1;
             const mas75 = c.litros > 75;
 
             map.set(c._id, { muchasCargas, mas75 });
@@ -1309,9 +1330,7 @@ ${adv?.mas75
                                         </td>
                                         <td className="p-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
-                                                    {inicialesDeNombre(c.nombreEmpleado)}
-                                                </div>
+                                                <AvatarCarga carga={c} className="h-9 w-9" />
                                                 <div className="min-w-0 flex items-center gap-2">
                                                     <span className="font-semibold text-stone-900 truncate">
                                                         {c.nombreEmpleado}
@@ -1426,9 +1445,7 @@ ${adv?.mas75
                                 {/* HEADER */}
                                 <div className="flex justify-between items-start gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
-                                            {inicialesDeNombre(c.nombreEmpleado)}
-                                        </div>
+                                        <AvatarCarga carga={c} className="h-10 w-10" />
                                         <div className="min-w-0">
                                             <p className="font-semibold text-stone-900 truncate">
                                                 {c.nombreEmpleado}
