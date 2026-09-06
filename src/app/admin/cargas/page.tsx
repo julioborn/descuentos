@@ -39,7 +39,7 @@ function AvatarCarga({ carga, className }: { carga: Carga; className: string }) 
     if (carga.empresa === 'INDIECITO') {
         return (
             <div className={`shrink-0 overflow-hidden rounded-full bg-[#801818]/10 ${className}`}>
-                <img src="/icons/indiecito-logo.png" alt="INDIECITO" className="h-full w-full object-cover" />
+                <img src="/icons/indiecito-avatar.png" alt="INDIECITO" className="h-full w-full object-cover" />
             </div>
         );
     }
