@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             empresa: empleado.empresa,
         });
 
-        const porcentajeDescuento = descuento?.porcentaje || 0;
+        const porcentajeDescuento = descuento?.activo === false ? 0 : (descuento?.porcentaje || 0);
         const precioFinal =
             precioFinalSinDescuento * (1 - porcentajeDescuento / 100);
 

@@ -9,6 +9,9 @@ const DescuentoSchema = new Schema({
     // true = la pagina publica muestra el descuento vigente,
     // false = muestra info general de la empresa en su lugar.
     promoActiva: { type: Boolean, default: true },
+    // Interruptor general: si es false, el descuento deja de aplicarse
+    // en el surtidor (queda en 0%) sin borrar el registro ni el historico.
+    activo: { type: Boolean, default: true },
 });
 
 export const Descuento =

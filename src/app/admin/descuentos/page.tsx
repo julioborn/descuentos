@@ -11,6 +11,7 @@ type Descuento = {
     porcentaje: number;
     pais: 'arg' | 'py';
     promoActiva?: boolean;
+    activo?: boolean;
 };
 
 export default function AdminDescuentosPage() {
@@ -101,6 +102,62 @@ export default function AdminDescuentosPage() {
             });
         } catch {
             Swal.fire('Error', 'No se pudo cambiar el modo', 'error');
+        }
+    };
+
+    const cambiarActivo = async (descuento: Descuento) => {
+        const estaActiva = descuento.activo ?? true;
+
+        if (estaActiva) {
+            const { isConfirmed } = await Swal.fire({
+                title: '¿Desactivar empresa?',
+                html: `
+                    <p style="color:#57534e;font-size:14px;margin:0 0 4px;">Los empleados de</p>
+                    <p style="color:#111827;font-size:17px;font-weight:700;margin:0 0 10px;">${descuento.empresa}</p>
+                    <p style="color:#a8a29e;font-size:13px;margin:0;">van a dejar de recibir el descuento en el surtidor.</p>
+                `,
+                icon: 'warning',
+                iconColor: '#801818',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, desactivar',
+                cancelButtonText: 'Cancelar',
+                buttonsStyling: false,
+                background: '#ffffff',
+                color: '#111827',
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl',
+                    confirmButton: 'bg-[#801818] hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm',
+                    cancelButton: 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-6 py-2.5 rounded-xl',
+                },
+            });
+            if (!isConfirmed) return;
+        }
+
+        const nuevoValor = !estaActiva;
+
+        try {
+            const res = await fetch(`/api/descuentos/${descuento._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: nuevoValor }),
+            });
+
+            if (!res.ok) throw new Error();
+
+            setDescuentos((prev) =>
+                prev.map((d) => (d._id === descuento._id ? { ...d, activo: nuevoValor } : d))
+            );
+
+            Swal.fire({
+                icon: 'success',
+                title: nuevoValor ? 'Empresa activada' : 'Empresa desactivada',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        } catch {
+            Swal.fire('Error', 'No se pudo cambiar el estado', 'error');
         }
     };
 
@@ -239,16 +296,31 @@ export default function AdminDescuentosPage() {
 
                             <div
                                 key={d._id}
-                                className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm"
+                                className={`bg-white border rounded-2xl p-5 shadow-sm transition ${(d.activo ?? true) ? 'border-stone-200' : 'border-stone-200 opacity-60'
+                                    }`}
                             >
 
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
-                                        %
+                                <div className="flex items-center justify-between gap-3 mb-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#801818]/10 text-xs font-bold text-[#801818]">
+                                            %
+                                        </div>
+                                        <div className="text-base font-semibold text-stone-800 truncate">
+                                            {d.empresa}
+                                        </div>
                                     </div>
-                                    <div className="text-base font-semibold text-stone-800 truncate">
-                                        {d.empresa}
-                                    </div>
+
+                                    <button
+                                        onClick={() => cambiarActivo(d)}
+                                        title={(d.activo ?? true) ? 'Tocá para desactivar' : 'Tocá para activar'}
+                                        className={`shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${(d.activo ?? true)
+                                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                            }`}
+                                    >
+                                        <span className={`h-1.5 w-1.5 rounded-full ${(d.activo ?? true) ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                                        {(d.activo ?? true) ? 'Activa' : 'Inactiva'}
+                                    </button>
                                 </div>
 
                                 <div className="flex gap-3">

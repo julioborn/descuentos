@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
         empresa: empleado.empresa,
         localidad: empleado.localidad,
         porcentaje: descuento?.porcentaje ?? 0,
-        promoActiva: descuento?.promoActiva ?? true,
+        // Si la empresa esta inactiva, la pagina muestra el modo "info de
+        // empresa" sin importar el valor de promoActiva.
+        promoActiva: descuento?.activo === false ? false : (descuento?.promoActiva ?? true),
     });
 }
