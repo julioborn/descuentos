@@ -6,6 +6,9 @@ import { useSession } from 'next-auth/react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import { HiChevronLeft, HiChevronRight, HiSearch } from 'react-icons/hi';
+import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
+import { saveAs } from 'file-saver';
 
 /* ---------- Tipos ---------- */
 type Empleado = {
@@ -257,6 +260,54 @@ export default function AdminDocentesPage() {
         } catch (e) {
             console.error(e);
             Swal.fire('Error', 'No se pudo generar el QR.', 'error');
+        }
+    };
+
+    /* Descargar tarjeta QR (mismo formato que al importar docentes) */
+    const descargarQR = async (emp: Fila) => {
+        try {
+            const origin = window.location.origin;
+            const qrUrl = await QRCode.toDataURL(`${origin}/playero?token=${emp.qrToken}`);
+
+            const nodo = document.createElement('div');
+            nodo.style.position = 'fixed';
+            nodo.style.left = '-9999px';
+            nodo.style.top = '0';
+            nodo.className = 'bg-white text-stone-900 border border-stone-200 p-4 rounded-2xl shadow-sm w-[280px] space-y-3';
+            nodo.innerHTML = `
+                <div class="flex justify-center">
+                    <img src="/idescuentos.png" alt="Logo" class="h-16" />
+                </div>
+                <div class="flex justify-center">
+                    <img src="${qrUrl}" alt="QR Code" class="w-48 h-48" />
+                </div>
+                <div class="text-center text-sm">
+                    <strong>${emp.nombre} ${emp.apellido}</strong>
+                </div>
+            `;
+            document.body.appendChild(nodo);
+
+            const imgs = Array.from(nodo.querySelectorAll('img'));
+            await Promise.all(
+                imgs.map((img) =>
+                    img.complete
+                        ? Promise.resolve()
+                        : new Promise((resolve) => {
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        })
+                )
+            );
+
+            const canvas = await html2canvas(nodo, { scale: 2 });
+            document.body.removeChild(nodo);
+
+            canvas.toBlob((blob) => {
+                if (blob) saveAs(blob, `qr-${emp.dni}.png`);
+            }, 'image/png', 1);
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'No se pudo descargar el QR.', 'error');
         }
     };
 
@@ -708,6 +759,16 @@ focus:ring-2 focus:ring-[#801818] focus:ring-offset-2 focus:ring-offset-white"
                                             <td className="p-2 text-center rounded-r-lg" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-center gap-2">
                                                     <button
+                                                        onClick={() => descargarQR(emp)}
+                                                        className="flex items-center justify-center w-8 h-8 rounded-full bg-green-700 hover:bg-green-600 text-white shadow-sm transition"
+                                                        title="Descargar QR"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                            <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+                                                            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
                                                         onClick={() => editarDocente(emp)}
                                                         className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-sm transition"
                                                         title="Editar"
@@ -770,6 +831,16 @@ cursor-pointer
                                             className="flex gap-2 shrink-0"
                                             onClick={(e) => e.stopPropagation()}
                                         >
+                                            <button
+                                                onClick={() => descargarQR(emp)}
+                                                className="flex items-center justify-center w-8 h-8 rounded-full bg-green-700 hover:bg-green-600 text-white shadow-sm"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                                                    <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+                                                    <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+                                                </svg>
+                                            </button>
+
                                             <button
                                                 onClick={() => editarDocente(emp)}
                                                 className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-sm"
