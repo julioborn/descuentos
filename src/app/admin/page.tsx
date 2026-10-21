@@ -12,6 +12,7 @@ import {
     GraduationCap,
     Import,
     FileText,
+    ClipboardList,
     ChevronRight
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -27,6 +28,7 @@ const META: Record<string, { grupo: typeof GROUP_ORDER[number]; descripcion: str
     Descuentos: { grupo: 'Configuración', descripcion: 'Porcentaje de descuento por empresa.' },
     Estadísticas: { grupo: 'Análisis y reportes', descripcion: 'Litros e ingresos, mes a mes.' },
     Informes: { grupo: 'Análisis y reportes', descripcion: 'Reportes descargables por empresa.' },
+    'Informe Gerencial': { grupo: 'Análisis y reportes', descripcion: 'Resumen ejecutivo del negocio, con gráficos y filtro de fechas.' },
     Importar: { grupo: 'Herramientas', descripcion: 'Carga masiva de padrones desde Excel.' },
 };
 
@@ -110,6 +112,11 @@ export default function AdminPage() {
             label: 'Informes',
             path: '/admin/informes',
             icon: <FileText className="w-6 h-6 text-[#801818]" />,
+        },
+        {
+            label: 'Informe Gerencial',
+            path: '/admin/informe-gerencial',
+            icon: <ClipboardList className="w-6 h-6 text-[#801818]" />,
         },
         {
             label: 'Importar',

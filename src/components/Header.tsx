@@ -16,6 +16,7 @@ import {
     Percent,
     BarChart3,
     FileText,
+    ClipboardList,
     Import,
 } from 'lucide-react';
 
@@ -28,6 +29,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
     'Descuentos': <Percent className="w-[18px] h-[18px]" />,
     'Estadísticas': <BarChart3 className="w-[18px] h-[18px]" />,
     'Informes': <FileText className="w-[18px] h-[18px]" />,
+    'Informe Gerencial': <ClipboardList className="w-[18px] h-[18px]" />,
     'Importar': <Import className="w-[18px] h-[18px]" />,
 };
 
@@ -191,6 +193,7 @@ export default function Header() {
                 { label: 'Descuentos', href: '/admin/descuentos' },
                 { label: 'Estadísticas', href: '/admin/estadisticas' },
                 { label: 'Informes', href: '/admin/informes' },
+                { label: 'Informe Gerencial', href: '/admin/informe-gerencial' },
             ]
             : role === 'playero'
                 ? [{ label: 'Inicio', href: '/playero' }]
