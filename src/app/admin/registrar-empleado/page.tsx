@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
 import html2canvas from 'html2canvas';
 import { useRef } from 'react';
+import { esQrDeEvento } from '@/lib/qrEventos';
 
 export default function RegistrarEmpleadoPage() {
     const [form, setForm] = useState({
@@ -54,7 +55,7 @@ export default function RegistrarEmpleadoPage() {
 
             if (!res.ok) throw new Error();
 
-            const urlQr = form.empresa === 'INDIECITO'
+            const urlQr = esQrDeEvento(form.empresa)
                 ? `${window.location.origin}/promo?token=${token}`
                 : `${window.location.origin}/playero?token=${token}`;
             const qr = await QRCode.toDataURL(urlQr);

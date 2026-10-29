@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useDeferredValue } from 'react';
 import Swal from 'sweetalert2';
 import Loader from '@/components/Loader';
+import { esQrDeEvento } from '@/lib/qrEventos';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HiChevronLeft, HiChevronRight, HiSearch } from 'react-icons/hi';
@@ -39,10 +40,11 @@ const slugify = (s?: string) =>
         .replace(/^-+|-+$/g, '')
         .toLowerCase();
 
-// El QR de INDIECITO usa una p\u00e1gina p\u00fablica informativa (adem\u00e1s de servir
-// para cargar el descuento); el resto de las empresas mantiene el link de siempre.
+// El QR de las empresas de EMPRESAS_QR_EVENTO usa una p\u00e1gina p\u00fablica
+// informativa (adem\u00e1s de servir para cargar el descuento); el resto
+// mantiene el link de siempre.
 const urlParaQr = (origin: string, emp: { empresa: string; qrToken: string }) =>
-    emp.empresa === 'INDIECITO'
+    esQrDeEvento(emp.empresa)
         ? `${origin}/promo?token=${emp.qrToken}`
         : `${origin}/playero?token=${emp.qrToken}`;
 

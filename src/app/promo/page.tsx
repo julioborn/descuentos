@@ -81,7 +81,46 @@ function PromoContent() {
                     <img src="/icons/dapsa-logo.png" alt="Dapsa" className="h-8 w-auto" />
                 </div>
 
-                {info.promoActiva ? (
+                {info.empresa === 'FIESTA EMPANADA' ? (
+                    <>
+                        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                            <div className="bg-[#801818] px-6 py-8 text-center text-white">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">
+                                    Beneficio activo
+                                </p>
+                                <p className="text-5xl font-black tracking-tight">
+                                    {info.porcentaje}% OFF
+                                </p>
+                                <p className="mt-1 text-sm text-white/80">
+                                    en combustible, con este QR
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                            <div className="bg-[#111827] px-6 py-7 text-center text-white">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 mb-2">
+                                    La Criolla
+                                </p>
+                                <p className="text-2xl font-black tracking-tight">
+                                    Fiesta de la Empanada
+                                </p>
+                                <p className="mt-1 text-sm text-white/70">
+                                    2da edición
+                                </p>
+                            </div>
+                            <div className="px-6 py-6 text-center space-y-2">
+                                <p className="text-sm font-semibold text-[#111827]">
+                                    14 de noviembre · C.C y D. Huracán
+                                </p>
+                                <p className="text-sm text-stone-600 leading-relaxed">
+                                    Reclamá tu QR al ingresar al festival y usalo para cargar
+                                    combustible con descuento.
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                ) : info.promoActiva ? (
                     <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
                         <div className="bg-[#801818] px-6 py-8 text-center text-white">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">
@@ -117,7 +156,7 @@ function PromoContent() {
                     </div>
                 )}
 
-                {info.promoActiva && (
+                {info.promoActiva && info.empresa !== 'FIESTA EMPANADA' && (
                     <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 text-center space-y-2">
                         <p className="text-sm font-semibold text-[#111827]">
                             Válido el 4, 5 y 6 de septiembre

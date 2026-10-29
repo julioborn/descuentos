@@ -13,6 +13,7 @@ import "react-day-picker/dist/style.css"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DayPicker, DateRange } from "react-day-picker"
+import { esQrDeEvento } from '@/lib/qrEventos';
 
 type Carga = {
     _id: string;
@@ -345,15 +346,11 @@ export default function CargasPage() {
     const advertenciasPorId = useMemo(() => {
         const map = new Map<string, { muchasCargas: boolean; mas75: boolean }>();
 
-        // INDIECITO usa un QR unico compartido por muchos autos: cargarlo
-        // varias veces en el mismo dia es el comportamiento esperado, no una duplicacion.
-        const esQrCompartido = (empresa?: string) => empresa === 'INDIECITO';
-
         // Agrupamos por DNI + día
         const cargasPorPersonaDia = new Map<string, number>();
 
         filtradas.forEach(c => {
-            if (esQrCompartido(c.empresa)) return;
+            if (esQrDeEvento(c.empresa)) return;
             const fechaObj = new Date(c.fecha);
             const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
 
@@ -365,7 +362,7 @@ export default function CargasPage() {
             const fechaObj = new Date(c.fecha);
             const diaClave = `${c.dniEmpleado}-${fechaObj.getFullYear()}-${fechaObj.getMonth()}-${fechaObj.getDate()}`;
 
-            const muchasCargas = !esQrCompartido(c.empresa) && (cargasPorPersonaDia.get(diaClave) || 0) > 1;
+            const muchasCargas = !esQrDeEvento(c.empresa) && (cargasPorPersonaDia.get(diaClave) || 0) > 1;
             const mas75 = c.litros > 75;
 
             map.set(c._id, { muchasCargas, mas75 });
