@@ -117,6 +117,9 @@ function PromoContent() {
                                     Reclamá tu QR al ingresar al festival y usalo para cargar
                                     combustible con descuento.
                                 </p>
+                                <p className="text-xs text-stone-400 pt-1">
+                                    Válido hasta el otro día a las 00 hs
+                                </p>
                             </div>
                         </div>
                     </>
