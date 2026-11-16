@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrowserQRCodeReader } from '@zxing/browser';
+import { DecodeHintType } from '@zxing/library';
 import Swal from 'sweetalert2';
 
 export default function QRScannerPage() {
@@ -11,31 +12,56 @@ export default function QRScannerPage() {
     const codeReader = useRef<BrowserQRCodeReader | null>(null);
 
     useEffect(() => {
-        const reader = new BrowserQRCodeReader();
+        // TRY_HARDER mejora la deteccion en condiciones dificiles (poca luz,
+        // QR impreso chico o de baja calidad), a costa de decodificar un poco
+        // mas lento cuadro a cuadro.
+        const hints = new Map();
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        const reader = new BrowserQRCodeReader(hints);
         codeReader.current = reader;
 
         let active = true;
 
         const startScanner = async () => {
-            try {
-                await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
-                    if (result && active) {
-                        active = false;
-                        const token = new URL(result.getText()).searchParams.get('token');
+            // Constraints explicitos (camara trasera, resolucion alta y
+            // enfoque continuo) para que la camara del navegador enfoque
+            // tan bien como la app de camara nativa del celular.
+            const constraints: MediaStreamConstraints = {
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    advanced: [{ focusMode: 'continuous' } as any],
+                },
+            };
 
-                        if (token) {
-                            stopCamera();
-                            router.push(`/playero/carga?token=${token}`);
-                        }
+            const onResult = (result: any) => {
+                if (result && active) {
+                    active = false;
+                    const token = new URL(result.getText()).searchParams.get('token');
+
+                    if (token) {
+                        stopCamera();
+                        router.push(`/playero/carga?token=${token}`);
                     }
-                });
+                }
+            };
+
+            try {
+                await reader.decodeFromConstraints(constraints, videoRef.current!, onResult);
             } catch {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error al iniciar la cámara',
-                    text: 'Asegurate de que la cámara esté habilitada.',
-                    confirmButtonColor: '#801818',
-                }).then(() => router.push('/playero'));
+                // Si el navegador no soporta alguno de los constraints avanzados,
+                // reintentamos con la seleccion automatica de camara de siempre.
+                try {
+                    await reader.decodeFromVideoDevice(undefined, videoRef.current!, onResult);
+                } catch {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al iniciar la cámara',
+                        text: 'Asegurate de que la cámara esté habilitada.',
+                        confirmButtonColor: '#801818',
+                    }).then(() => router.push('/playero'));
+                }
             }
         };
 
